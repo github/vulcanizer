@@ -1,0 +1,10 @@
+#!/bin/bash
+
+git_revision=$(git rev-parse HEAD)
+if [ $? -eq 0 ]; then
+  echo "$git_revision"
+  exit 0
+fi
+
+echo "Could not find revision" >> /dev/stderr
+exit 1
