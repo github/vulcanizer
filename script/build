@@ -1,0 +1,3 @@
+#!/bin/bash
+
+go install -ldflags="-X main.BuildVersion=$(script/revision)" github.com/github/vulcan-go-opensource-lib/...

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+./script/build
+
+go test -v github.com/github/vulcan-go-opensource-lib/...

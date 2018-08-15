@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+# dep gets confused if it's run when pwd is a symlink into $GOPATH.
+scripts="$(dirname "$0")"
+root="$(dirname "$scripts")"
+cd -P "$root"
+
+echo Updating vendor...
+dep ensure "$@"
