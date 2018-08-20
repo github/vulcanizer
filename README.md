@@ -5,6 +5,23 @@ This project is a golang library for interacting with an Elasticsearch cluster. 
 
 This project does not aim to be a fully-featured API client for querying or indexing to Elasticsearch.
 
+### Command line application
+
+This project produces a command line application that can be used to manage your Elasticsearch cluster:
+
+* `allocation [disable|enable] <cluster>`
+* `drain server <name> <cluster>`
+* `drain status <cluster>`
+* `fill all <cluster>`
+* `fill server <name> <cluster>`
+* `health <cluster>`
+* `indices <cluster>`
+* `nodes <cluster>`
+* `settings <cluster>`
+* `setting update <setting> <value> <cluster>`
+* `snapshots <cluster>`
+* `snapshot status <snapshot name> <cluster>`
+
 ### Supported Elasticsearch versions
 
 To be determined
