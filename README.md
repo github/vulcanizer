@@ -21,6 +21,19 @@ This project is under active development.
 
 This repository is [open to contributions](CONTRIBUTING.md). Please also see [code of conduct](CODE_OF_CONDUCT.md)
 
+To get up and running, install the project into your $GOPATH and run the set up scripts.
+
+```
+go get github.com/github/vulcan-go-opensource-lib
+
+cd $GOPATH/src/github.com/github/vulcan-go-opensource-lib
+
+./script/bootstrap
+./script/test
+```
+
+And the test suite should execute correctly.
+
 ### License
 
 This project is released under the [MIT LICENSE](LICENSE). Please note it includes 3rd party dependencies release under their own licenses; these are found under [vendor](https://github.com/github/vulcan-go-opensource-lib/tree/master/vendor).
