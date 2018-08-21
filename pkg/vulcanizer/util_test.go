@@ -1,4 +1,4 @@
-package vulcan
+package vulcanizer
 
 import (
 	"testing"
