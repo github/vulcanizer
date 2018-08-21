@@ -9,18 +9,23 @@ This project does not aim to be a fully-featured API client for querying or inde
 
 This project produces a command line application that can be used to manage your Elasticsearch cluster:
 
-* `allocation [disable|enable] <cluster>`
-* `drain server <name> <cluster>`
-* `drain status <cluster>`
-* `fill all <cluster>`
-* `fill server <name> <cluster>`
-* `health <cluster>`
-* `indices <cluster>`
-* `nodes <cluster>`
-* `settings <cluster>`
-* `setting update <setting> <value> <cluster>`
-* `snapshots <cluster>`
-* `snapshot status <snapshot name> <cluster>`
+* `allocation [disable|enable]`
+* `drain server <name>`
+* `drain status`
+* `fill all`
+* `fill server <name>`
+* `health`
+* `indices`
+* `nodes`
+* `settings`
+* `setting update <setting> <value>`
+* `snapshots`
+* `snapshot status <snapshot name>`
+
+All commands take:
+* `--cluster <name>` to look up information in a config file
+or
+* `--host localhost` and `--port 9200` for the connection information
 
 ### Supported Elasticsearch versions
 

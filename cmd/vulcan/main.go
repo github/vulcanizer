@@ -8,6 +8,22 @@ import (
 	"github.com/spf13/viper"
 )
 
+func getConfiguration() (string, int) {
+	var host string
+	var port int
+
+	if viper.GetString("cluster") != "" {
+		config := viper.Sub(viper.GetString("cluster"))
+		host = config.GetString("host")
+		port = config.GetInt("port")
+	} else {
+		host = viper.GetString("host")
+		port = viper.GetInt("port")
+	}
+
+	return host, port
+}
+
 func main() {
 
 	viper.SetConfigName(".vulcan")
@@ -19,15 +35,12 @@ func main() {
 	}
 
 	var cmdHealth = &cobra.Command{
-		Use:   "health <cluster>",
+		Use:   "health",
 		Short: "Display the health of the cluster.",
 		Long:  `Get detailed information about what consitutes the health of the cluster`,
-		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
-			host := viper.GetString(fmt.Sprintf("%s.host", args[0]))
-			port := viper.GetInt(fmt.Sprintf("%s.port", args[0]))
-
+			host, port := getConfiguration()
 			fmt.Printf("viper config host: %s, port: %v\n", host, port)
 
 			caption, values, _ := vulcan.GetHealth(host, port)
@@ -38,26 +51,36 @@ func main() {
 	}
 
 	var cmdIndices = &cobra.Command{
-		Use:   "indices <cluster>",
+		Use:   "indices",
 		Short: "Display the indices of the cluster.",
 		Long:  `Show what indices are created on the give cluster.`,
-		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Get indices on cluster", args[0])
+
+			host, port := getConfiguration()
+			fmt.Printf("viper config host: %s, port: %v\n", host, port)
 		},
 	}
 
 	var cmdNodes = &cobra.Command{
-		Use:   "nodes <cluster>",
+		Use:   "nodes",
 		Short: "Display the nodes of the cluster.",
 		Long:  `Show what nodes are part of the cluster.`,
-		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Get nodes on cluster", args[0])
+			host, port := getConfiguration()
+			fmt.Printf("viper config host: %s, port: %v\n", host, port)
 		},
 	}
 
 	var rootCmd = &cobra.Command{Use: "app"}
 	rootCmd.AddCommand(cmdHealth, cmdIndices, cmdNodes)
+
+	rootCmd.PersistentFlags().StringP("host", "u", "", "Host to connect to")
+	rootCmd.PersistentFlags().IntP("port", "p", 0, "Port to connect to")
+	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Cluster to connect to defined in config file")
+
+	viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
+	viper.BindPFlag("port", rootCmd.PersistentFlags().Lookup("port"))
+	viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
+
 	rootCmd.Execute()
 }
