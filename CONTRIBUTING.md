@@ -1,7 +1,7 @@
 ## Contributing
 
-[fork]: https://github.com/github/vulcan-go-opensource-lib/fork
-[pr]: https://github.com/github/vulcan-go-opensource-lib/compare
+[fork]: https://github.com/github/vulcanizer/fork
+[pr]: https://github.com/github/vulcanizer/compare
 [style]: https://github.com/styleguide/ruby
 [code-of-conduct]: CODE_OF_CONDUCT.md
 
