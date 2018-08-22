@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	vulcan "github.com/github/vulcan-go-opensource-lib"
+	v "github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,7 +26,7 @@ func getConfiguration() (string, int) {
 
 func main() {
 
-	viper.SetConfigName(".vulcan")
+	viper.SetConfigName(".vulcanizer")
 	viper.AddConfigPath("$HOME")
 
 	err := viper.ReadInConfig() // Find and read the config file
@@ -43,7 +43,7 @@ func main() {
 			host, port := getConfiguration()
 			fmt.Printf("viper config host: %s, port: %v\n", host, port)
 
-			caption, values, _ := vulcan.GetHealth(host, port)
+			caption, values, _ := v.GetHealth(host, port)
 
 			fmt.Println(caption)
 			fmt.Println(values)
