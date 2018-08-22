@@ -9,7 +9,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
   )
 
   if [[ ! -x "$(which go)" ]]; then
-    echo >&2 "vulcan-go-opensource-lib requires an installation of Go to build."
+    echo >&2 "vulcanizer requires an installation of Go to build."
     exit 1
   fi
 fi

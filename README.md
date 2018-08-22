@@ -1,4 +1,4 @@
-# vulcan-go-opensource-lib
+# vulcanizer
 GitHub's ops focused Elasticsearch library
 
 This project is a golang library for interacting with an Elasticsearch cluster. It's goal is to provide a high level API to help with common tasks that are associated with operating an Elasticsearch cluster such as querying health status of the cluster, migrating data off of nodes, updating cluster settings, etc.
@@ -11,7 +11,7 @@ To be determined
 
 ### Name
 
-To be determined.
+[Vulcanization](https://en.wikipedia.org/wiki/Vulcanization) is the process of making rubber more elastic, so vulcanizer is the library that makes Elasticsearch easier to work with!
 
 ### Project status
 
@@ -24,9 +24,9 @@ This repository is [open to contributions](CONTRIBUTING.md). Please also see [co
 To get up and running, install the project into your $GOPATH and run the set up scripts.
 
 ```
-go get github.com/github/vulcan-go-opensource-lib
+go get github.com/github/vulcanizer
 
-cd $GOPATH/src/github.com/github/vulcan-go-opensource-lib
+cd $GOPATH/src/github.com/github/vulcanizer
 
 ./script/bootstrap
 ./script/test
@@ -36,7 +36,7 @@ And the test suite should execute correctly.
 
 ### License
 
-This project is released under the [MIT LICENSE](LICENSE). Please note it includes 3rd party dependencies release under their own licenses; these are found under [vendor](https://github.com/github/vulcan-go-opensource-lib/tree/master/vendor).
+This project is released under the [MIT LICENSE](LICENSE). Please note it includes 3rd party dependencies release under their own licenses; these are found under [vendor](https://github.com/github/vulcanizer/tree/master/vendor).
 
 ### Authors
 
