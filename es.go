@@ -39,7 +39,7 @@ func GetClusterExcludeSettings(server string, port int) *ExcludeSettings {
 
 func DrainServer(server string, port int, serverToDrain string, namesExcluded string) (excludedServers string) {
 
-	var drainList string = ""
+	var drainList string
 
 	if namesExcluded != "None" {
 		drainList = serverToDrain + "," + namesExcluded
@@ -224,7 +224,7 @@ func SetSetting(server string, port int, setting string, value string) (string, 
 		Send(fmt.Sprintf(`{"transient" : { "%s" : "%s"}}`, setting, value)).
 		End()
 
-	if errs != nil && len(errs) > 0 {
+	if len(errs) > 0 {
 		errorText := []string{}
 		for _, err := range errs {
 			errorText = append(errorText, err.Error())

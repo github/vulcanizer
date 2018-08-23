@@ -34,7 +34,7 @@ func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httpte
 			}
 		}
 
-		if matched == false {
+		if !matched {
 			t.Fatalf("No requests matched setup. Got method %s, Path %s, body %s", r.Method, r.URL.EscapedPath(), requestBody)
 		}
 	}))

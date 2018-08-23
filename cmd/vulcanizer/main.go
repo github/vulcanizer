@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	v "github.com/github/vulcanizer"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -24,6 +26,16 @@ func getConfiguration() (string, int) {
 	return host, port
 }
 
+func renderTable(rows [][]string, header []string) string {
+	var result bytes.Buffer
+	table := tablewriter.NewWriter(&result)
+	table.SetHeader(header)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.AppendBulk(rows)
+	table.Render()
+	return result.String()
+}
+
 func main() {
 
 	viper.SetConfigName(".vulcanizer")
@@ -41,12 +53,12 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			host, port := getConfiguration()
-			fmt.Printf("viper config host: %s, port: %v\n", host, port)
+			fmt.Printf("config host: %s, port: %v\n", host, port)
 
-			caption, values, _ := v.GetHealth(host, port)
+			caption, rows, headers := v.GetHealth(host, port)
 
 			fmt.Println(caption)
-			fmt.Println(values)
+			fmt.Println(renderTable(rows, headers))
 		},
 	}
 
@@ -55,9 +67,12 @@ func main() {
 		Short: "Display the indices of the cluster.",
 		Long:  `Show what indices are created on the give cluster.`,
 		Run: func(cmd *cobra.Command, args []string) {
-
 			host, port := getConfiguration()
-			fmt.Printf("viper config host: %s, port: %v\n", host, port)
+			fmt.Printf("config host: %s, port: %v\n", host, port)
+
+			rows, header := v.GetIndices(host, port)
+			table := renderTable(rows, header)
+			fmt.Println(table)
 		},
 	}
 
@@ -67,15 +82,20 @@ func main() {
 		Long:  `Show what nodes are part of the cluster.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			host, port := getConfiguration()
-			fmt.Printf("viper config host: %s, port: %v\n", host, port)
+			fmt.Printf("config host: %s, port: %v\n", host, port)
+			rows, header := v.GetNodes(host, port)
+
+			table := renderTable(rows, header)
+
+			fmt.Println(table)
 		},
 	}
 
 	var rootCmd = &cobra.Command{Use: "app"}
 	rootCmd.AddCommand(cmdHealth, cmdIndices, cmdNodes)
 
-	rootCmd.PersistentFlags().StringP("host", "u", "", "Host to connect to")
-	rootCmd.PersistentFlags().IntP("port", "p", 0, "Port to connect to")
+	rootCmd.PersistentFlags().StringP("host", "", "", "Host to connect to")
+	rootCmd.PersistentFlags().IntP("port", "p", 9200, "Port to connect to")
 	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Cluster to connect to defined in config file")
 
 	viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))

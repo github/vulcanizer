@@ -7,25 +7,59 @@ This project does not aim to be a fully-featured API client for querying or inde
 
 ### Command line application
 
-This project produces a command line application that can be used to manage your Elasticsearch cluster:
+This project produces a `vulcanizer` binary that is a command line application that can be used to manage your Elasticsearch cluster.
+
+#### Commands implemented
+
+* `health`
+* `indices`
+* `nodes`
+
+#### Commands to be implemented
 
 * `allocation [disable|enable]`
 * `drain server <name>`
 * `drain status`
 * `fill all`
 * `fill server <name>`
-* `health`
-* `indices`
-* `nodes`
 * `settings`
 * `setting update <setting> <value>`
 * `snapshots`
 * `snapshot status <snapshot name>`
 
-All commands take:
-* `--cluster <name>` to look up information in a config file
-or
-* `--host localhost` and `--port 9200` for the connection information
+#### Configuration and connection information 
+
+All commands take `--cluster <name>` to look up information in a configuration file in `~/.vulcanizer.yaml`. The configuration should be in the form of 
+
+```
+local:
+  host: localhost
+  port: 9200
+staging:
+  host: 10.10.2.1
+  port: 9201
+production:
+  host: 10.10.1.1
+  port: 9202
+```
+
+Alternatively, all commands take `--host` and `--port` for the connection information.
+
+For example:
+
+```
+# Query for cluster health on the "local" cluster
+vulcanizer health --cluster local
+
+# Query for nodes against the node 10.10.2.1 and port 9202
+vulcanizer nodes --host 10.10.2.1 --port 9202
+```
+
+### Development
+
+`./script/build` will compile the project and install the `vulcanizer` binary to `$GOPATH/bin`.
+
+`./script/test` will run the tests in the project.
 
 ### Supported Elasticsearch versions
 
