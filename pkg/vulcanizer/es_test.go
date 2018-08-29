@@ -2,46 +2,43 @@ package vulcanizer
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"strconv"
 	"testing"
 )
 
-type ServerSetup struct {
-	Method, Path, Body, Response string
-	HttpStatus                   int
-}
-
-func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httptest.Server) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		requestBytes, _ := ioutil.ReadAll(r.Body)
-		requestBody := string(requestBytes)
-
-		matched := false
-		for _, setup := range setups {
-			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody == setup.Body {
-				matched = true
-				if setup.HttpStatus == 0 {
-					w.WriteHeader(http.StatusOK)
-				} else {
-					w.WriteHeader(setup.HttpStatus)
-				}
-				w.Write([]byte(setup.Response))
-			}
-		}
-
-		if matched == false {
-			t.Fatalf("No requests matched setup. Got method %s, Path %s, body %s", r.Method, r.URL.EscapedPath(), requestBody)
-		}
-	}))
-	url, _ := url.Parse(ts.URL)
-	port, _ := strconv.Atoi(url.Port())
-	return url.Hostname(), port, ts
-}
+//
+// type ServerSetup struct {
+// 	Method, Path, Body, Response string
+// 	HttpStatus                   int
+// }
+//
+// func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httptest.Server) {
+// 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//
+// 		requestBytes, _ := ioutil.ReadAll(r.Body)
+// 		requestBody := string(requestBytes)
+//
+// 		matched := false
+// 		for _, setup := range setups {
+// 			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody == setup.Body {
+// 				matched = true
+// 				if setup.HttpStatus == 0 {
+// 					w.WriteHeader(http.StatusOK)
+// 				} else {
+// 					w.WriteHeader(setup.HttpStatus)
+// 				}
+// 				w.Write([]byte(setup.Response))
+// 			}
+// 		}
+//
+// 		if matched == false {
+// 			t.Fatalf("No requests matched setup. Got method %s, Path %s, body %s", r.Method, r.URL.EscapedPath(), requestBody)
+// 		}
+// 	}))
+// 	url, _ := url.Parse(ts.URL)
+// 	port, _ := strconv.Atoi(url.Port())
+// 	return url.Hostname(), port, ts
+// }
 
 func TestGetClusterExcludeSettings(t *testing.T) {
 
