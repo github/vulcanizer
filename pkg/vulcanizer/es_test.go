@@ -281,98 +281,98 @@ func TestGetSettings(t *testing.T) {
 	}
 }
 
-func TestSetSetting_ExistingTransientSetting(t *testing.T) {
-	getSetup := &ServerSetup{
-		Method:   "GET",
-		Path:     "/_cluster/settings",
-		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.2"}}}}}}`,
-	}
-	putSetup := &ServerSetup{
-		Method:   "PUT",
-		Path:     "/_cluster/settings",
-		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
-		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
-	}
+// func TestSetSetting_ExistingTransientSetting(t *testing.T) {
+// 	getSetup := &ServerSetup{
+// 		Method:   "GET",
+// 		Path:     "/_cluster/settings",
+// 		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.2"}}}}}}`,
+// 	}
+// 	putSetup := &ServerSetup{
+// 		Method:   "PUT",
+// 		Path:     "/_cluster/settings",
+// 		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
+// 		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
+// 	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
-	defer ts.Close()
+// 	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
+// 	defer ts.Close()
 
-	oldValue, newValue, err := SetSetting(host, port, "cluster.routing.allocation.exclude._name", "10.0.0.99")
+// 	oldValue, newValue, err := SetSetting(host, port, "cluster.routing.allocation.exclude._name", "10.0.0.99")
 
-	if err != nil {
-		t.Fatalf("Expected error to be nil, %s", err)
-	}
+// 	if err != nil {
+// 		t.Fatalf("Expected error to be nil, %s", err)
+// 	}
 
-	if oldValue != "10.0.0.2" {
-		t.Fatalf("Unexpected old value, got %s", oldValue)
-	}
+// 	if oldValue != "10.0.0.2" {
+// 		t.Fatalf("Unexpected old value, got %s", oldValue)
+// 	}
 
-	if newValue != "10.0.0.99" {
-		t.Fatalf("Unexpected new value, got %s", newValue)
-	}
-}
+// 	if newValue != "10.0.0.99" {
+// 		t.Fatalf("Unexpected new value, got %s", newValue)
+// 	}
+// }
 
-func TestSetSetting_ExistingPersistentSetting(t *testing.T) {
-	getSetup := &ServerSetup{
-		Method:   "GET",
-		Path:     "/_cluster/settings",
-		Response: `{"transient":{},"persistent":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.2"}}}}}}`,
-	}
-	putSetup := &ServerSetup{
-		Method:   "PUT",
-		Path:     "/_cluster/settings",
-		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
-		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
-	}
+// func TestSetSetting_ExistingPersistentSetting(t *testing.T) {
+// 	getSetup := &ServerSetup{
+// 		Method:   "GET",
+// 		Path:     "/_cluster/settings",
+// 		Response: `{"transient":{},"persistent":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.2"}}}}}}`,
+// 	}
+// 	putSetup := &ServerSetup{
+// 		Method:   "PUT",
+// 		Path:     "/_cluster/settings",
+// 		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
+// 		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
+// 	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
-	defer ts.Close()
+// 	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
+// 	defer ts.Close()
 
-	oldValue, newValue, err := SetSetting(host, port, "cluster.routing.allocation.exclude._name", "10.0.0.99")
+// 	oldValue, newValue, err := SetSetting(host, port, "cluster.routing.allocation.exclude._name", "10.0.0.99")
 
-	if err != nil {
-		t.Fatalf("Expected error to be nil, %s", err)
-	}
+// 	if err != nil {
+// 		t.Fatalf("Expected error to be nil, %s", err)
+// 	}
 
-	if oldValue != "10.0.0.2" {
-		t.Fatalf("Unexpected old value, got %s", oldValue)
-	}
+// 	if oldValue != "10.0.0.2" {
+// 		t.Fatalf("Unexpected old value, got %s", oldValue)
+// 	}
 
-	if newValue != "10.0.0.99" {
-		t.Fatalf("Unexpected new value, got %s", newValue)
-	}
-}
+// 	if newValue != "10.0.0.99" {
+// 		t.Fatalf("Unexpected new value, got %s", newValue)
+// 	}
+// }
 
-func TestSetSetting_NoExistingSetting(t *testing.T) {
-	getSetup := &ServerSetup{
-		Method:   "GET",
-		Path:     "/_cluster/settings",
-		Response: `{"transient":{},"persistent":{}}`,
-	}
-	putSetup := &ServerSetup{
-		Method:   "PUT",
-		Path:     "/_cluster/settings",
-		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
-		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
-	}
+// func TestSetSetting_NoExistingSetting(t *testing.T) {
+// 	getSetup := &ServerSetup{
+// 		Method:   "GET",
+// 		Path:     "/_cluster/settings",
+// 		Response: `{"transient":{},"persistent":{}}`,
+// 	}
+// 	putSetup := &ServerSetup{
+// 		Method:   "PUT",
+// 		Path:     "/_cluster/settings",
+// 		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
+// 		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
+// 	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
-	defer ts.Close()
+// 	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
+// 	defer ts.Close()
 
-	oldValue, newValue, err := SetSetting(host, port, "cluster.routing.allocation.exclude._name", "10.0.0.99")
+// 	oldValue, newValue, err := SetSetting(host, port, "cluster.routing.allocation.exclude._name", "10.0.0.99")
 
-	if err != nil {
-		t.Fatalf("Expected error to be nil, %s", err)
-	}
+// 	if err != nil {
+// 		t.Fatalf("Expected error to be nil, %s", err)
+// 	}
 
-	if oldValue != "" {
-		t.Fatalf("Unexpected old value, got %s", oldValue)
-	}
+// 	if oldValue != "" {
+// 		t.Fatalf("Unexpected old value, got %s", oldValue)
+// 	}
 
-	if newValue != "10.0.0.99" {
-		t.Fatalf("Unexpected new value, got %s", newValue)
-	}
-}
+// 	if newValue != "10.0.0.99" {
+// 		t.Fatalf("Unexpected new value, got %s", newValue)
+// 	}
+// }
 
 func TestSetSetting_BadRequest(t *testing.T) {
 	getSetup := &ServerSetup{
@@ -384,7 +384,7 @@ func TestSetSetting_BadRequest(t *testing.T) {
 		Method:     "PUT",
 		Path:       "/_cluster/settings",
 		Body:       `{"transient":{"cluster.routing.allocation.enable":"foo"}}`,
-		HttpStatus: http.StatusBadRequest,
+		HTTPStatus: http.StatusBadRequest,
 		Response:   `{"error":{"root_cause":[{"type":"illegal_argument_exception","reason":"Illegal allocation.enable value [FOO]"}],"type":"illegal_argument_exception","reason":"Illegal allocation.enable value [FOO]"},"status":400}`,
 	}
 
