@@ -12,6 +12,8 @@ if [ "$(uname -s)" = "Darwin" ]; then
     echo >&2 "vulcanizer requires an installation of Go to build."
     exit 1
   fi
+  # Colorize go output, because it's minty fresh.
+  go get -u github.com/rakyll/gotest
 fi
 
 script/build
