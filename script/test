@@ -2,4 +2,10 @@
 
 ./script/build
 
-go test -v github.com/github/vulcanizer/...
+# If gotest exists, colorize the output.
+if [ -f $GOBIN/gotest ]
+then
+     gotest -v github.com/github/vulcanizer/...
+else
+    go test -v github.com/github/vulcanizer/...
+fi
