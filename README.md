@@ -14,12 +14,12 @@ This project produces a `vulcanizer` binary that is a command line application t
 * `health`
 * `indices`
 * `nodes`
-
-#### Commands to be implemented
-
 * `allocation [disable|enable]`
 * `drain server <name>`
 * `drain status`
+
+#### Commands to be implemented
+
 * `fill all`
 * `fill server <name>`
 * `settings`
