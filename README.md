@@ -20,10 +20,10 @@ This project produces a `vulcanizer` binary that is a command line application t
 * `drain status`
 * `fill all`
 * `fill server --name <name>`
+* `settings`
 
 #### Commands to be implemented
 
-* `settings`
 * `setting update <setting> <value>`
 * `snapshots`
 * `snapshot status <snapshot name>`
