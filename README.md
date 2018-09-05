@@ -22,11 +22,17 @@ This project produces a `vulcanizer` binary that is a command line application t
 * `fill server --name <name>`
 * `settings`
 * `setting update <setting> <value>`
+* `snapshots`
+* `snapshot status <snapshot name>`
 
 #### Commands to be implemented
 
-* `snapshots`
-* `snapshot status <snapshot name>`
+* Listing repositories
+* Verifying repositories
+* Taking snapshots
+* Deleting snapshots
+* Displaying index settings
+* Updating index settings
 
 #### Configuration and connection information 
 

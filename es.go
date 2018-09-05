@@ -250,9 +250,9 @@ func SetSetting(server string, port int, setting string, value string) (string, 
 	return existingValue, newValue, nil
 }
 
-func GetSnapshots(server string, port int, cluster string) ([][]string, []string) {
+func GetSnapshots(server string, port int, repository string) ([][]string, []string) {
 
-	_, body, _ := buildGetRequest(server, port, fmt.Sprintf("_snapshot/%s/_all", cluster)).End()
+	_, body, _ := buildGetRequest(server, port, fmt.Sprintf("_snapshot/%s/_all", repository)).End()
 
 	results := [][]string{}
 	headers := []string{"state", "snapshot", "finished", "duration"}
@@ -281,8 +281,8 @@ func GetSnapshots(server string, port int, cluster string) ([][]string, []string
 	return results, headers
 }
 
-func GetSnapshotStatus(server string, port int, cluster string, snapshot string) ([][]string, []string) {
-	_, body, _ := buildGetRequest(server, port, fmt.Sprintf("_snapshot/%s/%s", cluster, snapshot)).End()
+func GetSnapshotStatus(server string, port int, repository string, snapshot string) ([][]string, []string) {
+	_, body, _ := buildGetRequest(server, port, fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).End()
 
 	headers := []string{"metric", "value"}
 
