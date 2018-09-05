@@ -17,9 +17,7 @@ var cmdNodes = &cobra.Command{
 	Long:  `Show what nodes are part of the cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
-		fmt.Printf("config host: %s, port: %v\n", host, port)
 		rows, header := v.GetNodes(host, port)
-
 		table := renderTable(rows, header)
 
 		fmt.Println(table)
