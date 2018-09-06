@@ -35,7 +35,7 @@ func renderTable(rows [][]string, header []string) string {
 	return result.String()
 }
 
-var rootCmd = &cobra.Command{Use: "app"}
+var rootCmd = &cobra.Command{Use: "vulcanizer"}
 
 func main() {
 

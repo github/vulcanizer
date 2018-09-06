@@ -9,21 +9,32 @@ This project does not aim to be a fully-featured API client for querying or inde
 
 This project produces a `vulcanizer` binary that is a command line application that can be used to manage your Elasticsearch cluster.
 
-#### Commands implemented
+```
+$ vulcanizer -h
+Usage:
+  vulcanizer [command]
 
-* `health`
-* `indices`
-* `nodes`
-* `allocation disable`
-* `allocation enable`
-* `drain server --name <name>`
-* `drain status`
-* `fill all`
-* `fill server --name <name>`
-* `settings`
-* `setting update <setting> <value>`
-* `snapshots`
-* `snapshot status <snapshot name>`
+Available Commands:
+  allocation  Set shard allocation on the cluster.
+  drain       Drain a server or see what servers are draining.
+  fill        Fill servers with data, removing shard allocation exclusion rules.
+  health      Display the health of the cluster.
+  help        Help about any command
+  indices     Display the indices of the cluster.
+  nodes       Display the nodes of the cluster.
+  setting     Interact with cluster settings.
+  settings    Display all the settings of the cluster.
+  snapshot    Interact with a specific snapshot.
+  snapshots   Display the snapshots of the cluster.
+
+Flags:
+  -c, --cluster string   Cluster to connect to defined in config file
+  -h, --help             help for vulcanizer
+      --host string      Host to connect to
+  -p, --port int         Port to connect to (default 9200)
+
+Use "vulcanizer [command] --help" for more information about a command.
+```
 
 #### Commands to be implemented
 
