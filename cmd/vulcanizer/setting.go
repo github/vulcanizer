@@ -13,10 +13,16 @@ var settingToUpdate, valueToUpdate string
 func init() {
 
 	cmdSettingUpdate.Flags().StringVarP(&settingToUpdate, "setting", "s", "", "Elasticsearch cluster setting to update (required)")
-	cmdSettingUpdate.MarkFlagRequired("setting")
+	err := cmdSettingUpdate.MarkFlagRequired("setting")
+	if err != nil {
+		panic(err)
+	}
 
 	cmdSettingUpdate.Flags().StringVarP(&valueToUpdate, "value", "v", "", "Value of the Elasticsearch cluster setting to update (required)")
-	cmdSettingUpdate.MarkFlagRequired("value")
+	err = cmdSettingUpdate.MarkFlagRequired("value")
+	if err != nil {
+		panic(err)
+	}
 
 	cmdSetting.AddCommand(cmdSettingUpdate)
 	rootCmd.AddCommand(cmdSetting)

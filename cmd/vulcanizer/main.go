@@ -51,9 +51,21 @@ func main() {
 	rootCmd.PersistentFlags().IntP("port", "p", 9200, "Port to connect to")
 	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Cluster to connect to defined in config file")
 
-	viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
-	viper.BindPFlag("port", rootCmd.PersistentFlags().Lookup("port"))
-	viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
+	err = viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
+	if err != nil {
+		panic(err)
+	}
+	err = viper.BindPFlag("port", rootCmd.PersistentFlags().Lookup("port"))
+	if err != nil {
+		panic(err)
+	}
+	err = viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
+	if err != nil {
+		panic(err)
+	}
 
-	rootCmd.Execute()
+	err = rootCmd.Execute()
+	if err != nil {
+		panic(err)
+	}
 }

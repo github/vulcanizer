@@ -34,7 +34,10 @@ func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httpte
 				} else {
 					w.WriteHeader(setup.HTTPStatus)
 				}
-				w.Write([]byte(setup.Response))
+				_, err := w.Write([]byte(setup.Response))
+				if err != nil {
+					t.Fatalf("Unable to write test server response: %v", err)
+				}
 			}
 		}
 
@@ -337,7 +340,7 @@ func TestSetSettings(t *testing.T) {
 	}
 
 	for _, x := range tt {
-		t.Run(fmt.Sprintf("%s", x.Name), func(st *testing.T) {
+		t.Run(x.Name, func(st *testing.T) {
 
 			getSetup := &ServerSetup{
 				Method:   "GET",
@@ -403,7 +406,7 @@ func TestAllocationSettings(t *testing.T) {
 	}
 
 	for _, x := range tt {
-		t.Run(fmt.Sprintf("%s", x.Name), func(st *testing.T) {
+		t.Run(x.Name, func(st *testing.T) {
 
 			testSetup := &ServerSetup{
 				Method:   "PUT",

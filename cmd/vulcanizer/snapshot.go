@@ -10,10 +10,16 @@ import (
 
 func init() {
 	cmdSnapshotStatus.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
-	cmdSnapshotStatus.MarkFlagRequired("snapshot")
+	err := cmdSnapshotStatus.MarkFlagRequired("snapshot")
+	if err != nil {
+		panic(err)
+	}
 
 	cmdSnapshotStatus.Flags().StringP("repository", "r", "", "Snapshot repository to query (required)")
-	cmdSnapshotStatus.MarkFlagRequired("repository")
+	err = cmdSnapshotStatus.MarkFlagRequired("repository")
+	if err != nil {
+		panic(err)
+	}
 
 	cmdSnapshot.AddCommand(cmdSnapshotStatus)
 	rootCmd.AddCommand(cmdSnapshot)

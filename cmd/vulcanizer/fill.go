@@ -11,7 +11,10 @@ var serverToFill string
 
 func init() {
 	cmdFillServer.Flags().StringVarP(&serverToFill, "name", "n", "", "Elasticsearch node name to fill (required)")
-	cmdFillServer.MarkFlagRequired("name")
+	err := cmdFillServer.MarkFlagRequired("name")
+	if err != nil {
+		panic(err)
+	}
 
 	cmdFill.AddCommand(cmdFillServer, cmdFillAll)
 	rootCmd.AddCommand(cmdFill)

@@ -10,7 +10,10 @@ import (
 
 func init() {
 	cmdSnapshots.Flags().StringP("repository", "r", "", "Snapshot repository to query")
-	cmdSnapshots.MarkFlagRequired("repository")
+	err := cmdSnapshots.MarkFlagRequired("repository")
+	if err != nil {
+		panic(err)
+	}
 	rootCmd.AddCommand(cmdSnapshots)
 }
 

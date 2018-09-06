@@ -12,7 +12,10 @@ var serverToDrain string
 
 func init() {
 	cmdDrainServer.Flags().StringVarP(&serverToDrain, "name", "n", "", "Elasticsearch node name to drain (required)")
-	cmdDrainServer.MarkFlagRequired("name")
+	err := cmdDrainServer.MarkFlagRequired("name")
+	if err != nil {
+		panic(err)
+	}
 
 	cmdDrain.AddCommand(cmdDrainServer, cmdDrainStatus)
 	rootCmd.AddCommand(cmdDrain)
