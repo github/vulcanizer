@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	v "github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
@@ -13,7 +14,8 @@ func init() {
 	cmdFillServer.Flags().StringVarP(&serverToFill, "name", "n", "", "Elasticsearch node name to fill (required)")
 	err := cmdFillServer.MarkFlagRequired("name")
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error binding name configuration flag: %s \n", err)
+		os.Exit(1)
 	}
 
 	cmdFill.AddCommand(cmdFillServer, cmdFillAll)

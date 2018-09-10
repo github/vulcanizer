@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	v "github.com/github/vulcanizer"
@@ -14,7 +15,8 @@ func init() {
 	cmdDrainServer.Flags().StringVarP(&serverToDrain, "name", "n", "", "Elasticsearch node name to drain (required)")
 	err := cmdDrainServer.MarkFlagRequired("name")
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error binding name configuration flag: %s \n", err)
+		os.Exit(1)
 	}
 
 	cmdDrain.AddCommand(cmdDrainServer, cmdDrainStatus)

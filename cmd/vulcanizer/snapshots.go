@@ -12,7 +12,8 @@ func init() {
 	cmdSnapshots.Flags().StringP("repository", "r", "", "Snapshot repository to query")
 	err := cmdSnapshots.MarkFlagRequired("repository")
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
 	}
 	rootCmd.AddCommand(cmdSnapshots)
 }

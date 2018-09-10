@@ -15,13 +15,15 @@ func init() {
 	cmdSettingUpdate.Flags().StringVarP(&settingToUpdate, "setting", "s", "", "Elasticsearch cluster setting to update (required)")
 	err := cmdSettingUpdate.MarkFlagRequired("setting")
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error binding setting configuration flag: %s \n", err)
+		os.Exit(1)
 	}
 
 	cmdSettingUpdate.Flags().StringVarP(&valueToUpdate, "value", "v", "", "Value of the Elasticsearch cluster setting to update (required)")
 	err = cmdSettingUpdate.MarkFlagRequired("value")
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error binding value configuration flag: %s \n", err)
+		os.Exit(1)
 	}
 
 	cmdSetting.AddCommand(cmdSettingUpdate)

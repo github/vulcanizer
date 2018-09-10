@@ -28,10 +28,11 @@ Available Commands:
   snapshots   Display the snapshots of the cluster.
 
 Flags:
-  -c, --cluster string   Cluster to connect to defined in config file
-  -h, --help             help for vulcanizer
-      --host string      Host to connect to
-  -p, --port int         Port to connect to (default 9200)
+  -c, --cluster string      Cluster to connect to defined in config file
+  -f, --configFile string   Configuration file to read in (default to "~/.vulcanizer.yaml")
+  -h, --help                help for vulcanizer
+      --host string         Host to connect to (default "localhost")
+  -p, --port int            Port to connect to (default 9200)
 
 Use "vulcanizer [command] --help" for more information about a command.
 ```

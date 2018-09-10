@@ -12,13 +12,15 @@ func init() {
 	cmdSnapshotStatus.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
 	err := cmdSnapshotStatus.MarkFlagRequired("snapshot")
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error binding snapshot configuration flag: %s \n", err)
+		os.Exit(1)
 	}
 
 	cmdSnapshotStatus.Flags().StringP("repository", "r", "", "Snapshot repository to query (required)")
 	err = cmdSnapshotStatus.MarkFlagRequired("repository")
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
 	}
 
 	cmdSnapshot.AddCommand(cmdSnapshotStatus)
