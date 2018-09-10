@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -35,9 +35,10 @@ var cmdDrainServer = &cobra.Command{
 	Long:  `This command will set the shard allocation rules to exclude the given server name. This will cause shards to be moved away from this server, draining the data away.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
 		fmt.Printf("drain server name is: %s\n", serverToDrain)
 
-		excludeSettings := v.GetClusterExcludeSettings(host, port)
+		excludeSettings := v.GetClusterExcludeSettings()
 
 		//TODO @nickcanz - make DrainServer take the ExcludeSettings struct or do this work within DrainServer
 		var existingExcludes string
@@ -47,7 +48,7 @@ var cmdDrainServer = &cobra.Command{
 			existingExcludes = strings.Join(excludeSettings.Names, ",")
 		}
 
-		excludedServers := v.DrainServer(host, port, serverToDrain, existingExcludes)
+		excludedServers := v.DrainServer(serverToDrain, existingExcludes)
 
 		fmt.Printf("draining servers: %s\n", excludedServers)
 	},
@@ -59,7 +60,8 @@ var cmdDrainStatus = &cobra.Command{
 	Long:  `This command will display what servers are set in the clusters allocation exclude rules.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
-		excludeSettings := v.GetClusterExcludeSettings(host, port)
+		v := vulcanizer.NewClient(host, port)
+		excludeSettings := v.GetClusterExcludeSettings()
 		fmt.Printf("drain status: %+v\n", excludeSettings)
 	},
 }

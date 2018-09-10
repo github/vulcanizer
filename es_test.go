@@ -61,7 +61,9 @@ func TestGetClusterExcludeSettings(t *testing.T) {
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
 
-	excludeSettings := GetClusterExcludeSettings(host, port)
+	client := NewClient(host, port)
+
+	excludeSettings := client.GetClusterExcludeSettings()
 
 	if excludeSettings.Ips[0] != "10.0.0.99" || len(excludeSettings.Ips) != 1 {
 		t.Errorf("Expected 10.0.0.99 for excluded ip, got %s", excludeSettings.Ips)
@@ -87,8 +89,9 @@ func TestDrainServer_OneValue(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	excludedServers := DrainServer(host, port, "server_to_drain", "None")
+	excludedServers := client.DrainServer("server_to_drain", "None")
 
 	if excludedServers != "server_to_drain" {
 		t.Errorf("Expected response server_to_drain, got %s", excludedServers)
@@ -106,8 +109,9 @@ func TestDrainServer_ExistingValues(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	excludedServers := DrainServer(host, port, "server_to_drain", "existing_one,existing_two")
+	excludedServers := client.DrainServer("server_to_drain", "existing_one,existing_two")
 
 	if excludedServers != "server_to_drain,existing_one,existing_two" {
 		t.Errorf("unexpected response, got %s", excludedServers)
@@ -131,8 +135,9 @@ func TestFillOneServer_ExistingServers(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	goodServer, excludedServers := FillOneServer(host, port, "good_server")
+	goodServer, excludedServers := client.FillOneServer("good_server")
 
 	if goodServer != "good_server" {
 		t.Errorf("unexpected response, got %s", goodServer)
@@ -160,8 +165,9 @@ func TestFillOneServer_OneServer(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	goodServer, excludedServers := FillOneServer(host, port, "good_server")
+	goodServer, excludedServers := client.FillOneServer("good_server")
 
 	if goodServer != "good_server" {
 		t.Errorf("unexpected response, got %s", goodServer)
@@ -182,8 +188,9 @@ func TestFillAll(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	excludeSettings := FillAll(host, port)
+	excludeSettings := client.FillAll()
 
 	if len(excludeSettings.Ips) != 0 {
 		t.Errorf("Expected empty excluded Ips, got %s", excludeSettings.Ips)
@@ -207,8 +214,9 @@ func TestGetNodes(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	nodes, headers := GetNodes(host, port)
+	nodes, headers := client.GetNodes()
 
 	if len(headers) != 5 {
 		t.Errorf("Unexpected headers, got %s", headers)
@@ -228,8 +236,9 @@ func TestGetIndices(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	indices, headers := GetIndices(host, port)
+	indices, headers := client.GetIndices()
 
 	if len(headers) != 7 {
 		t.Errorf("Unexpected headers, got %s", headers)
@@ -249,8 +258,9 @@ func TestGetHealth(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	caption, health, headers := GetHealth(host, port)
+	caption, health, headers := client.GetHealth()
 
 	if len(caption) < 1 {
 		t.Errorf("No caption, got %s", caption)
@@ -275,8 +285,9 @@ func TestGetSettings(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	settings, headers := GetSettings(host, port)
+	settings, headers := client.GetSettings()
 
 	if len(headers) != 2 {
 		t.Errorf("Unexpected headers, got %s", headers)
@@ -356,8 +367,9 @@ func TestSetSettings(t *testing.T) {
 
 			host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 			defer ts.Close()
+			client := NewClient(host, port)
 
-			oldSetting, newSetting, err := SetSetting(host, port, x.Setting, x.SetValue)
+			oldSetting, newSetting, err := client.SetSetting(x.Setting, x.SetValue)
 
 			if err != nil {
 				st.Errorf("Expected error to be nil, %s", err)
@@ -417,8 +429,9 @@ func TestAllocationSettings(t *testing.T) {
 
 			host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 			defer ts.Close()
+			client := NewClient(host, port)
 
-			resp := SetAllocation(host, port, x.Setting)
+			resp := client.SetAllocation(x.Setting)
 
 			if resp != x.Expected {
 				st.Errorf("Unexpected response, got %s", resp)
@@ -443,8 +456,9 @@ func TestSetSetting_BadRequest(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	_, _, err := SetSetting(host, port, "cluster.routing.allocation.enable", "foo")
+	_, _, err := client.SetSetting("cluster.routing.allocation.enable", "foo")
 
 	if err == nil {
 		t.Errorf("Expected error to not be nil, %s", err)
@@ -497,8 +511,9 @@ func TestGetSnapshots(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	snapshots, headers := GetSnapshots(host, port, "octocat")
+	snapshots, headers := client.GetSnapshots("octocat")
 
 	if len(headers) != 4 {
 		t.Errorf("Unexpected headers, got %s", headers)
@@ -540,8 +555,9 @@ func TestGetSnapshots_PartialSnapshot(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	snapshots, headers := GetSnapshots(host, port, "octocat")
+	snapshots, headers := client.GetSnapshots("octocat")
 
 	if len(headers) != 4 {
 		t.Errorf("Unexpected headers, got %s", headers)
@@ -587,8 +603,9 @@ func TestGetSnapshots_Last10(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	snapshots, headers := GetSnapshots(host, port, "octocat")
+	snapshots, headers := client.GetSnapshots("octocat")
 
 	if len(headers) != 4 {
 		t.Errorf("Unexpected headers, got %s", headers)
@@ -631,8 +648,9 @@ func TestGetSnapshotStatus(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	snapshot, headers := GetSnapshotStatus(host, port, "octocat", "snapshot1")
+	snapshot, headers := client.GetSnapshotStatus("octocat", "snapshot1")
 
 	if len(headers) != 2 {
 		t.Errorf("Unexpected headers, got %s", headers)
@@ -701,8 +719,9 @@ func TestPerformSnapshotCheck(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	good, bad := PerformSnapshotsCheck(host, port, "octocat")
+	good, bad := client.PerformSnapshotsCheck("octocat")
 
 	if len(good) != 2 {
 		t.Errorf("Unexpected good snapshots, got %s", good)
@@ -759,8 +778,9 @@ func TestPerformSnapshotCheck_SomeFailing(t *testing.T) {
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
+	client := NewClient(host, port)
 
-	good, bad := PerformSnapshotsCheck(host, port, "octocat")
+	good, bad := client.PerformSnapshotsCheck("octocat")
 
 	if len(good) != 1 {
 		t.Errorf("Unexpected good snapshots, got %s", good)

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,8 @@ var cmdAllocationEnable = &cobra.Command{
 	Long:  `This commands enables allocation on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
-		response := v.SetAllocation(host, port, "enable")
+		v := vulcanizer.NewClient(host, port)
+		response := v.SetAllocation("enable")
 		fmt.Printf("Enabling allocation:\n")
 		fmt.Printf("Allocation set to %s\n", response)
 	},
@@ -36,7 +37,8 @@ var cmdAllocationDisable = &cobra.Command{
 	Long:  `This commands disables allocation on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
-		response := v.SetAllocation(host, port, "disable")
+		v := vulcanizer.NewClient(host, port)
+		response := v.SetAllocation("disable")
 		fmt.Printf("Disabling allocation:\n")
 		fmt.Printf("Allocation set to %s\n", response)
 	},

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,8 @@ var cmdIndices = &cobra.Command{
 	Long:  `Show what indices are created on the give cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
-		rows, header := v.GetIndices(host, port)
+		v := vulcanizer.NewClient(host, port)
+		rows, header := v.GetIndices()
 		table := renderTable(rows, header)
 		fmt.Println(table)
 	},

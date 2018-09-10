@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,8 @@ var cmdSettings = &cobra.Command{
 	Long:  `This command displays all the transient and persisent settings that have been set on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
-		rows, headers := v.GetSettings(host, port)
+		v := vulcanizer.NewClient(host, port)
+		rows, headers := v.GetSettings()
 
 		fmt.Println(renderTable(rows, headers))
 	},
