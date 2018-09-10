@@ -14,3 +14,15 @@
 [[constraint]]
   branch = "master"
   name = "github.com/jeremywohl/flatten"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/spf13/cobra"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/spf13/viper"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/olekukonko/tablewriter"

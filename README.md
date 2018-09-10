@@ -5,6 +5,81 @@ This project is a golang library for interacting with an Elasticsearch cluster. 
 
 This project does not aim to be a fully-featured API client for querying or indexing to Elasticsearch.
 
+### Command line application
+
+This project produces a `vulcanizer` binary that is a command line application that can be used to manage your Elasticsearch cluster.
+
+```
+$ vulcanizer -h
+Usage:
+  vulcanizer [command]
+
+Available Commands:
+  allocation  Set shard allocation on the cluster.
+  drain       Drain a server or see what servers are draining.
+  fill        Fill servers with data, removing shard allocation exclusion rules.
+  health      Display the health of the cluster.
+  help        Help about any command
+  indices     Display the indices of the cluster.
+  nodes       Display the nodes of the cluster.
+  setting     Interact with cluster settings.
+  settings    Display all the settings of the cluster.
+  snapshot    Interact with a specific snapshot.
+  snapshots   Display the snapshots of the cluster.
+
+Flags:
+  -c, --cluster string      Cluster to connect to defined in config file
+  -f, --configFile string   Configuration file to read in (default to "~/.vulcanizer.yaml")
+  -h, --help                help for vulcanizer
+      --host string         Host to connect to (default "localhost")
+  -p, --port int            Port to connect to (default 9200)
+
+Use "vulcanizer [command] --help" for more information about a command.
+```
+
+#### Commands to be implemented
+
+* Listing repositories
+* Verifying repositories
+* Taking snapshots
+* Deleting snapshots
+* Displaying index settings
+* Updating index settings
+
+#### Configuration and connection information 
+
+All commands take `--cluster <name>` to look up information in a configuration file in `~/.vulcanizer.yaml`. The configuration should be in the form of 
+
+```
+local:
+  host: localhost
+  port: 9200
+staging:
+  host: 10.10.2.1
+  port: 9201
+production:
+  host: 10.10.1.1
+  port: 9202
+```
+
+Alternatively, all commands take `--host` and `--port` for the connection information.
+
+For example:
+
+```
+# Query for cluster health on the "local" cluster
+vulcanizer health --cluster local
+
+# Query for nodes against the node 10.10.2.1 and port 9202
+vulcanizer nodes --host 10.10.2.1 --port 9202
+```
+
+### Development
+
+`./script/build` will compile the project and install the `vulcanizer` binary to `$GOPATH/bin`.
+
+`./script/test` will run the tests in the project.
+
 ### Supported Elasticsearch versions
 
 To be determined
