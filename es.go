@@ -17,19 +17,28 @@ type ExcludeSettings struct {
 	Ips, Hosts, Names []string
 }
 
-const ClusterSettingsPath = "_cluster/settings"
-
-func buildGetRequest(server string, port int, path string) *gorequest.SuperAgent {
-	return gorequest.New().Get(fmt.Sprintf("http://%s:%v/%s", server, port, path)).Set("Accept", "application/json")
+type Client struct {
+	Host string
+	Port int
 }
 
-func buildPutRequest(server string, port int, path string) *gorequest.SuperAgent {
-	return gorequest.New().Put(fmt.Sprintf("http://%s:%v/%s", server, port, path))
+func NewClient(host string, port int) *Client {
+	return &Client{host, port}
+}
+
+const clusterSettingsPath = "_cluster/settings"
+
+func (c *Client) buildGetRequest(path string) *gorequest.SuperAgent {
+	return gorequest.New().Get(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path)).Set("Accept", "application/json")
+}
+
+func (c *Client) buildPutRequest(path string) *gorequest.SuperAgent {
+	return gorequest.New().Put(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
 }
 
 // Get current cluster settings for exclusion
-func GetClusterExcludeSettings(server string, port int) *ExcludeSettings {
-	_, body, _ := buildGetRequest(server, port, ClusterSettingsPath).End()
+func (c *Client) GetClusterExcludeSettings() *ExcludeSettings {
+	_, body, _ := c.buildGetRequest(clusterSettingsPath).End()
 
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
@@ -37,7 +46,7 @@ func GetClusterExcludeSettings(server string, port int) *ExcludeSettings {
 	return excludeSettings
 }
 
-func DrainServer(server string, port int, serverToDrain string, namesExcluded string) (excludedServers string) {
+func (c *Client) DrainServer(serverToDrain string, namesExcluded string) (excludedServers string) {
 
 	var drainList string
 
@@ -48,7 +57,7 @@ func DrainServer(server string, port int, serverToDrain string, namesExcluded st
 		drainList = serverToDrain
 	}
 
-	_, body, _ := buildPutRequest(server, port, ClusterSettingsPath).
+	_, body, _ := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
 		Send(`{"transient" : { "cluster.routing.allocation.exclude._name" : "` + drainList + `"}}`).
 		End()
@@ -58,10 +67,10 @@ func DrainServer(server string, port int, serverToDrain string, namesExcluded st
 	return drainingServers.String()
 }
 
-func FillOneServer(server string, port int, serverToFill string) (serverFilling, excludedServers string) {
+func (c *Client) FillOneServer(serverToFill string) (serverFilling, excludedServers string) {
 
 	// Get the current list of strings
-	excludeSettings := GetClusterExcludeSettings(server, port)
+	excludeSettings := c.GetClusterExcludeSettings()
 
 	serverToFill = strings.TrimSpace(serverToFill)
 
@@ -72,7 +81,7 @@ func FillOneServer(server string, port int, serverToFill string) (serverFilling,
 		}
 	}
 
-	_, body, _ := buildPutRequest(server, port, ClusterSettingsPath).
+	_, body, _ := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
 		Send(`{"transient" : { "cluster.routing.allocation.exclude._name" : "` + strings.Join(newNamesDrained, ",") + `"}}`).
 		End()
@@ -82,9 +91,9 @@ func FillOneServer(server string, port int, serverToFill string) (serverFilling,
 	return serverToFill, drainingServers.String()
 }
 
-func FillAll(server string, port int) *ExcludeSettings {
+func (c *Client) FillAll() *ExcludeSettings {
 
-	_, body, _ := buildPutRequest(server, port, ClusterSettingsPath).
+	_, body, _ := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
 		Send(`{"transient" : { "cluster.routing.allocation.exclude" : { "_name" :  "", "_ip" : "", "_host" : ""}}}`).
 		End()
@@ -94,8 +103,8 @@ func FillAll(server string, port int) *ExcludeSettings {
 	return ExcludeSettingsFromJson(excludedArray)
 }
 
-func GetNodes(server string, port int) ([][]string, []string) {
-	_, body, _ := buildGetRequest(server, port, "_cat/nodes?h=master,role,name,ip,id").End()
+func (c *Client) GetNodes() ([][]string, []string) {
+	_, body, _ := c.buildGetRequest("_cat/nodes?h=master,role,name,ip,id").End()
 
 	results := [][]string{}
 	headers := []string{"master", "role", "name", "ip", "id"}
@@ -116,8 +125,8 @@ func GetNodes(server string, port int) ([][]string, []string) {
 	return results, headers
 }
 
-func GetIndices(server string, port int) ([][]string, []string) {
-	_, body, _ := buildGetRequest(server, port, "_cat/indices?h=health,status,index,pri,rep,store.size,docs.count").End()
+func (c *Client) GetIndices() ([][]string, []string) {
+	_, body, _ := c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count").End()
 
 	results := [][]string{}
 	headers := []string{"health", "status", "name", "primary shards", "replicas", "index size", "docs"}
@@ -140,8 +149,8 @@ func GetIndices(server string, port int) ([][]string, []string) {
 	return results, headers
 }
 
-func GetHealth(server string, port int) (string, [][]string, []string) {
-	_, body, _ := buildGetRequest(server, port, "_cat/health?h=status,relo,init,unassign,pending_tasks,active_shards_percent").End()
+func (c *Client) GetHealth() (string, [][]string, []string) {
+	_, body, _ := c.buildGetRequest("_cat/health?h=status,relo,init,unassign,pending_tasks,active_shards_percent").End()
 
 	results := [][]string{}
 	headers := []string{"status", "relocating", "init", "unassigned", "active shards %"}
@@ -165,8 +174,8 @@ func GetHealth(server string, port int) (string, [][]string, []string) {
 	return caption, results, headers
 }
 
-func GetSettings(server string, port int) ([][]string, []string) {
-	_, body, _ := buildGetRequest(server, port, ClusterSettingsPath).End()
+func (c *Client) GetSettings() ([][]string, []string) {
+	_, body, _ := c.buildGetRequest(clusterSettingsPath).End()
 
 	results := [][]string{}
 	headers := []string{"setting", "value"}
@@ -193,7 +202,7 @@ func GetSettings(server string, port int) ([][]string, []string) {
 	return results, headers
 }
 
-func SetAllocation(server string, port int, allocation string) string {
+func (c *Client) SetAllocation(allocation string) string {
 
 	var allocationSetting string
 
@@ -203,7 +212,7 @@ func SetAllocation(server string, port int, allocation string) string {
 		allocationSetting = "none"
 	}
 
-	_, body, _ := buildPutRequest(server, port, ClusterSettingsPath).
+	_, body, _ := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
 		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.enable" : "%s"}}`, allocationSetting)).
 		End()
@@ -213,13 +222,13 @@ func SetAllocation(server string, port int, allocation string) string {
 	return allocationVal.String()
 }
 
-func SetSetting(server string, port int, setting string, value string) (string, string, error) {
+func (c *Client) SetSetting(setting string, value string) (string, string, error) {
 
-	_, settingsBody, _ := buildGetRequest(server, port, ClusterSettingsPath).End()
+	_, settingsBody, _ := c.buildGetRequest(clusterSettingsPath).End()
 
 	existingValues := gjson.GetMany(settingsBody, fmt.Sprintf("transient.%s", setting), fmt.Sprintf("persistent.%s", setting))
 
-	response, body, errs := buildPutRequest(server, port, ClusterSettingsPath).
+	response, body, errs := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
 		Send(fmt.Sprintf(`{"transient" : { "%s" : "%s"}}`, setting, value)).
 		End()
@@ -250,9 +259,9 @@ func SetSetting(server string, port int, setting string, value string) (string, 
 	return existingValue, newValue, nil
 }
 
-func GetSnapshots(server string, port int, repository string) ([][]string, []string) {
+func (c *Client) GetSnapshots(repository string) ([][]string, []string) {
 
-	_, body, _ := buildGetRequest(server, port, fmt.Sprintf("_snapshot/%s/_all", repository)).End()
+	_, body, _ := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/_all", repository)).End()
 
 	results := [][]string{}
 	headers := []string{"state", "snapshot", "finished", "duration"}
@@ -281,8 +290,8 @@ func GetSnapshots(server string, port int, repository string) ([][]string, []str
 	return results, headers
 }
 
-func GetSnapshotStatus(server string, port int, repository string, snapshot string) ([][]string, []string) {
-	_, body, _ := buildGetRequest(server, port, fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).End()
+func (c *Client) GetSnapshotStatus(repository string, snapshot string) ([][]string, []string) {
+	_, body, _ := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).End()
 
 	headers := []string{"metric", "value"}
 
@@ -312,8 +321,8 @@ func GetSnapshotStatus(server string, port int, repository string, snapshot stri
 	return results, headers
 }
 
-func PerformSnapshotsCheck(server string, port int, cluster string) ([]string, []string) {
-	_, body, _ := buildGetRequest(server, port, fmt.Sprintf("_snapshot/%s/_all", cluster)).End()
+func (c *Client) PerformSnapshotsCheck(cluster string) ([]string, []string) {
+	_, body, _ := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/_all", cluster)).End()
 
 	results := []map[string]interface{}{}
 

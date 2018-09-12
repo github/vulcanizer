@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,8 @@ var cmdNodes = &cobra.Command{
 	Long:  `Show what nodes are part of the cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
-		rows, header := v.GetNodes(host, port)
+		v := vulcanizer.NewClient(host, port)
+		rows, header := v.GetNodes()
 		table := renderTable(rows, header)
 
 		fmt.Println(table)

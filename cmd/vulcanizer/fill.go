@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -34,8 +34,9 @@ var cmdFillAll = &cobra.Command{
 	Long:  `This command will remove all shard allocation exclusion rules from the cluster, allowing all servers to fill with data.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
 
-		excludeSettings := v.FillAll(host, port)
+		excludeSettings := v.FillAll()
 
 		fmt.Printf("Current allocation exclude settings: %+v\n", excludeSettings)
 	},
@@ -47,8 +48,9 @@ var cmdFillServer = &cobra.Command{
 	Long:  `This command will remove shard allocation exclusion rules from a particular Elasticsearch node, allowing shards to allocated to it.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
 
-		serverFilling, excludedServers := v.FillOneServer(host, port, serverToFill)
+		serverFilling, excludedServers := v.FillOneServer(serverToFill)
 
 		fmt.Printf("Server \"%s\" removed from allocation rules.\n", serverFilling)
 		fmt.Printf("Servers \"%s\" are still being excluded from allocation.\n", excludedServers)

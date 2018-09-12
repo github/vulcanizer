@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +39,7 @@ var cmdSnapshotStatus = &cobra.Command{
 	Long:  `This command will display detailed information about the given snapshot.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
 
 		snapshot, err := cmd.Flags().GetString("snapshot")
 		if err != nil {
@@ -52,7 +53,7 @@ var cmdSnapshotStatus = &cobra.Command{
 			os.Exit(1)
 		}
 
-		rows, headers := v.GetSnapshotStatus(host, port, repository, snapshot)
+		rows, headers := v.GetSnapshotStatus(repository, snapshot)
 		fmt.Println(renderTable(rows, headers))
 	},
 }

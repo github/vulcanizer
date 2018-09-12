@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	v "github.com/github/vulcanizer"
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +24,7 @@ var cmdSnapshots = &cobra.Command{
 	Long:  `List the 10 most recent snapshots of the given repository`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
 
 		repository, err := cmd.Flags().GetString("repository")
 		if err != nil {
@@ -31,7 +32,7 @@ var cmdSnapshots = &cobra.Command{
 			os.Exit(1)
 		}
 
-		rows, headers := v.GetSnapshots(host, port, repository)
+		rows, headers := v.GetSnapshots(repository)
 
 		fmt.Println(renderTable(rows, headers))
 	},
