@@ -5,6 +5,17 @@ This project is a golang library for interacting with an Elasticsearch cluster. 
 
 This project does not aim to be a fully-featured API client for querying or indexing to Elasticsearch.
 
+### Go API
+
+You can perform custom operations in your Go application.
+
+```
+import "github.com/github/vulcanizer"
+
+v = vulcanizer.NewClient("localhost", 9200)
+oldSetting, newSetting, err := v.SetSetting("indices.recovery.max_bytes_per_sec", "1000mb")
+```
+
 ### Command line application
 
 This project produces a `vulcanizer` binary that is a command line application that can be used to manage your Elasticsearch cluster.
