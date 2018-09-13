@@ -40,6 +40,16 @@ type Index struct {
 	DocumentCount int    `json:"docs.count,string"`
 }
 
+type ClusterHealth struct {
+	Cluster                string `json:"cluster"`
+	Status                 string `json:"status"`
+	RelocatingShards       int    `json:"relo,string"`
+	InitializingShards     int    `json:"init,string"`
+	UnassignedShards       int    `json:"unassign,string"`
+	ActiveShardsPercentage string `json:"active_shards_percent"`
+	Message                string
+}
+
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
 }
@@ -143,29 +153,19 @@ func (c *Client) GetIndices() ([]Index, error) {
 	return indices, nil
 }
 
-func (c *Client) GetHealth() (string, [][]string, []string) {
-	_, body, _ := c.buildGetRequest("_cat/health?h=status,relo,init,unassign,pending_tasks,active_shards_percent").End()
+func (c *Client) GetHealth() ([]ClusterHealth, error) {
+	var health []ClusterHealth
+	_, _, errs := c.buildGetRequest("_cat/health?h=cluster,status,relo,init,unassign,pending_tasks,active_shards_percent").EndStruct(&health)
 
-	results := [][]string{}
-	headers := []string{"status", "relocating", "init", "unassigned", "active shards %"}
+	if len(errs) > 0 {
+		return nil, combineErrors(errs)
+	}
 
-	gjson.Parse(body).ForEach(func(key, value gjson.Result) bool {
-		result := []string{
-			value.Get("status").String(),
-			value.Get("relo").String(),
-			value.Get("init").String(),
-			value.Get("unassign").String(),
-			value.Get("active_shards_percent").String(),
-		}
+	for i := range health {
+		health[i].Message = captionHealth(health[i].Status)
+	}
 
-		results = append(results, result)
-		return true // keep iterating
-	})
-
-	status := results[0][0]
-	caption := captionHealth(status)
-
-	return caption, results, headers
+	return health, nil
 }
 
 func (c *Client) GetSettings() ([][]string, []string) {

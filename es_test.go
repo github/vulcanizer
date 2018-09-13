@@ -268,19 +268,18 @@ func TestGetHealth(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	caption, health, headers := client.GetHealth()
+	health, err := client.GetHealth()
 
-	if len(caption) < 1 {
-		t.Errorf("No caption, got %s", caption)
-
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if len(headers) != 5 {
-		t.Errorf("Unexpected headers, got %s , length: %d", headers, len(headers))
+	if len(health) != 1 {
+		t.Errorf("Unexpected health, got %+v", health)
 	}
 
-	if health[0][0] != "yellow" {
-		t.Errorf("Unexpected cluster status, got %s", health)
+	if health[0].UnassignedShards != 5 {
+		t.Errorf("Unexpected unassigned shards, expected 5, got %d", health[0].UnassignedShards)
 	}
 }
 
