@@ -216,14 +216,18 @@ func TestGetNodes(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	nodes, headers := client.GetNodes()
+	nodes, err := client.GetNodes()
 
-	if len(headers) != 5 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if nodes[0][2] != "foo" && nodes[0][1] == "d" {
-		t.Errorf("Unexpected node name, got %s", nodes)
+	if len(nodes) != 1 {
+		t.Errorf("Unexpected nodes, got %s", nodes)
+	}
+
+	if nodes[0].Name != "foo" {
+		t.Errorf("Unexpected node name, expected foo, got %s", nodes[0].Name)
 	}
 }
 

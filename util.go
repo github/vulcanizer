@@ -1,6 +1,7 @@
 package vulcanizer
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -46,4 +47,12 @@ func captionHealth(health string) (caption string) {
 	default:
 		return health
 	}
+}
+
+func combineErrors(errs []error) error {
+	errorText := []string{}
+	for _, err := range errs {
+		errorText = append(errorText, err.Error())
+	}
+	return errors.New(strings.Join(errorText, "\n"))
 }

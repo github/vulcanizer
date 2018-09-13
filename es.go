@@ -22,6 +22,14 @@ type Client struct {
 	Port int
 }
 
+type Node struct {
+	Name   string `json:"name"`
+	Ip     string `json:"ip"`
+	Id     string `json:"id"`
+	Role   string `json:"role"`
+	Master string `json:"master"`
+}
+
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
 }
@@ -103,26 +111,15 @@ func (c *Client) FillAll() *ExcludeSettings {
 	return ExcludeSettingsFromJson(excludedArray)
 }
 
-func (c *Client) GetNodes() ([][]string, []string) {
-	_, body, _ := c.buildGetRequest("_cat/nodes?h=master,role,name,ip,id").End()
+func (c *Client) GetNodes() ([]Node, error) {
+	var nodes []Node
+	_, _, errs := c.buildGetRequest("_cat/nodes?h=master,role,name,ip,id").EndStruct(&nodes)
 
-	results := [][]string{}
-	headers := []string{"master", "role", "name", "ip", "id"}
+	if len(errs) > 0 {
+		return nil, combineErrors(errs)
+	}
 
-	gjson.Parse(body).ForEach(func(key, value gjson.Result) bool {
-		result := []string{
-			value.Get("master").String(),
-			value.Get("role").String(),
-			value.Get("name").String(),
-			value.Get("ip").String(),
-			value.Get("id").String(),
-		}
-
-		results = append(results, result)
-		return true // keep iterating
-	})
-
-	return results, headers
+	return nodes, nil
 }
 
 func (c *Client) GetIndices() ([][]string, []string) {
@@ -234,11 +231,7 @@ func (c *Client) SetSetting(setting string, value string) (string, string, error
 		End()
 
 	if len(errs) > 0 {
-		errorText := []string{}
-		for _, err := range errs {
-			errorText = append(errorText, err.Error())
-		}
-		return "", "", errors.New(strings.Join(errorText, "\n"))
+		return "", "", combineErrors(errs)
 	}
 
 	if response.StatusCode != http.StatusOK {
