@@ -242,14 +242,18 @@ func TestGetIndices(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	indices, headers := client.GetIndices()
+	indices, err := client.GetIndices()
 
-	if len(headers) != 7 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if indices[0][2] != "index1" || indices[0][5] != "3.6kb" || indices[0][6] != "1500" {
-		t.Errorf("Unexpected index name, got %s", indices)
+	if len(indices) != 1 {
+		t.Errorf("Unexpected indices, got %v", indices)
+	}
+
+	if indices[0].Health != "yellow" || indices[0].ReplicaCount != 1 || indices[0].DocumentCount != 1500 {
+		t.Errorf("Unexpected index values, got %v", indices[0])
 	}
 }
 

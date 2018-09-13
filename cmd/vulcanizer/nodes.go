@@ -41,7 +41,6 @@ var cmdNodes = &cobra.Command{
 		}
 
 		table := renderTable(rows, header)
-
 		fmt.Println(table)
 	},
 }

@@ -30,6 +30,16 @@ type Node struct {
 	Master string `json:"master"`
 }
 
+type Index struct {
+	Health        string `json:"health"`
+	Status        string `json:"status"`
+	Name          string `json:"index"`
+	PrimaryShards int    `json:"pri,string"`
+	ReplicaCount  int    `json:"rep,string"`
+	IndexSize     string `json:"store.size"`
+	DocumentCount int    `json:"docs.count,string"`
+}
+
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
 }
@@ -122,28 +132,15 @@ func (c *Client) GetNodes() ([]Node, error) {
 	return nodes, nil
 }
 
-func (c *Client) GetIndices() ([][]string, []string) {
-	_, body, _ := c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count").End()
+func (c *Client) GetIndices() ([]Index, error) {
+	var indices []Index
+	_, _, errs := c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count").EndStruct(&indices)
 
-	results := [][]string{}
-	headers := []string{"health", "status", "name", "primary shards", "replicas", "index size", "docs"}
+	if len(errs) > 0 {
+		return nil, combineErrors(errs)
+	}
 
-	gjson.Parse(body).ForEach(func(key, value gjson.Result) bool {
-		result := []string{
-			value.Get("health").String(),
-			value.Get("status").String(),
-			value.Get("index").String(),
-			value.Get("pri").String(),
-			value.Get("rep").String(),
-			value.Get("store\\.size").String(),
-			value.Get("docs\\.count").String(),
-		}
-
-		results = append(results, result)
-		return true // keep iterating
-	})
-
-	return results, headers
+	return indices, nil
 }
 
 func (c *Client) GetHealth() (string, [][]string, []string) {
