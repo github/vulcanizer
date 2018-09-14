@@ -63,7 +63,11 @@ func TestGetClusterExcludeSettings(t *testing.T) {
 
 	client := NewClient(host, port)
 
-	excludeSettings := client.GetClusterExcludeSettings()
+	excludeSettings, err := client.GetClusterExcludeSettings()
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
 
 	if excludeSettings.Ips[0] != "10.0.0.99" || len(excludeSettings.Ips) != 1 {
 		t.Errorf("Expected 10.0.0.99 for excluded ip, got %s", excludeSettings.Ips)
@@ -80,41 +84,60 @@ func TestGetClusterExcludeSettings(t *testing.T) {
 
 func TestDrainServer_OneValue(t *testing.T) {
 
-	testSetup := &ServerSetup{
+	getSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cluster/settings",
+		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":""}}}}}}`,
+	}
+
+	putSetup := &ServerSetup{
 		Method:   "PUT",
 		Path:     "/_cluster/settings",
 		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"server_to_drain"}}`,
 		Response: `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"server_to_drain"}}}}}}`,
 	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	excludedServers := client.DrainServer("server_to_drain", "None")
+	excludeSettings, err := client.DrainServer("server_to_drain")
 
-	if excludedServers != "server_to_drain" {
-		t.Errorf("Expected response server_to_drain, got %s", excludedServers)
+	if err != nil {
+		t.Errorf("Unexpected error, %s", err)
+	}
+
+	if excludeSettings.Names[0] != "server_to_drain" {
+		t.Errorf("Expected response, got %+v", excludeSettings)
 	}
 }
 
 func TestDrainServer_ExistingValues(t *testing.T) {
 
-	testSetup := &ServerSetup{
+	getSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cluster/settings",
+		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"existing_one,existing_two"}}}}}}`,
+	}
+
+	putSetup := &ServerSetup{
 		Method:   "PUT",
 		Path:     "/_cluster/settings",
-		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"server_to_drain,existing_one,existing_two"}}`,
+		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"existing_one,existing_two,server_to_drain"}}`,
 		Response: `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"server_to_drain,existing_one,existing_two"}}}}}}`,
 	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	excludedServers := client.DrainServer("server_to_drain", "existing_one,existing_two")
+	excludeSettings, err := client.DrainServer("server_to_drain")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
 
-	if excludedServers != "server_to_drain,existing_one,existing_two" {
-		t.Errorf("unexpected response, got %s", excludedServers)
+	if len(excludeSettings.Names) != 3 || excludeSettings.Names[2] != "server_to_drain" {
+		t.Errorf("unexpected response, got %+v", excludeSettings)
 	}
 }
 
@@ -137,14 +160,14 @@ func TestFillOneServer_ExistingServers(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	goodServer, excludedServers := client.FillOneServer("good_server")
+	excludeSettings, err := client.FillOneServer("good_server")
 
-	if goodServer != "good_server" {
-		t.Errorf("unexpected response, got %s", goodServer)
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if excludedServers != "excluded_server1,excluded_server2" {
-		t.Errorf("unexpected response, got %s", excludedServers)
+	if excludeSettings.Names[0] != "excluded_server1" {
+		t.Errorf("unexpected response, got %+v", excludeSettings)
 	}
 }
 
@@ -167,14 +190,10 @@ func TestFillOneServer_OneServer(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	goodServer, excludedServers := client.FillOneServer("good_server")
+	_, err := client.FillOneServer("good_server")
 
-	if goodServer != "good_server" {
-		t.Errorf("unexpected response, got %s", goodServer)
-	}
-
-	if excludedServers != "" {
-		t.Errorf("unexpected response, got %s", excludedServers)
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 }
 
@@ -190,7 +209,10 @@ func TestFillAll(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	excludeSettings := client.FillAll()
+	excludeSettings, err := client.FillAll()
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
 
 	if len(excludeSettings.Ips) != 0 {
 		t.Errorf("Expected empty excluded Ips, got %s", excludeSettings.Ips)
@@ -446,7 +468,11 @@ func TestAllocationSettings(t *testing.T) {
 			defer ts.Close()
 			client := NewClient(host, port)
 
-			resp := client.SetAllocation(x.Setting)
+			resp, err := client.SetAllocation(x.Setting)
+
+			if err != nil {
+				st.Errorf("Unexpected error, got %s", err)
+			}
 
 			if resp != x.Expected {
 				st.Errorf("Unexpected response, got %s", resp)

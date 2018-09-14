@@ -36,7 +36,11 @@ var cmdFillAll = &cobra.Command{
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
 
-		excludeSettings := v.FillAll()
+		excludeSettings, err := v.FillAll()
+		if err != nil {
+			fmt.Printf("Error calling Elasticsearch: %s \n", err)
+			os.Exit(1)
+		}
 
 		fmt.Printf("Current allocation exclude settings: %+v\n", excludeSettings)
 	},
@@ -50,9 +54,13 @@ var cmdFillServer = &cobra.Command{
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
 
-		serverFilling, excludedServers := v.FillOneServer(serverToFill)
+		excludeSettings, err := v.FillOneServer(serverToFill)
+		if err != nil {
+			fmt.Printf("Error calling Elasticsearch: %s \n", err)
+			os.Exit(1)
+		}
 
-		fmt.Printf("Server \"%s\" removed from allocation rules.\n", serverFilling)
-		fmt.Printf("Servers \"%s\" are still being excluded from allocation.\n", excludedServers)
+		fmt.Printf("Server \"%s\" removed from allocation rules.\n", serverToFill)
+		fmt.Printf("Current exclude settings: %+v\n", excludeSettings)
 	},
 }

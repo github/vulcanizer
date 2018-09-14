@@ -99,40 +99,48 @@ func (c *Client) buildPutRequest(path string) *gorequest.SuperAgent {
 }
 
 // Get current cluster settings for exclusion
-func (c *Client) GetClusterExcludeSettings() *ExcludeSettings {
-	_, body, _ := c.buildGetRequest(clusterSettingsPath).End()
+func (c *Client) GetClusterExcludeSettings() (ExcludeSettings, error) {
+	_, body, errs := c.buildGetRequest(clusterSettingsPath).End()
+
+	if len(errs) > 0 {
+		return ExcludeSettings{}, combineErrors(errs)
+	}
 
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
 	excludeSettings := ExcludeSettingsFromJson(excludedArray)
-	return excludeSettings
+	return excludeSettings, nil
 }
 
-func (c *Client) DrainServer(serverToDrain string, namesExcluded string) (excludedServers string) {
+func (c *Client) DrainServer(serverToDrain string) (ExcludeSettings, error) {
 
-	var drainList string
+	excludeSettings, err := c.GetClusterExcludeSettings()
 
-	if namesExcluded != "None" {
-		drainList = serverToDrain + "," + namesExcluded
-
-	} else {
-		drainList = serverToDrain
+	if err != nil {
+		return ExcludeSettings{}, err
 	}
 
-	_, body, _ := c.buildPutRequest(clusterSettingsPath).
+	excludeSettings.Names = append(excludeSettings.Names, serverToDrain)
+
+	_, _, errs := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
-		Send(`{"transient" : { "cluster.routing.allocation.exclude._name" : "` + drainList + `"}}`).
+		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.exclude._name" : "%s"}}`, strings.Join(excludeSettings.Names, ","))).
 		End()
 
-	drainingServers := gjson.Get(body, "transient.cluster.routing.allocation.exclude._name")
+	if len(errs) > 0 {
+		return ExcludeSettings{}, combineErrors(errs)
+	}
 
-	return drainingServers.String()
+	return excludeSettings, nil
 }
 
-func (c *Client) FillOneServer(serverToFill string) (serverFilling, excludedServers string) {
+func (c *Client) FillOneServer(serverToFill string) (ExcludeSettings, error) {
 
 	// Get the current list of strings
-	excludeSettings := c.GetClusterExcludeSettings()
+	excludeSettings, err := c.GetClusterExcludeSettings()
+	if err != nil {
+		return ExcludeSettings{}, err
+	}
 
 	serverToFill = strings.TrimSpace(serverToFill)
 
@@ -143,26 +151,32 @@ func (c *Client) FillOneServer(serverToFill string) (serverFilling, excludedServ
 		}
 	}
 
-	_, body, _ := c.buildPutRequest(clusterSettingsPath).
+	_, _, errs := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
-		Send(`{"transient" : { "cluster.routing.allocation.exclude._name" : "` + strings.Join(newNamesDrained, ",") + `"}}`).
+		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.exclude._name" : "%s"}}`, strings.Join(newNamesDrained, ","))).
 		End()
 
-	drainingServers := gjson.Get(body, "transient.cluster.routing.allocation.exclude._name")
+	if len(errs) > 0 {
+		return ExcludeSettings{}, combineErrors(errs)
+	}
 
-	return serverToFill, drainingServers.String()
+	return c.GetClusterExcludeSettings()
 }
 
-func (c *Client) FillAll() *ExcludeSettings {
+func (c *Client) FillAll() (ExcludeSettings, error) {
 
-	_, body, _ := c.buildPutRequest(clusterSettingsPath).
+	_, body, errs := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
 		Send(`{"transient" : { "cluster.routing.allocation.exclude" : { "_name" :  "", "_ip" : "", "_host" : ""}}}`).
 		End()
 
+	if len(errs) > 0 {
+		return ExcludeSettings{}, combineErrors(errs)
+	}
+
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	return ExcludeSettingsFromJson(excludedArray)
+	return ExcludeSettingsFromJson(excludedArray), nil
 }
 
 func (c *Client) GetNodes() ([]Node, error) {
@@ -260,7 +274,7 @@ func (c *Client) GetSettings() (ClusterSettings, error) {
 	return clusterSettings, nil
 }
 
-func (c *Client) SetAllocation(allocation string) string {
+func (c *Client) SetAllocation(allocation string) (string, error) {
 
 	var allocationSetting string
 
@@ -270,14 +284,18 @@ func (c *Client) SetAllocation(allocation string) string {
 		allocationSetting = "none"
 	}
 
-	_, body, _ := c.buildPutRequest(clusterSettingsPath).
+	_, body, errs := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
 		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.enable" : "%s"}}`, allocationSetting)).
 		End()
 
+	if len(errs) > 0 {
+		return "", combineErrors(errs)
+	}
+
 	allocationVal := gjson.Get(body, "transient.cluster.routing.allocation.enable")
 
-	return allocationVal.String()
+	return allocationVal.String(), nil
 }
 
 func (c *Client) SetSetting(setting string, value string) (string, string, error) {
