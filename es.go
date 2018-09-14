@@ -59,6 +59,31 @@ type ClusterSetting struct {
 	Setting, Value string
 }
 
+type snapshotWrapper struct {
+	Snapshots []Snapshot `json:"snapshots"`
+}
+
+type Snapshot struct {
+	State          string    `json:"state"`
+	Name           string    `json:"snapshot"`
+	StartTime      time.Time `json:"start_time,string"`
+	EndTime        time.Time `json:"end_time,string"`
+	DurationMillis int       `json:"duration_in_millis"`
+	Indices        []string  `json:"indices"`
+	Shards         struct {
+		Total      int `json:"total"`
+		Failed     int `json:"failed"`
+		Successful int `json:"successful"`
+	} `json:"shards"`
+	Failures []struct {
+		Index   string `json:"index"`
+		ShardID int    `json:"shard_id"`
+		Reason  string `json:"reason"`
+		NodeID  string `json:"node_id"`
+		Status  string `json:"status"`
+	} `json:"failures"`
+}
+
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
 }
@@ -288,97 +313,27 @@ func (c *Client) SetSetting(setting string, value string) (string, string, error
 	return existingValue, newValue, nil
 }
 
-func (c *Client) GetSnapshots(repository string) ([][]string, []string) {
+func (c *Client) GetSnapshots(repository string) ([]Snapshot, error) {
 
-	_, body, _ := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/_all", repository)).End()
+	var snapshotWrapper snapshotWrapper
+	_, _, errs := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/_all", repository)).EndStruct(&snapshotWrapper)
 
-	results := [][]string{}
-	headers := []string{"state", "snapshot", "finished", "duration"}
-
-	snapshotResults := gjson.Get(body, "snapshots")
-	snapshotResults.ForEach(func(key, value gjson.Result) bool {
-
-		millis := value.Get("duration_in_millis").String()
-		duration, _ := time.ParseDuration(fmt.Sprintf("%sms", millis))
-
-		result := []string{
-			value.Get("state").String(),
-			value.Get("snapshot").String(),
-			value.Get("end_time").String(),
-			fmt.Sprintf("%v", duration),
-		}
-
-		results = append(results, result)
-		return true // keep iterating
-	})
-
-	if len(results) > 10 {
-		results = results[len(results)-10:]
+	if len(errs) > 0 {
+		return nil, combineErrors(errs)
 	}
 
-	return results, headers
+	return snapshotWrapper.Snapshots, nil
 }
 
-func (c *Client) GetSnapshotStatus(repository string, snapshot string) ([][]string, []string) {
-	_, body, _ := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).End()
+func (c *Client) GetSnapshotStatus(repository string, snapshot string) (Snapshot, error) {
 
-	headers := []string{"metric", "value"}
+	var snapshotWrapper snapshotWrapper
 
-	snapshotResult := gjson.Get(body, "snapshots.0")
+	_, _, errs := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).EndStruct(&snapshotWrapper)
 
-	millis := snapshotResult.Get("duration_in_millis").String()
-	duration, _ := time.ParseDuration(fmt.Sprintf("%sms", millis))
-
-	indices := snapshotResult.Get("indices").Array()
-
-	display_indices := []string{}
-
-	for _, index := range indices {
-		display_indices = append(display_indices, index.String())
+	if len(errs) > 0 {
+		return Snapshot{}, combineErrors(errs)
 	}
 
-	results := [][]string{
-		[]string{"state", snapshotResult.Get("state").String()},
-		[]string{"snapshot", snapshotResult.Get("snapshot").String()},
-		[]string{"indices", strings.Join(display_indices, "\n")},
-		[]string{"started", snapshotResult.Get("start_time").String()},
-		[]string{"finished", snapshotResult.Get("end_time").String()},
-		[]string{"duration", fmt.Sprintf("%v", duration)},
-		[]string{"shards", fmt.Sprintf("Successful shards %s, failed shards %s", snapshotResult.Get("shards.successful").String(), snapshotResult.Get("shards.failed").String())},
-	}
-
-	return results, headers
-}
-
-func (c *Client) PerformSnapshotsCheck(cluster string) ([]string, []string) {
-	_, body, _ := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/_all", cluster)).End()
-
-	results := []map[string]interface{}{}
-
-	snapshotResults := gjson.Get(body, "snapshots")
-	snapshotResults.ForEach(func(key, value gjson.Result) bool {
-
-		snapshot := value.Value().(map[string]interface{})
-		results = append(results, snapshot)
-		return true // keep iterating
-	})
-
-	if len(results) > 5 {
-		results = results[len(results)-5:]
-	}
-
-	goodSnapshots := []string{}
-	badSnapshots := []string{}
-
-	for _, snapshot := range results {
-		name := snapshot["snapshot"].(string)
-
-		if snapshot["state"].(string) == "SUCCESS" {
-			goodSnapshots = append(goodSnapshots, name)
-		} else {
-			badSnapshots = append(badSnapshots, name)
-		}
-	}
-
-	return goodSnapshots, badSnapshots
+	return snapshotWrapper.Snapshots[0], nil
 }

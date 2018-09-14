@@ -528,24 +528,28 @@ func TestGetSnapshots(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	snapshots, headers := client.GetSnapshots("octocat")
+	snapshots, err := client.GetSnapshots("octocat")
 
-	if len(headers) != 4 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
 	if len(snapshots) != 2 {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 
-	if snapshots[0][0] != "SUCCESS" || snapshots[0][1] != "snapshot1" ||
-		snapshots[0][2] != "2018-04-03T07:41:01.719Z" ||
-		snapshots[0][3] != "1s" || snapshots[1][3] != "500ms" {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+	if snapshots[0].State != "SUCCESS" || snapshots[0].Name != "snapshot1" ||
+		snapshots[0].Shards.Successful != 93 {
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
+	}
+
+	if snapshots[0].Indices[0] != "index1" || snapshots[0].Indices[1] != "index2" ||
+		len(snapshots[0].Indices) != 2 {
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 }
 
-func TestGetSnapshots_PartialSnapshot(t *testing.T) {
+func TestGetSnapshots_Inprogress(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method: "GET",
 		Path:   "/_snapshot/octocat/_all",
@@ -572,67 +576,17 @@ func TestGetSnapshots_PartialSnapshot(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	snapshots, headers := client.GetSnapshots("octocat")
-
-	if len(headers) != 4 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	snapshots, err := client.GetSnapshots("octocat")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
 	if len(snapshots) != 1 {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 
-	if snapshots[0][0] != "IN_PROGRESS" || snapshots[0][1] != "snapshot1" ||
-		snapshots[0][2] != "" ||
-		snapshots[0][3] != "1h0m0s" {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
-	}
-}
-
-func TestGetSnapshots_Last10(t *testing.T) {
-	testSetup := &ServerSetup{
-		Method: "GET",
-		Path:   "/_snapshot/octocat/_all",
-		Response: `{
-
-  "snapshots": [
-    { "snapshot": "snapshot1", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot2", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot3", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot4", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot5", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot6", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot7", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot8", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot9", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot10", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot11", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot12", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot13", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot14", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot15", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot16", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-  ]
-}`,
-	}
-
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	snapshots, headers := client.GetSnapshots("octocat")
-
-	if len(headers) != 4 {
-		t.Errorf("Unexpected headers, got %s", headers)
-	}
-
-	if len(snapshots) != 10 {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
-	}
-
-	if snapshots[0][1] != "snapshot7" ||
-		snapshots[9][1] != "snapshot16" {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+	if snapshots[0].State != "IN_PROGRESS" {
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 }
 
@@ -665,147 +619,16 @@ func TestGetSnapshotStatus(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	snapshot, headers := client.GetSnapshotStatus("octocat", "snapshot1")
-
-	if len(headers) != 2 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	snapshot, err := client.GetSnapshotStatus("octocat", "snapshot1")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
-	if len(snapshot) != 7 {
-		t.Errorf("Unexpected snapshots, got %s", snapshot)
+	if snapshot.State != "SUCCESS" {
+		t.Errorf("Unexpected state, got %+v", snapshot)
 	}
 
-	if snapshot[0][0] != "state" || snapshot[0][1] != "SUCCESS" {
-		t.Errorf("Unexpected state, got %s", snapshot[0])
-	}
-
-	if snapshot[1][0] != "snapshot" || snapshot[1][1] != "snapshot1" {
-		t.Errorf("Unexpected snapshot name, got %s", snapshot[1])
-	}
-
-	if snapshot[2][0] != "indices" || snapshot[2][1] != "index1\nindex2" {
-		t.Errorf("Unexpected indices, got %s", snapshot[2][1])
-	}
-
-	if snapshot[5][0] != "duration" || snapshot[5][1] != "1s" {
-		t.Errorf("Unexpected indices, got %s", snapshot[5])
-	}
-}
-
-func TestPerformSnapshotCheck(t *testing.T) {
-	testSetup := &ServerSetup{
-		Method: "GET",
-		Path:   "/_snapshot/octocat/_all",
-		Response: `{
-  "snapshots": [
-    {
-      "snapshot": "snapshot1",
-      "uuid": "kXx-r58tSOeVvDbvCC1IsQ",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "SUCCESS",
-      "start_time": "2018-04-03T06:06:24.837Z",
-      "start_time_in_millis": 1522735584837,
-      "end_time": "2018-04-03T07:41:01.719Z",
-      "end_time_in_millis": 1522741261719,
-      "duration_in_millis": 1000,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    },
-    {
-      "snapshot": "snapshot2",
-      "uuid": "ReLFDkUfQcysi6HG2y40uw",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "SUCCESS",
-      "start_time": "2018-04-03T18:13:11.012Z",
-      "start_time_in_millis": 1522779191012,
-      "end_time": "2018-04-03T18:25:58.440Z",
-      "end_time_in_millis": 1522779958440,
-      "duration_in_millis": 500,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    }
-  ]
-}`,
-	}
-
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	good, bad := client.PerformSnapshotsCheck("octocat")
-
-	if len(good) != 2 {
-		t.Errorf("Unexpected good snapshots, got %s", good)
-	}
-
-	if len(bad) != 0 {
-		t.Errorf("Unexpected bad snapshots, got %s", bad)
-	}
-
-	if good[0] != "snapshot1" || good[1] != "snapshot2" {
-		t.Errorf("Unexpected snapshots, got %s", good)
-	}
-}
-
-func TestPerformSnapshotCheck_SomeFailing(t *testing.T) {
-	testSetup := &ServerSetup{
-		Method: "GET",
-		Path:   "/_snapshot/octocat/_all",
-		Response: `{
-  "snapshots": [
-    {
-      "snapshot": "snapshot1",
-      "uuid": "kXx-r58tSOeVvDbvCC1IsQ",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "FAILED",
-      "start_time": "2018-04-03T06:06:24.837Z",
-      "start_time_in_millis": 1522735584837,
-      "end_time": "2018-04-03T07:41:01.719Z",
-      "end_time_in_millis": 1522741261719,
-      "duration_in_millis": 1000,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    },
-    {
-      "snapshot": "snapshot2",
-      "uuid": "ReLFDkUfQcysi6HG2y40uw",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "SUCCESS",
-      "start_time": "2018-04-03T18:13:11.012Z",
-      "start_time_in_millis": 1522779191012,
-      "end_time": "2018-04-03T18:25:58.440Z",
-      "end_time_in_millis": 1522779958440,
-      "duration_in_millis": 500,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    }
-  ]
-}`,
-	}
-
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	good, bad := client.PerformSnapshotsCheck("octocat")
-
-	if len(good) != 1 {
-		t.Errorf("Unexpected good snapshots, got %s", good)
-	}
-
-	if len(bad) != 1 {
-		t.Errorf("Unexpected bad snapshots, got %s", bad)
-	}
-
-	if bad[0] != "snapshot1" || good[0] != "snapshot2" {
-		t.Errorf("Unexpected snapshots, good: %s bad: %s", good, bad)
+	if snapshot.Name != "snapshot1" {
+		t.Errorf("Unexpected name, got %+v", snapshot)
 	}
 }
