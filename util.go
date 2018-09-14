@@ -7,7 +7,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func ExcludeSettingsFromJson(settings []gjson.Result) ExcludeSettings {
+func excludeSettingsFromJson(settings []gjson.Result) ExcludeSettings {
 	excludeSettings := ExcludeSettings{}
 
 	if settings[0].String() == "" {

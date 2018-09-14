@@ -108,7 +108,7 @@ func (c *Client) GetClusterExcludeSettings() (ExcludeSettings, error) {
 
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	excludeSettings := ExcludeSettingsFromJson(excludedArray)
+	excludeSettings := excludeSettingsFromJson(excludedArray)
 	return excludeSettings, nil
 }
 
@@ -176,7 +176,7 @@ func (c *Client) FillAll() (ExcludeSettings, error) {
 
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	return ExcludeSettingsFromJson(excludedArray), nil
+	return excludeSettingsFromJson(excludedArray), nil
 }
 
 func (c *Client) GetNodes() ([]Node, error) {
