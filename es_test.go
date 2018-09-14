@@ -505,7 +505,7 @@ func TestSetSetting_BadRequest(t *testing.T) {
 		t.Errorf("Expected error to not be nil, %s", err)
 	}
 
-	if err.Error() != fmt.Sprintf("Bad HTTP Status of 400 from Elasticsearch: %s", putSetup.Response) {
+	if err.Error() != fmt.Sprintf("Bad HTTP Status from Elasticsearch: 400, %s", putSetup.Response) {
 		t.Errorf("Unexpected error message, %s", err)
 	}
 }

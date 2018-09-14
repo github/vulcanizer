@@ -90,132 +90,6 @@ func NewClient(host string, port int) *Client {
 
 const clusterSettingsPath = "_cluster/settings"
 
-func (c *Client) buildGetRequest(path string) *gorequest.SuperAgent {
-	return gorequest.New().Get(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path)).Set("Accept", "application/json")
-}
-
-func (c *Client) buildPutRequest(path string) *gorequest.SuperAgent {
-	return gorequest.New().Put(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
-}
-
-// Get current cluster settings for exclusion
-func (c *Client) GetClusterExcludeSettings() (ExcludeSettings, error) {
-	_, body, errs := c.buildGetRequest(clusterSettingsPath).End()
-
-	if len(errs) > 0 {
-		return ExcludeSettings{}, combineErrors(errs)
-	}
-
-	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
-
-	excludeSettings := excludeSettingsFromJson(excludedArray)
-	return excludeSettings, nil
-}
-
-func (c *Client) DrainServer(serverToDrain string) (ExcludeSettings, error) {
-
-	excludeSettings, err := c.GetClusterExcludeSettings()
-
-	if err != nil {
-		return ExcludeSettings{}, err
-	}
-
-	excludeSettings.Names = append(excludeSettings.Names, serverToDrain)
-
-	_, _, errs := c.buildPutRequest(clusterSettingsPath).
-		Set("Content-Type", "application/json").
-		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.exclude._name" : "%s"}}`, strings.Join(excludeSettings.Names, ","))).
-		End()
-
-	if len(errs) > 0 {
-		return ExcludeSettings{}, combineErrors(errs)
-	}
-
-	return excludeSettings, nil
-}
-
-func (c *Client) FillOneServer(serverToFill string) (ExcludeSettings, error) {
-
-	// Get the current list of strings
-	excludeSettings, err := c.GetClusterExcludeSettings()
-	if err != nil {
-		return ExcludeSettings{}, err
-	}
-
-	serverToFill = strings.TrimSpace(serverToFill)
-
-	newNamesDrained := []string{}
-	for _, s := range excludeSettings.Names {
-		if s != serverToFill {
-			newNamesDrained = append(newNamesDrained, s)
-		}
-	}
-
-	_, _, errs := c.buildPutRequest(clusterSettingsPath).
-		Set("Content-Type", "application/json").
-		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.exclude._name" : "%s"}}`, strings.Join(newNamesDrained, ","))).
-		End()
-
-	if len(errs) > 0 {
-		return ExcludeSettings{}, combineErrors(errs)
-	}
-
-	return c.GetClusterExcludeSettings()
-}
-
-func (c *Client) FillAll() (ExcludeSettings, error) {
-
-	_, body, errs := c.buildPutRequest(clusterSettingsPath).
-		Set("Content-Type", "application/json").
-		Send(`{"transient" : { "cluster.routing.allocation.exclude" : { "_name" :  "", "_ip" : "", "_host" : ""}}}`).
-		End()
-
-	if len(errs) > 0 {
-		return ExcludeSettings{}, combineErrors(errs)
-	}
-
-	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
-
-	return excludeSettingsFromJson(excludedArray), nil
-}
-
-func (c *Client) GetNodes() ([]Node, error) {
-	var nodes []Node
-	_, _, errs := c.buildGetRequest("_cat/nodes?h=master,role,name,ip,id").EndStruct(&nodes)
-
-	if len(errs) > 0 {
-		return nil, combineErrors(errs)
-	}
-
-	return nodes, nil
-}
-
-func (c *Client) GetIndices() ([]Index, error) {
-	var indices []Index
-	_, _, errs := c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count").EndStruct(&indices)
-
-	if len(errs) > 0 {
-		return nil, combineErrors(errs)
-	}
-
-	return indices, nil
-}
-
-func (c *Client) GetHealth() ([]ClusterHealth, error) {
-	var health []ClusterHealth
-	_, _, errs := c.buildGetRequest("_cat/health?h=cluster,status,relo,init,unassign,pending_tasks,active_shards_percent").EndStruct(&health)
-
-	if len(errs) > 0 {
-		return nil, combineErrors(errs)
-	}
-
-	for i := range health {
-		health[i].Message = captionHealth(health[i].Status)
-	}
-
-	return health, nil
-}
-
 func settingsToStructs(rawJson string) ([]ClusterSetting, error) {
 	flatSettings, err := flatten.FlattenString(rawJson, "", flatten.DotStyle)
 	if err != nil {
@@ -246,17 +120,175 @@ func settingsToStructs(rawJson string) ([]ClusterSetting, error) {
 	return clusterSettings, nil
 }
 
-func (c *Client) GetSettings() (ClusterSettings, error) {
-	_, body, errs := c.buildGetRequest(clusterSettingsPath).End()
-
-	clusterSettings := ClusterSettings{}
+func handleErrWithBytes(s *gorequest.SuperAgent) ([]byte, error) {
+	response, body, errs := s.EndBytes()
 
 	if len(errs) > 0 {
-		return clusterSettings, combineErrors(errs)
+		return nil, combineErrors(errs)
 	}
 
-	rawPersistentSettings := gjson.Get(body, "persistent").Raw
-	rawTransientSettings := gjson.Get(body, "transient").Raw
+	if response.StatusCode != http.StatusOK {
+		errorMessage := fmt.Sprintf("Bad HTTP Status from Elasticsearch: %v, %s", response.StatusCode, body)
+		return nil, errors.New(errorMessage)
+	}
+	return body, nil
+}
+
+func handleErrWithStruct(s *gorequest.SuperAgent, v interface{}) error {
+	response, body, errs := s.EndStruct(v)
+
+	if len(errs) > 0 {
+		return combineErrors(errs)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		errorMessage := fmt.Sprintf("Bad HTTP Status from Elasticsearch: %v, %s", response.StatusCode, body)
+		return errors.New(errorMessage)
+	}
+	return nil
+}
+
+func (c *Client) buildGetRequest(path string) *gorequest.SuperAgent {
+	return gorequest.New().Get(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path)).Set("Accept", "application/json")
+}
+
+func (c *Client) buildPutRequest(path string) *gorequest.SuperAgent {
+	return gorequest.New().Put(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
+}
+
+// Get current cluster settings for exclusion
+func (c *Client) GetClusterExcludeSettings() (ExcludeSettings, error) {
+	body, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
+
+	if err != nil {
+		return ExcludeSettings{}, err
+	}
+
+	excludedArray := gjson.GetManyBytes(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
+
+	excludeSettings := excludeSettingsFromJson(excludedArray)
+	return excludeSettings, nil
+}
+
+func (c *Client) DrainServer(serverToDrain string) (ExcludeSettings, error) {
+
+	excludeSettings, err := c.GetClusterExcludeSettings()
+
+	if err != nil {
+		return ExcludeSettings{}, err
+	}
+
+	excludeSettings.Names = append(excludeSettings.Names, serverToDrain)
+
+	agent := c.buildPutRequest(clusterSettingsPath).
+		Set("Content-Type", "application/json").
+		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.exclude._name" : "%s"}}`, strings.Join(excludeSettings.Names, ",")))
+
+	_, err = handleErrWithBytes(agent)
+
+	if err != nil {
+		return ExcludeSettings{}, err
+	}
+
+	return excludeSettings, nil
+}
+
+func (c *Client) FillOneServer(serverToFill string) (ExcludeSettings, error) {
+
+	// Get the current list of strings
+	excludeSettings, err := c.GetClusterExcludeSettings()
+	if err != nil {
+		return ExcludeSettings{}, err
+	}
+
+	serverToFill = strings.TrimSpace(serverToFill)
+
+	newNamesDrained := []string{}
+	for _, s := range excludeSettings.Names {
+		if s != serverToFill {
+			newNamesDrained = append(newNamesDrained, s)
+		}
+	}
+
+	agent := c.buildPutRequest(clusterSettingsPath).
+		Set("Content-Type", "application/json").
+		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.exclude._name" : "%s"}}`, strings.Join(newNamesDrained, ",")))
+
+	_, err = handleErrWithBytes(agent)
+
+	if err != nil {
+		return ExcludeSettings{}, err
+	}
+
+	return c.GetClusterExcludeSettings()
+}
+
+func (c *Client) FillAll() (ExcludeSettings, error) {
+
+	agent := c.buildPutRequest(clusterSettingsPath).
+		Set("Content-Type", "application/json").
+		Send(`{"transient" : { "cluster.routing.allocation.exclude" : { "_name" :  "", "_ip" : "", "_host" : ""}}}`)
+
+	body, err := handleErrWithBytes(agent)
+
+	if err != nil {
+		return ExcludeSettings{}, err
+	}
+
+	excludedArray := gjson.GetManyBytes(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
+
+	return excludeSettingsFromJson(excludedArray), nil
+}
+
+func (c *Client) GetNodes() ([]Node, error) {
+	var nodes []Node
+
+	agent := c.buildGetRequest("_cat/nodes?h=master,role,name,ip,id")
+	err := handleErrWithStruct(agent, &nodes)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nodes, nil
+}
+
+func (c *Client) GetIndices() ([]Index, error) {
+	var indices []Index
+	err := handleErrWithStruct(c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count"), &indices)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return indices, nil
+}
+
+func (c *Client) GetHealth() ([]ClusterHealth, error) {
+	var health []ClusterHealth
+	err := handleErrWithStruct(c.buildGetRequest("_cat/health?h=cluster,status,relo,init,unassign,pending_tasks,active_shards_percent"), &health)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range health {
+		health[i].Message = captionHealth(health[i].Status)
+	}
+
+	return health, nil
+}
+
+func (c *Client) GetSettings() (ClusterSettings, error) {
+	clusterSettings := ClusterSettings{}
+	body, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
+
+	if err != nil {
+		return clusterSettings, err
+	}
+
+	rawPersistentSettings := gjson.GetBytes(body, "persistent").Raw
+	rawTransientSettings := gjson.GetBytes(body, "transient").Raw
 
 	persisentSettings, err := settingsToStructs(rawPersistentSettings)
 	if err != nil {
@@ -284,41 +316,42 @@ func (c *Client) SetAllocation(allocation string) (string, error) {
 		allocationSetting = "none"
 	}
 
-	_, body, errs := c.buildPutRequest(clusterSettingsPath).
+	agent := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
-		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.enable" : "%s"}}`, allocationSetting)).
-		End()
+		Send(fmt.Sprintf(`{"transient" : { "cluster.routing.allocation.enable" : "%s"}}`, allocationSetting))
 
-	if len(errs) > 0 {
-		return "", combineErrors(errs)
+	body, err := handleErrWithBytes(agent)
+
+	if err != nil {
+		return "", err
 	}
 
-	allocationVal := gjson.Get(body, "transient.cluster.routing.allocation.enable")
+	allocationVal := gjson.GetBytes(body, "transient.cluster.routing.allocation.enable")
 
 	return allocationVal.String(), nil
 }
 
 func (c *Client) SetSetting(setting string, value string) (string, string, error) {
 
-	_, settingsBody, _ := c.buildGetRequest(clusterSettingsPath).End()
+	settingsBody, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
 
-	existingValues := gjson.GetMany(settingsBody, fmt.Sprintf("transient.%s", setting), fmt.Sprintf("persistent.%s", setting))
+	if err != nil {
+		return "", "", err
+	}
 
-	response, body, errs := c.buildPutRequest(clusterSettingsPath).
+	existingValues := gjson.GetManyBytes(settingsBody, fmt.Sprintf("transient.%s", setting), fmt.Sprintf("persistent.%s", setting))
+
+	agent := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
-		Send(fmt.Sprintf(`{"transient" : { "%s" : "%s"}}`, setting, value)).
-		End()
+		Send(fmt.Sprintf(`{"transient" : { "%s" : "%s"}}`, setting, value))
 
-	if len(errs) > 0 {
-		return "", "", combineErrors(errs)
+	body, err := handleErrWithBytes(agent)
+
+	if err != nil {
+		return "", "", err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		errorMessage := fmt.Sprintf("Bad HTTP Status of %v from Elasticsearch: %s", response.StatusCode, body)
-		return "", "", errors.New(errorMessage)
-	}
-
-	newValue := gjson.Get(body, fmt.Sprintf("transient.%s", setting)).String()
+	newValue := gjson.GetBytes(body, fmt.Sprintf("transient.%s", setting)).String()
 
 	var existingValue string
 
@@ -334,10 +367,11 @@ func (c *Client) SetSetting(setting string, value string) (string, string, error
 func (c *Client) GetSnapshots(repository string) ([]Snapshot, error) {
 
 	var snapshotWrapper snapshotWrapper
-	_, _, errs := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/_all", repository)).EndStruct(&snapshotWrapper)
 
-	if len(errs) > 0 {
-		return nil, combineErrors(errs)
+	err := handleErrWithStruct(c.buildGetRequest(fmt.Sprintf("_snapshot/%s/_all", repository)), &snapshotWrapper)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return snapshotWrapper.Snapshots, nil
@@ -347,10 +381,10 @@ func (c *Client) GetSnapshotStatus(repository string, snapshot string) (Snapshot
 
 	var snapshotWrapper snapshotWrapper
 
-	_, _, errs := c.buildGetRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).EndStruct(&snapshotWrapper)
+	err := handleErrWithStruct(c.buildGetRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)), &snapshotWrapper)
 
-	if len(errs) > 0 {
-		return Snapshot{}, combineErrors(errs)
+	if err != nil {
+		return Snapshot{}, err
 	}
 
 	return snapshotWrapper.Snapshots[0], nil
