@@ -294,18 +294,26 @@ func TestGetSettings(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	settings, headers := client.GetSettings()
+	clusterSettings, err := client.GetSettings()
 
-	if len(headers) != 2 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
-	if len(settings) != 1 {
-		t.Errorf("Unexpected settings, got %s", settings)
+	if len(clusterSettings.PersistentSettings) != 0 {
+		t.Errorf("Unexpected persistent settings, got %v", clusterSettings.PersistentSettings)
 	}
 
-	if settings[0][0] != "transient.cluster.routing.allocation.exclude._name" || settings[0][1] != "10.0.0.2" {
-		t.Errorf("Unexpected settings, got %s", settings)
+	if len(clusterSettings.TransientSettings) != 1 {
+		t.Errorf("Unexpected transient settings, got %v", clusterSettings.TransientSettings)
+	}
+
+	if clusterSettings.TransientSettings[0].Setting != "cluster.routing.allocation.exclude._name" {
+		t.Errorf("Unexpected setting name, got %s", clusterSettings.TransientSettings[0].Setting)
+	}
+
+	if clusterSettings.TransientSettings[0].Value != "10.0.0.2" {
+		t.Errorf("Unexpected setting value, got %s", clusterSettings.TransientSettings[0].Value)
 	}
 }
 

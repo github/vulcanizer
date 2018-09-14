@@ -50,6 +50,15 @@ type ClusterHealth struct {
 	Message                string
 }
 
+type ClusterSettings struct {
+	PersistentSettings []ClusterSetting
+	TransientSettings  []ClusterSetting
+}
+
+type ClusterSetting struct {
+	Setting, Value string
+}
+
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
 }
@@ -168,15 +177,13 @@ func (c *Client) GetHealth() ([]ClusterHealth, error) {
 	return health, nil
 }
 
-func (c *Client) GetSettings() ([][]string, []string) {
-	_, body, _ := c.buildGetRequest(clusterSettingsPath).End()
+func settingsToStructs(rawJson string) ([]ClusterSetting, error) {
+	flatSettings, err := flatten.FlattenString(rawJson, "", flatten.DotStyle)
+	if err != nil {
+		return nil, err
+	}
 
-	results := [][]string{}
-	headers := []string{"setting", "value"}
-
-	settings, _ := flatten.FlattenString(body, "", flatten.DotStyle)
-
-	settingsMap, _ := gjson.Parse(settings).Value().(map[string]interface{})
+	settingsMap, _ := gjson.Parse(flatSettings).Value().(map[string]interface{})
 	keys := []string{}
 
 	for k, v := range settingsMap {
@@ -188,12 +195,44 @@ func (c *Client) GetSettings() ([][]string, []string) {
 
 	sort.Strings(keys)
 
+	var clusterSettings []ClusterSetting
 	for _, k := range keys {
-		setting := []string{k, settingsMap[k].(string)}
-		results = append(results, setting)
+		setting := ClusterSetting{
+			Setting: k,
+			Value:   settingsMap[k].(string),
+		}
+
+		clusterSettings = append(clusterSettings, setting)
+	}
+	return clusterSettings, nil
+}
+
+func (c *Client) GetSettings() (ClusterSettings, error) {
+	_, body, errs := c.buildGetRequest(clusterSettingsPath).End()
+
+	clusterSettings := ClusterSettings{}
+
+	if len(errs) > 0 {
+		return clusterSettings, combineErrors(errs)
 	}
 
-	return results, headers
+	rawPersistentSettings := gjson.Get(body, "persistent").Raw
+	rawTransientSettings := gjson.Get(body, "transient").Raw
+
+	persisentSettings, err := settingsToStructs(rawPersistentSettings)
+	if err != nil {
+		return clusterSettings, err
+	}
+
+	transientSetting, err := settingsToStructs(rawTransientSettings)
+	if err != nil {
+		return clusterSettings, err
+	}
+
+	clusterSettings.PersistentSettings = persisentSettings
+	clusterSettings.TransientSettings = transientSetting
+
+	return clusterSettings, nil
 }
 
 func (c *Client) SetAllocation(allocation string) string {
