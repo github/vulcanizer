@@ -1,6 +1,7 @@
 package vulcanizer
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/tidwall/gjson"
@@ -41,5 +42,21 @@ func TestExcludeSettingsFromJson_NoResults(t *testing.T) {
 
 	if len(settings.Hosts) != 0 {
 		t.Fatalf("Hosts should be empty array, got %s", settings.Hosts)
+	}
+}
+
+func TestCombineErrors(t *testing.T) {
+	error1 := errors.New("First error")
+	error2 := errors.New("Second error")
+	error3 := errors.New("Third error")
+
+	combinedError := combineErrors([]error{error1, error2, error3})
+
+	expectedMessage := `First error
+Second error
+Third error`
+
+	if combinedError.Error() != expectedMessage {
+		t.Errorf("Unexpected error message, got %s", combinedError.Error())
 	}
 }
