@@ -481,6 +481,7 @@ func TestAllocationSettings(t *testing.T) {
 		})
 	}
 }
+
 func TestSetSetting_BadRequest(t *testing.T) {
 	getSetup := &ServerSetup{
 		Method:   "GET",
