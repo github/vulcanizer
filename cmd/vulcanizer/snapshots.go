@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
@@ -32,8 +33,30 @@ var cmdSnapshots = &cobra.Command{
 			os.Exit(1)
 		}
 
-		rows, headers := v.GetSnapshots(repository)
+		snapshots, err := v.GetSnapshots(repository)
+		if err != nil {
+			fmt.Printf("Could not query snapshots. Error: %s\n", err)
+			os.Exit(1)
+		}
 
-		fmt.Println(renderTable(rows, headers))
+		header := []string{"State", "Name", "Finished", "Duration"}
+
+		if len(snapshots) > 10 {
+			snapshots = snapshots[len(snapshots)-10:]
+		}
+
+		rows := [][]string{}
+		for _, snapshot := range snapshots {
+			duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.DurationMillis))
+			row := []string{
+				snapshot.State,
+				snapshot.Name,
+				snapshot.EndTime.Format(time.RFC3339),
+				fmt.Sprintf("%v", duration),
+			}
+			rows = append(rows, row)
+		}
+
+		fmt.Println(renderTable(rows, header))
 	},
 }

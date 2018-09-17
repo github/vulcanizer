@@ -1,13 +1,14 @@
 package vulcanizer
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/tidwall/gjson"
 )
 
-func ExcludeSettingsFromJson(settings []gjson.Result) *ExcludeSettings {
-	excludeSettings := &ExcludeSettings{}
+func excludeSettingsFromJson(settings []gjson.Result) ExcludeSettings {
+	excludeSettings := ExcludeSettings{}
 
 	if settings[0].String() == "" {
 		excludeSettings.Ips = []string{}
@@ -46,4 +47,12 @@ func captionHealth(health string) (caption string) {
 	default:
 		return health
 	}
+}
+
+func combineErrors(errs []error) error {
+	errorText := []string{}
+	for _, err := range errs {
+		errorText = append(errorText, err.Error())
+	}
+	return errors.New(strings.Join(errorText, "\n"))
 }

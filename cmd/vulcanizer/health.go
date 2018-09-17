@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
@@ -18,9 +20,30 @@ var cmdHealth = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
-		caption, rows, headers := v.GetHealth()
+		health, err := v.GetHealth()
 
-		fmt.Println(caption)
-		fmt.Println(renderTable(rows, headers))
+		if err != nil {
+			fmt.Printf("Error getting cluster health: %s\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println(health[0].Message)
+
+		header := []string{"Cluster", "Status", "Relocating", "Initializing", "Unassigned", "Active %"}
+		rows := [][]string{}
+		for _, cluster := range health {
+			row := []string{
+				cluster.Cluster,
+				cluster.Status,
+				strconv.Itoa(cluster.RelocatingShards),
+				strconv.Itoa(cluster.InitializingShards),
+				strconv.Itoa(cluster.UnassignedShards),
+				cluster.ActiveShardsPercentage,
+			}
+
+			rows = append(rows, row)
+		}
+
+		fmt.Println(renderTable(rows, header))
 	},
 }

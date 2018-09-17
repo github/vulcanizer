@@ -1,6 +1,7 @@
 package vulcanizer
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/tidwall/gjson"
@@ -10,7 +11,7 @@ func TestExcludeSettingsFromJson_OneResult(t *testing.T) {
 	body := `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_host":"excluded.host","_name":"excluded_name","_ip":"10.0.0.99"}}}}}}`
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	settings := ExcludeSettingsFromJson(excludedArray)
+	settings := excludeSettingsFromJson(excludedArray)
 
 	if len(settings.Ips) != 1 && settings.Ips[0] != "10.0.0.99" {
 		t.Fatalf("Ips should should contain 10.0.0.99, got %s", settings.Ips)
@@ -29,7 +30,7 @@ func TestExcludeSettingsFromJson_NoResults(t *testing.T) {
 	body := `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_host":"","_name":"","_ip":""}}}}}}`
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	settings := ExcludeSettingsFromJson(excludedArray)
+	settings := excludeSettingsFromJson(excludedArray)
 
 	if len(settings.Ips) != 0 {
 		t.Fatalf("Ips should be empty array, got %#v", settings.Ips)
@@ -41,5 +42,21 @@ func TestExcludeSettingsFromJson_NoResults(t *testing.T) {
 
 	if len(settings.Hosts) != 0 {
 		t.Fatalf("Hosts should be empty array, got %s", settings.Hosts)
+	}
+}
+
+func TestCombineErrors(t *testing.T) {
+	error1 := errors.New("First error")
+	error2 := errors.New("Second error")
+	error3 := errors.New("Third error")
+
+	combinedError := combineErrors([]error{error1, error2, error3})
+
+	expectedMessage := `First error
+Second error
+Third error`
+
+	if combinedError.Error() != expectedMessage {
+		t.Errorf("Unexpected error message, got %s", combinedError.Error())
 	}
 }

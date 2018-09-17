@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
@@ -38,19 +37,13 @@ var cmdDrainServer = &cobra.Command{
 		v := vulcanizer.NewClient(host, port)
 		fmt.Printf("drain server name is: %s\n", serverToDrain)
 
-		excludeSettings := v.GetClusterExcludeSettings()
-
-		//TODO @nickcanz - make DrainServer take the ExcludeSettings struct or do this work within DrainServer
-		var existingExcludes string
-		if len(excludeSettings.Names) == 0 {
-			existingExcludes = "None"
-		} else {
-			existingExcludes = strings.Join(excludeSettings.Names, ",")
+		excludedServers, err := v.DrainServer(serverToDrain)
+		if err != nil {
+			fmt.Printf("Error getting exclude settings: %s \n", err)
+			os.Exit(1)
 		}
 
-		excludedServers := v.DrainServer(serverToDrain, existingExcludes)
-
-		fmt.Printf("draining servers: %s\n", excludedServers)
+		fmt.Printf("draining servers: %+v\n", excludedServers)
 	},
 }
 
@@ -61,7 +54,11 @@ var cmdDrainStatus = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
-		excludeSettings := v.GetClusterExcludeSettings()
+		excludeSettings, err := v.GetClusterExcludeSettings()
+		if err != nil {
+			fmt.Printf("Error getting exclude settings: %s \n", err)
+			os.Exit(1)
+		}
 		fmt.Printf("drain status: %+v\n", excludeSettings)
 	},
 }

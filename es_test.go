@@ -63,7 +63,11 @@ func TestGetClusterExcludeSettings(t *testing.T) {
 
 	client := NewClient(host, port)
 
-	excludeSettings := client.GetClusterExcludeSettings()
+	excludeSettings, err := client.GetClusterExcludeSettings()
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
 
 	if excludeSettings.Ips[0] != "10.0.0.99" || len(excludeSettings.Ips) != 1 {
 		t.Errorf("Expected 10.0.0.99 for excluded ip, got %s", excludeSettings.Ips)
@@ -80,41 +84,60 @@ func TestGetClusterExcludeSettings(t *testing.T) {
 
 func TestDrainServer_OneValue(t *testing.T) {
 
-	testSetup := &ServerSetup{
+	getSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cluster/settings",
+		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":""}}}}}}`,
+	}
+
+	putSetup := &ServerSetup{
 		Method:   "PUT",
 		Path:     "/_cluster/settings",
 		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"server_to_drain"}}`,
 		Response: `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"server_to_drain"}}}}}}`,
 	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	excludedServers := client.DrainServer("server_to_drain", "None")
+	excludeSettings, err := client.DrainServer("server_to_drain")
 
-	if excludedServers != "server_to_drain" {
-		t.Errorf("Expected response server_to_drain, got %s", excludedServers)
+	if err != nil {
+		t.Errorf("Unexpected error, %s", err)
+	}
+
+	if excludeSettings.Names[0] != "server_to_drain" {
+		t.Errorf("Expected response, got %+v", excludeSettings)
 	}
 }
 
 func TestDrainServer_ExistingValues(t *testing.T) {
 
-	testSetup := &ServerSetup{
+	getSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cluster/settings",
+		Response: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"existing_one,existing_two"}}}}}}`,
+	}
+
+	putSetup := &ServerSetup{
 		Method:   "PUT",
 		Path:     "/_cluster/settings",
-		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"server_to_drain,existing_one,existing_two"}}`,
+		Body:     `{"transient":{"cluster.routing.allocation.exclude._name":"existing_one,existing_two,server_to_drain"}}`,
 		Response: `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"server_to_drain,existing_one,existing_two"}}}}}}`,
 	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, putSetup})
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	excludedServers := client.DrainServer("server_to_drain", "existing_one,existing_two")
+	excludeSettings, err := client.DrainServer("server_to_drain")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
 
-	if excludedServers != "server_to_drain,existing_one,existing_two" {
-		t.Errorf("unexpected response, got %s", excludedServers)
+	if len(excludeSettings.Names) != 3 || excludeSettings.Names[2] != "server_to_drain" {
+		t.Errorf("unexpected response, got %+v", excludeSettings)
 	}
 }
 
@@ -137,14 +160,14 @@ func TestFillOneServer_ExistingServers(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	goodServer, excludedServers := client.FillOneServer("good_server")
+	excludeSettings, err := client.FillOneServer("good_server")
 
-	if goodServer != "good_server" {
-		t.Errorf("unexpected response, got %s", goodServer)
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if excludedServers != "excluded_server1,excluded_server2" {
-		t.Errorf("unexpected response, got %s", excludedServers)
+	if excludeSettings.Names[0] != "excluded_server1" {
+		t.Errorf("unexpected response, got %+v", excludeSettings)
 	}
 }
 
@@ -167,14 +190,10 @@ func TestFillOneServer_OneServer(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	goodServer, excludedServers := client.FillOneServer("good_server")
+	_, err := client.FillOneServer("good_server")
 
-	if goodServer != "good_server" {
-		t.Errorf("unexpected response, got %s", goodServer)
-	}
-
-	if excludedServers != "" {
-		t.Errorf("unexpected response, got %s", excludedServers)
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 }
 
@@ -190,7 +209,10 @@ func TestFillAll(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	excludeSettings := client.FillAll()
+	excludeSettings, err := client.FillAll()
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
 
 	if len(excludeSettings.Ips) != 0 {
 		t.Errorf("Expected empty excluded Ips, got %s", excludeSettings.Ips)
@@ -216,14 +238,18 @@ func TestGetNodes(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	nodes, headers := client.GetNodes()
+	nodes, err := client.GetNodes()
 
-	if len(headers) != 5 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if nodes[0][2] != "foo" && nodes[0][1] == "d" {
-		t.Errorf("Unexpected node name, got %s", nodes)
+	if len(nodes) != 1 {
+		t.Errorf("Unexpected nodes, got %s", nodes)
+	}
+
+	if nodes[0].Name != "foo" {
+		t.Errorf("Unexpected node name, expected foo, got %s", nodes[0].Name)
 	}
 }
 
@@ -238,14 +264,18 @@ func TestGetIndices(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	indices, headers := client.GetIndices()
+	indices, err := client.GetIndices()
 
-	if len(headers) != 7 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if indices[0][2] != "index1" || indices[0][5] != "3.6kb" || indices[0][6] != "1500" {
-		t.Errorf("Unexpected index name, got %s", indices)
+	if len(indices) != 1 {
+		t.Errorf("Unexpected indices, got %v", indices)
+	}
+
+	if indices[0].Health != "yellow" || indices[0].ReplicaCount != 1 || indices[0].DocumentCount != 1500 {
+		t.Errorf("Unexpected index values, got %v", indices[0])
 	}
 }
 
@@ -260,19 +290,18 @@ func TestGetHealth(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	caption, health, headers := client.GetHealth()
+	health, err := client.GetHealth()
 
-	if len(caption) < 1 {
-		t.Errorf("No caption, got %s", caption)
-
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if len(headers) != 5 {
-		t.Errorf("Unexpected headers, got %s , length: %d", headers, len(headers))
+	if len(health) != 1 {
+		t.Errorf("Unexpected health, got %+v", health)
 	}
 
-	if health[0][0] != "yellow" {
-		t.Errorf("Unexpected cluster status, got %s", health)
+	if health[0].UnassignedShards != 5 {
+		t.Errorf("Unexpected unassigned shards, expected 5, got %d", health[0].UnassignedShards)
 	}
 }
 
@@ -287,18 +316,26 @@ func TestGetSettings(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	settings, headers := client.GetSettings()
+	clusterSettings, err := client.GetSettings()
 
-	if len(headers) != 2 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
-	if len(settings) != 1 {
-		t.Errorf("Unexpected settings, got %s", settings)
+	if len(clusterSettings.PersistentSettings) != 0 {
+		t.Errorf("Unexpected persistent settings, got %v", clusterSettings.PersistentSettings)
 	}
 
-	if settings[0][0] != "transient.cluster.routing.allocation.exclude._name" || settings[0][1] != "10.0.0.2" {
-		t.Errorf("Unexpected settings, got %s", settings)
+	if len(clusterSettings.TransientSettings) != 1 {
+		t.Errorf("Unexpected transient settings, got %v", clusterSettings.TransientSettings)
+	}
+
+	if clusterSettings.TransientSettings[0].Setting != "cluster.routing.allocation.exclude._name" {
+		t.Errorf("Unexpected setting name, got %s", clusterSettings.TransientSettings[0].Setting)
+	}
+
+	if clusterSettings.TransientSettings[0].Value != "10.0.0.2" {
+		t.Errorf("Unexpected setting value, got %s", clusterSettings.TransientSettings[0].Value)
 	}
 }
 
@@ -431,7 +468,11 @@ func TestAllocationSettings(t *testing.T) {
 			defer ts.Close()
 			client := NewClient(host, port)
 
-			resp := client.SetAllocation(x.Setting)
+			resp, err := client.SetAllocation(x.Setting)
+
+			if err != nil {
+				st.Errorf("Unexpected error, got %s", err)
+			}
 
 			if resp != x.Expected {
 				st.Errorf("Unexpected response, got %s", resp)
@@ -440,6 +481,7 @@ func TestAllocationSettings(t *testing.T) {
 		})
 	}
 }
+
 func TestSetSetting_BadRequest(t *testing.T) {
 	getSetup := &ServerSetup{
 		Method:   "GET",
@@ -464,7 +506,7 @@ func TestSetSetting_BadRequest(t *testing.T) {
 		t.Errorf("Expected error to not be nil, %s", err)
 	}
 
-	if err.Error() != fmt.Sprintf("Bad HTTP Status of 400 from Elasticsearch: %s", putSetup.Response) {
+	if err.Error() != fmt.Sprintf("Bad HTTP Status from Elasticsearch: 400, %s", putSetup.Response) {
 		t.Errorf("Unexpected error message, %s", err)
 	}
 }
@@ -513,24 +555,28 @@ func TestGetSnapshots(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	snapshots, headers := client.GetSnapshots("octocat")
+	snapshots, err := client.GetSnapshots("octocat")
 
-	if len(headers) != 4 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
 	if len(snapshots) != 2 {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 
-	if snapshots[0][0] != "SUCCESS" || snapshots[0][1] != "snapshot1" ||
-		snapshots[0][2] != "2018-04-03T07:41:01.719Z" ||
-		snapshots[0][3] != "1s" || snapshots[1][3] != "500ms" {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+	if snapshots[0].State != "SUCCESS" || snapshots[0].Name != "snapshot1" ||
+		snapshots[0].Shards.Successful != 93 {
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
+	}
+
+	if snapshots[0].Indices[0] != "index1" || snapshots[0].Indices[1] != "index2" ||
+		len(snapshots[0].Indices) != 2 {
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 }
 
-func TestGetSnapshots_PartialSnapshot(t *testing.T) {
+func TestGetSnapshots_Inprogress(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method: "GET",
 		Path:   "/_snapshot/octocat/_all",
@@ -557,67 +603,17 @@ func TestGetSnapshots_PartialSnapshot(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	snapshots, headers := client.GetSnapshots("octocat")
-
-	if len(headers) != 4 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	snapshots, err := client.GetSnapshots("octocat")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
 	if len(snapshots) != 1 {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 
-	if snapshots[0][0] != "IN_PROGRESS" || snapshots[0][1] != "snapshot1" ||
-		snapshots[0][2] != "" ||
-		snapshots[0][3] != "1h0m0s" {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
-	}
-}
-
-func TestGetSnapshots_Last10(t *testing.T) {
-	testSetup := &ServerSetup{
-		Method: "GET",
-		Path:   "/_snapshot/octocat/_all",
-		Response: `{
-
-  "snapshots": [
-    { "snapshot": "snapshot1", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot2", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot3", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot4", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot5", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot6", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot7", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot8", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot9", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot10", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot11", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot12", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot13", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot14", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot15", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-    { "snapshot": "snapshot16", "state": "SUCCESS", "end_time": "2018-04-03T18:25:58.440Z", "end_time_in_millis": 1522779958440, "duration_in_millis": 500 },
-  ]
-}`,
-	}
-
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	snapshots, headers := client.GetSnapshots("octocat")
-
-	if len(headers) != 4 {
-		t.Errorf("Unexpected headers, got %s", headers)
-	}
-
-	if len(snapshots) != 10 {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
-	}
-
-	if snapshots[0][1] != "snapshot7" ||
-		snapshots[9][1] != "snapshot16" {
-		t.Errorf("Unexpected snapshots, got %s", snapshots)
+	if snapshots[0].State != "IN_PROGRESS" {
+		t.Errorf("Unexpected snapshots, got %v", snapshots)
 	}
 }
 
@@ -650,147 +646,16 @@ func TestGetSnapshotStatus(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	snapshot, headers := client.GetSnapshotStatus("octocat", "snapshot1")
-
-	if len(headers) != 2 {
-		t.Errorf("Unexpected headers, got %s", headers)
+	snapshot, err := client.GetSnapshotStatus("octocat", "snapshot1")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
 	}
 
-	if len(snapshot) != 7 {
-		t.Errorf("Unexpected snapshots, got %s", snapshot)
+	if snapshot.State != "SUCCESS" {
+		t.Errorf("Unexpected state, got %+v", snapshot)
 	}
 
-	if snapshot[0][0] != "state" || snapshot[0][1] != "SUCCESS" {
-		t.Errorf("Unexpected state, got %s", snapshot[0])
-	}
-
-	if snapshot[1][0] != "snapshot" || snapshot[1][1] != "snapshot1" {
-		t.Errorf("Unexpected snapshot name, got %s", snapshot[1])
-	}
-
-	if snapshot[2][0] != "indices" || snapshot[2][1] != "index1\nindex2" {
-		t.Errorf("Unexpected indices, got %s", snapshot[2][1])
-	}
-
-	if snapshot[5][0] != "duration" || snapshot[5][1] != "1s" {
-		t.Errorf("Unexpected indices, got %s", snapshot[5])
-	}
-}
-
-func TestPerformSnapshotCheck(t *testing.T) {
-	testSetup := &ServerSetup{
-		Method: "GET",
-		Path:   "/_snapshot/octocat/_all",
-		Response: `{
-  "snapshots": [
-    {
-      "snapshot": "snapshot1",
-      "uuid": "kXx-r58tSOeVvDbvCC1IsQ",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "SUCCESS",
-      "start_time": "2018-04-03T06:06:24.837Z",
-      "start_time_in_millis": 1522735584837,
-      "end_time": "2018-04-03T07:41:01.719Z",
-      "end_time_in_millis": 1522741261719,
-      "duration_in_millis": 1000,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    },
-    {
-      "snapshot": "snapshot2",
-      "uuid": "ReLFDkUfQcysi6HG2y40uw",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "SUCCESS",
-      "start_time": "2018-04-03T18:13:11.012Z",
-      "start_time_in_millis": 1522779191012,
-      "end_time": "2018-04-03T18:25:58.440Z",
-      "end_time_in_millis": 1522779958440,
-      "duration_in_millis": 500,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    }
-  ]
-}`,
-	}
-
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	good, bad := client.PerformSnapshotsCheck("octocat")
-
-	if len(good) != 2 {
-		t.Errorf("Unexpected good snapshots, got %s", good)
-	}
-
-	if len(bad) != 0 {
-		t.Errorf("Unexpected bad snapshots, got %s", bad)
-	}
-
-	if good[0] != "snapshot1" || good[1] != "snapshot2" {
-		t.Errorf("Unexpected snapshots, got %s", good)
-	}
-}
-
-func TestPerformSnapshotCheck_SomeFailing(t *testing.T) {
-	testSetup := &ServerSetup{
-		Method: "GET",
-		Path:   "/_snapshot/octocat/_all",
-		Response: `{
-  "snapshots": [
-    {
-      "snapshot": "snapshot1",
-      "uuid": "kXx-r58tSOeVvDbvCC1IsQ",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "FAILED",
-      "start_time": "2018-04-03T06:06:24.837Z",
-      "start_time_in_millis": 1522735584837,
-      "end_time": "2018-04-03T07:41:01.719Z",
-      "end_time_in_millis": 1522741261719,
-      "duration_in_millis": 1000,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    },
-    {
-      "snapshot": "snapshot2",
-      "uuid": "ReLFDkUfQcysi6HG2y40uw",
-      "version_id": 5060699,
-      "version": "5.6.6",
-      "indices": [ "index1", "index2" ],
-      "state": "SUCCESS",
-      "start_time": "2018-04-03T18:13:11.012Z",
-      "start_time_in_millis": 1522779191012,
-      "end_time": "2018-04-03T18:25:58.440Z",
-      "end_time_in_millis": 1522779958440,
-      "duration_in_millis": 500,
-      "failures": [],
-      "shards": { "total": 93, "failed": 0, "successful": 93 }
-    }
-  ]
-}`,
-	}
-
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	good, bad := client.PerformSnapshotsCheck("octocat")
-
-	if len(good) != 1 {
-		t.Errorf("Unexpected good snapshots, got %s", good)
-	}
-
-	if len(bad) != 1 {
-		t.Errorf("Unexpected bad snapshots, got %s", bad)
-	}
-
-	if bad[0] != "snapshot1" || good[0] != "snapshot2" {
-		t.Errorf("Unexpected snapshots, good: %s bad: %s", good, bad)
+	if snapshot.Name != "snapshot1" {
+		t.Errorf("Unexpected name, got %+v", snapshot)
 	}
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
@@ -41,7 +43,7 @@ var cmdSnapshotStatus = &cobra.Command{
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
 
-		snapshot, err := cmd.Flags().GetString("snapshot")
+		snapshotName, err := cmd.Flags().GetString("snapshot")
 		if err != nil {
 			fmt.Printf("Could not retrieve required argument: snapshot. Error: %s\n", err)
 			os.Exit(1)
@@ -53,7 +55,24 @@ var cmdSnapshotStatus = &cobra.Command{
 			os.Exit(1)
 		}
 
-		rows, headers := v.GetSnapshotStatus(repository, snapshot)
-		fmt.Println(renderTable(rows, headers))
+		snapshot, err := v.GetSnapshotStatus(repository, snapshotName)
+		if err != nil {
+			fmt.Printf("Error getting snapshot. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.DurationMillis))
+
+		results := [][]string{
+			[]string{"State", snapshot.State},
+			[]string{"Name", snapshot.Name},
+			[]string{"Indices", strings.Join(snapshot.Indices, ", ")},
+			[]string{"Started", snapshot.StartTime.Format(time.RFC3339)},
+			[]string{"Finished", snapshot.EndTime.Format(time.RFC3339)},
+			[]string{"Duration", fmt.Sprintf("%v", duration)},
+			[]string{"Shards", fmt.Sprintf("Successful shards: %d, failed shards: %d", snapshot.Shards.Successful, snapshot.Shards.Failed)},
+		}
+
+		fmt.Println(renderTable(results, []string{"Metric", "Value"}))
 	},
 }

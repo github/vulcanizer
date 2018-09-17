@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
@@ -25,7 +26,11 @@ var cmdAllocationEnable = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
-		response := v.SetAllocation("enable")
+		response, err := v.SetAllocation("enable")
+		if err != nil {
+			fmt.Printf("Error setting allocation: %s \n", err)
+			os.Exit(1)
+		}
 		fmt.Printf("Enabling allocation:\n")
 		fmt.Printf("Allocation set to %s\n", response)
 	},
@@ -38,7 +43,11 @@ var cmdAllocationDisable = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
-		response := v.SetAllocation("disable")
+		response, err := v.SetAllocation("disable")
+		if err != nil {
+			fmt.Printf("Error setting allocation: %s \n", err)
+			os.Exit(1)
+		}
 		fmt.Printf("Disabling allocation:\n")
 		fmt.Printf("Allocation set to %s\n", response)
 	},
