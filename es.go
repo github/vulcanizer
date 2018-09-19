@@ -13,6 +13,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+//Hold the values for what values are in the cluster.allocation.exclude settings.
+//Relevant Elasticsearch documentation: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/allocation-filtering.html
 type ExcludeSettings struct {
 	Ips, Hosts, Names []string
 }
@@ -55,6 +57,10 @@ type ClusterSettings struct {
 	TransientSettings  []ClusterSetting
 }
 
+//A setting name and value with the setting name to be a "collapsed" version of the setting. A setting of:
+//  { "indices": { "recovery" : { "max_bytes_per_sec": "10mb" } } }
+//would be represented by:
+//  ClusterSetting{ Setting: "indices.recovery.max_bytes_per_sec", Value: "10mb" }
 type ClusterSetting struct {
 	Setting, Value string
 }
@@ -84,6 +90,7 @@ type Snapshot struct {
 	} `json:"failures"`
 }
 
+//Initialize a new vulcanizer client to use.
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
 }
@@ -156,7 +163,7 @@ func (c *Client) buildPutRequest(path string) *gorequest.SuperAgent {
 	return gorequest.New().Put(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
 }
 
-// Get current cluster settings for exclusion
+// Get current cluster settings for shard allocation exclusion rules.
 func (c *Client) GetClusterExcludeSettings() (ExcludeSettings, error) {
 	body, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
 
@@ -170,8 +177,10 @@ func (c *Client) GetClusterExcludeSettings() (ExcludeSettings, error) {
 	return excludeSettings, nil
 }
 
+//Set shard allocation exclusion rules such that the Elasticsearch node with the name `serverToDrain` is excluded. This should cause Elasticsearch to migrate shards away from that node.
+//
+//Use case: You need to restart an Elasticsearch node. In order to do so safely, you should migrate data away from it. Calling `DrainServer` with the node name will move data off of the specified node.
 func (c *Client) DrainServer(serverToDrain string) (ExcludeSettings, error) {
-
 	excludeSettings, err := c.GetClusterExcludeSettings()
 
 	if err != nil {
@@ -193,6 +202,9 @@ func (c *Client) DrainServer(serverToDrain string) (ExcludeSettings, error) {
 	return excludeSettings, nil
 }
 
+//Set shard allocation exclusion rules such that the Elasticsearch node with the name `serverToFill` is no longer being excluded. This should cause Elasticsearch to migrate shards to that node.
+//
+//Use case: You have completed maintenance on an Elasticsearch node and it's ready to hold data again. Calling `FillOneServer` with the node name will remove that node name from the shard exclusion rules and allow data to be relocated onto the node.
 func (c *Client) FillOneServer(serverToFill string) (ExcludeSettings, error) {
 
 	// Get the current list of strings
@@ -223,6 +235,9 @@ func (c *Client) FillOneServer(serverToFill string) (ExcludeSettings, error) {
 	return c.GetClusterExcludeSettings()
 }
 
+//Removes all shard allocation exclusion rules.
+//
+//Use case: You had been performing maintenance on a number of Elasticsearch nodes. They are all ready to receive data again. Calling `FillAll` will remove all the allocation exclusion rules on the cluster, allowing Elasticsearch to freely allocate shards on the previously excluded nodes.
 func (c *Client) FillAll() (ExcludeSettings, error) {
 
 	agent := c.buildPutRequest(clusterSettingsPath).
@@ -240,6 +255,9 @@ func (c *Client) FillAll() (ExcludeSettings, error) {
 	return excludeSettingsFromJson(excludedArray), nil
 }
 
+//Get all the nodes in the cluster.
+//
+//Use case: You want to see what nodes Elasticsearch considers part of the cluster.
 func (c *Client) GetNodes() ([]Node, error) {
 	var nodes []Node
 
@@ -253,6 +271,9 @@ func (c *Client) GetNodes() ([]Node, error) {
 	return nodes, nil
 }
 
+//Get all the indices in the cluster.
+//
+//Use case: You want to see some basic info on all the indices of the cluster.
 func (c *Client) GetIndices() ([]Index, error) {
 	var indices []Index
 	err := handleErrWithStruct(c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count"), &indices)
@@ -264,6 +285,9 @@ func (c *Client) GetIndices() ([]Index, error) {
 	return indices, nil
 }
 
+//Get the health of the cluster.
+//
+//Use case: You want to see information needed to determine if the Elasticsearch cluster is healthy (green) or not (yellow/red).
 func (c *Client) GetHealth() ([]ClusterHealth, error) {
 	var health []ClusterHealth
 	err := handleErrWithStruct(c.buildGetRequest("_cat/health?h=cluster,status,relo,init,unassign,pending_tasks,active_shards_percent"), &health)
@@ -279,6 +303,9 @@ func (c *Client) GetHealth() ([]ClusterHealth, error) {
 	return health, nil
 }
 
+//Get all the persistent and transient cluster settings.
+//
+//Use case: You want to see the current settings in the cluster.
 func (c *Client) GetSettings() (ClusterSettings, error) {
 	clusterSettings := ClusterSettings{}
 	body, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
@@ -306,6 +333,9 @@ func (c *Client) GetSettings() (ClusterSettings, error) {
 	return clusterSettings, nil
 }
 
+//Enables or disables allocation for the cluster.
+//
+//Use case: You are performing an operation the cluster where nodes may be dropping in and out. Elasticsearch will typically try to rebalance immediately but you want the cluster to hold off rebalancing until you complete your task. Calling `SetAllocation("disable")` will disable allocation so Elasticsearch won't move/relocate any shards. Once you complete your task, calling `SetAllocation("enable")` will allow Elasticsearch to relocate shards again.
 func (c *Client) SetAllocation(allocation string) (string, error) {
 
 	var allocationSetting string
@@ -331,6 +361,9 @@ func (c *Client) SetAllocation(allocation string) (string, error) {
 	return allocationVal.String(), nil
 }
 
+//Set a new value for a cluster setting
+//
+//Use case: You've doubled the number of nodes in your cluster and you want to increase the number of shards the cluster can relocate at one time. Calling `SetSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "100")` will update that value with the cluster. Once data relocation is complete you can decrease the setting by calling `SetSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "20")`.
 func (c *Client) SetSetting(setting string, value string) (string, string, error) {
 
 	settingsBody, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
@@ -364,6 +397,9 @@ func (c *Client) SetSetting(setting string, value string) (string, string, error
 	return existingValue, newValue, nil
 }
 
+//List the snapshots of the given repository.
+//
+//Use case: You want to see information on snapshots in a repository.
 func (c *Client) GetSnapshots(repository string) ([]Snapshot, error) {
 
 	var snapshotWrapper snapshotWrapper
@@ -377,6 +413,9 @@ func (c *Client) GetSnapshots(repository string) ([]Snapshot, error) {
 	return snapshotWrapper.Snapshots, nil
 }
 
+//Get detailed information about a particular snapshot.
+//
+//Use case: You had a snapshot fail and you want to see the reason why and what shards/nodes the error occurred on.
 func (c *Client) GetSnapshotStatus(repository string, snapshot string) (Snapshot, error) {
 
 	var snapshotWrapper snapshotWrapper
