@@ -48,14 +48,10 @@ Flags:
 Use "vulcanizer [command] --help" for more information about a command.
 ```
 
-#### Commands to be implemented
+#### Roadmap and future releases
 
-* Listing repositories
-* Verifying repositories
-* Taking snapshots
-* Deleting snapshots
-* Displaying index settings
-* Updating index settings
+The proposed future for vulcanizer can be found in our [ROADMAP](ROADMAP.md).
+
 
 #### Configuration and connection information 
 
@@ -122,7 +118,7 @@ And the test suite should execute correctly.
 
 ### License
 
-This project is released under the [MIT LICENSE](LICENSE). Please note it includes 3rd party dependencies release under their own licenses; these are found under [vendor](https://github.com/github/vulcanizer/tree/master/vendor).
+This project is released under the [MIT LICENSE](LICENSE). Please note it includes 3rd party dependencies release under their own licenses; these are found under [vendor](https://github.com/github/vulcanizer/tree/master/vendor). When using the GitHub logos, be sure to follow the [GitHub logo guidelines](https://github.com/logos).
 
 ### Authors
 
