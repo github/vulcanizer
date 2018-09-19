@@ -20,7 +20,7 @@ Functionality:
 * Enable or disable cluster allocation entirely
 
 
-## v0.2.0 - Proposed
+### v0.2.0 - Proposed
 
 Handle more cases around repositories and snapshots.
 
@@ -30,7 +30,7 @@ Functionality:
 * Create a repository
 * Delete a snapshot
 
-## v0.3.0 - Proposed
+### v0.3.0 - Proposed
 
 Show more information around shard allocation and recovery.
 
@@ -40,7 +40,7 @@ Functionality:
 * Show recovery information in a friendly manner, like percentages and maybe calculate an estimated time
 * Show allocation explain information in a friendly manner
 
-## v0.4.0 - Proposed
+### v0.4.0 - Proposed
 
 Handle more index-related cases.
 
