@@ -19,11 +19,13 @@ type ExcludeSettings struct {
 	Ips, Hosts, Names []string
 }
 
+//Hold connection information to a Elasticsearch cluster.
 type Client struct {
 	Host string
 	Port int
 }
 
+//Holds information about an Elasticsearch node, based on the _cat/nodes API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html
 type Node struct {
 	Name   string `json:"name"`
 	Ip     string `json:"ip"`
@@ -32,6 +34,7 @@ type Node struct {
 	Master string `json:"master"`
 }
 
+//Holds information about an Elasticsearch index, based on the _cat/indices API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-indices.html
 type Index struct {
 	Health        string `json:"health"`
 	Status        string `json:"status"`
@@ -42,6 +45,7 @@ type Index struct {
 	DocumentCount int    `json:"docs.count,string"`
 }
 
+//Holds information about the health of an Elasticsearch cluster, based on the _cat/health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-health.html
 type ClusterHealth struct {
 	Cluster                string `json:"cluster"`
 	Status                 string `json:"status"`
@@ -52,6 +56,7 @@ type ClusterHealth struct {
 	Message                string
 }
 
+//Holds slices for persistent and transient cluster settings.
 type ClusterSettings struct {
 	PersistentSettings []ClusterSetting
 	TransientSettings  []ClusterSetting
@@ -69,6 +74,7 @@ type snapshotWrapper struct {
 	Snapshots []Snapshot `json:"snapshots"`
 }
 
+//Holds information about an Elasticsearch snapshot, based on the snapshot API: https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html
 type Snapshot struct {
 	State          string    `json:"state"`
 	Name           string    `json:"snapshot"`
