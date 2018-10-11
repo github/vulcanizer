@@ -74,6 +74,10 @@ type snapshotWrapper struct {
 	Snapshots []Snapshot `json:"snapshots"`
 }
 
+type acknowledgedResponse struct {
+	Acknowledged bool `json:"acknowledged"`
+}
+
 //Holds information about an Elasticsearch snapshot, based on the snapshot API: https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html
 type Snapshot struct {
 	State          string    `json:"state"`
@@ -167,6 +171,14 @@ func (c *Client) buildGetRequest(path string) *gorequest.SuperAgent {
 
 func (c *Client) buildPutRequest(path string) *gorequest.SuperAgent {
 	return gorequest.New().Put(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
+}
+
+func (c *Client) buildDeleteRequest(path string) *gorequest.SuperAgent {
+	return gorequest.New().Delete(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
+}
+
+func (c *Client) buildPostRequest(path string) *gorequest.SuperAgent {
+	return gorequest.New().Post(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
 }
 
 // Get current cluster settings for shard allocation exclusion rules.
@@ -433,4 +445,37 @@ func (c *Client) GetSnapshotStatus(repository string, snapshot string) (Snapshot
 	}
 
 	return snapshotWrapper.Snapshots[0], nil
+}
+
+//Delete a snapshot
+//
+//Use case: You want to delete older snapshots so that they don't take up extra space.
+func (c *Client) DeleteSnapshot(repository string, snapshot string) error {
+	var response acknowledgedResponse
+
+	err := handleErrWithStruct(c.buildDeleteRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)), &response)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Acknowledged {
+		return fmt.Errorf(`Request to delete snapshot "%s" on respository "%s" was not acknowledged. %+v`, snapshot, repository, response)
+	}
+
+	return nil
+}
+
+//Verify a snapshot repository
+//
+//Use case: Have Elasticsearch verify a repository to make sure that all nodes can access the snapshot location correctly.
+func (c *Client) VerifyRepository(repository string) (bool, error) {
+
+	_, err := handleErrWithBytes(c.buildPostRequest(fmt.Sprintf("_snapshot/%s/_verify", repository)))
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
