@@ -20,15 +20,19 @@ Functionality:
 * Enable or disable cluster allocation entirely
 
 
-### v0.2.0 - Proposed
+## v0.2.0 - [Released](https://github.com/github/vulcanizer/releases/tag/v0.2.0)
 
 Handle more cases around repositories and snapshots.
 
 Functionality:
-* List repositories
 * Verify a repository
-* Create a repository
 * Delete a snapshot
+
+#### v0.2.1 - Proposed
+
+Functionality:
+* List repositories
+* Create a repository
 
 ### v0.3.0 - Proposed
 
