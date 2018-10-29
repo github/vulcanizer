@@ -453,7 +453,7 @@ func (c *Client) GetSnapshotStatus(repository string, snapshot string) (Snapshot
 func (c *Client) DeleteSnapshot(repository string, snapshot string) error {
 	var response acknowledgedResponse
 
-	err := handleErrWithStruct(c.buildDeleteRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)), &response)
+	err := handleErrWithStruct(c.buildDeleteRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).Timeout(10*time.Minute), &response)
 
 	if err != nil {
 		return err
