@@ -659,3 +659,41 @@ func TestGetSnapshotStatus(t *testing.T) {
 		t.Errorf("Unexpected name, got %+v", snapshot)
 	}
 }
+
+func TestDeleteSnapshot(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "DELETE",
+		Path:     "/_snapshot/octocat/snapshot1",
+		Response: `{"acknowledged": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.DeleteSnapshot("octocat", "snapshot1")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+}
+
+func TestVerifyRepository(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/_snapshot/octocat/_verify",
+		Response: `{"nodes":{"YaTBa_BtRmOoz1bHKJeQ8w":{"name":"YaTBa_B"}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	verified, err := client.VerifyRepository("octocat")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if !verified {
+		t.Errorf("Expected repository to be verified, got %v", verified)
+	}
+}
