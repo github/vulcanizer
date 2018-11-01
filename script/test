@@ -10,3 +10,5 @@ then
 else
     go test -v github.com/github/vulcanizer/...
 fi
+
+golangci-lint -v run
