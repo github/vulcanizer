@@ -1,0 +1,9 @@
+docker compose up
+
+write documents
+
+create repository
+
+make snapshot
+
+restore snapshot
