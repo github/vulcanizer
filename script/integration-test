@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+./script/build
+
+cd integration_data/
+docker-compose -f elasticsearch-cluster-v5-compose.yml up -d
+sleep 20
+curl -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@documents.dat"; echo
+
+# Run tests
+go test -v github.com/github/vulcanizer/... -tags integration
+
+docker-compose -f elasticsearch-cluster-v5-compose.yml down
