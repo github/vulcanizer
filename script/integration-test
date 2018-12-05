@@ -3,10 +3,12 @@ set -e
 
 ./script/build
 
-cd integration_data/
+cd integration_data/v5
 docker-compose -f elasticsearch-cluster-v5-compose.yml up -d
-sleep 20
-curl -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@documents.dat"; echo
+sleep 10
+curl --retry 5 --retry-delay 5 --retry-connrefused -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
+curl -XPUT localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
+curl -XPUT localhost:49200/_snapshot/backup-repo/snapshot_1?wait_for_completion=true
 
 # Run tests
 go test -v github.com/github/vulcanizer/... -tags integration

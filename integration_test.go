@@ -39,3 +39,31 @@ func TestIndices(t *testing.T) {
 		t.Fatalf("Expected 10 docs, got: %v", indices[0].DocumentCount)
 	}
 }
+
+func TestVerifyRepository(t *testing.T) {
+	c := vulcanizer.NewClient("localhost", 49200)
+
+	verified, err := c.VerifyRepository("backup-repo")
+
+	if err != nil {
+		t.Fatalf("Error verifying repositories: %s", err)
+	}
+
+	if !verified {
+		t.Fatalf("Expected to backup-repo to be a verified repository")
+	}
+}
+
+func TestGetSnapshotStatus(t *testing.T) {
+	c := vulcanizer.NewClient("localhost", 49200)
+
+	snapshot, err := c.GetSnapshotStatus("backup-repo", "snapshot_1")
+
+	if err != nil {
+		t.Fatalf("Error getting snapshot status: %s", err)
+	}
+
+	if snapshot.State != "SUCCESS" {
+		t.Fatalf("Expected snapshot to be a success: %+v", snapshot)
+	}
+}

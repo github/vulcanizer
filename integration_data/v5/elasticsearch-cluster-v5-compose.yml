@@ -11,6 +11,7 @@ services:
       - cluster.name=vulcanizer-elasticsearch-v5
       - node.name=vulcanizer-elasticsearch-v5
       - bootstrap.memory_lock=true
+      - "path.repo=/backups"
       - "ES_JAVA_OPTS=-Xms512M -Xmx512M"
       - xpack.security.enabled=false
       - xpack.monitoring.enabled=false
@@ -30,6 +31,8 @@ services:
       - 49200:9200
     networks:
       - esnet
+    volumes:
+      - backup-volume:/backups
 
   elasticsearch-v5-2:
     build:
@@ -43,6 +46,7 @@ services:
       - cluster.name=vulcanizer-elasticsearch-v5
       - bootstrap.memory_lock=true
       - node.name=vulcanizer-elasticsearch-v5-2
+      - "path.repo=/backups"
       - "discovery.zen.ping.unicast.hosts=vulcanizer-elasticsearch-v5"
       - "ES_JAVA_OPTS=-Xms512M -Xmx512M"
       - xpack.security.enabled=false
@@ -61,6 +65,11 @@ services:
       - IPC_LOCK
     networks:
       - esnet
+    volumes:
+      - backup-volume:/backups
 
 networks:
     esnet:
+
+volumes:
+  backup-volume:
