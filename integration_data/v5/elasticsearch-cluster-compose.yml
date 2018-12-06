@@ -4,7 +4,7 @@ services:
   elasticsearch-v5:
     build:
       context: .
-      dockerfile: elasticsearch-v5.dockerfile
+      dockerfile: elasticsearch.dockerfile
     image: vulcanizer-elasticsearch:v5
     container_name: vulcanizer-elasticsearch-v5
     environment:

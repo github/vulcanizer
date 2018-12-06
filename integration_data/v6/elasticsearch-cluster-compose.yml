@@ -1,0 +1,75 @@
+version: '3.7'
+
+services:
+  elasticsearch-v6:
+    build:
+      context: .
+      dockerfile: elasticsearch.dockerfile
+    image: vulcanizer-elasticsearch:v6
+    container_name: vulcanizer-elasticsearch-v6
+    environment:
+      - cluster.name=vulcanizer-elasticsearch-v6
+      - node.name=vulcanizer-elasticsearch-v6
+      - bootstrap.memory_lock=true
+      - "path.repo=/backups"
+      - "ES_JAVA_OPTS=-Xms512M -Xmx512M"
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - xpack.ml.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - 49200:9200
+    networks:
+      - esnet
+    volumes:
+      - backup-volume:/backups
+
+  elasticsearch-v6-2:
+    build:
+      context: .
+      dockerfile: elasticsearch-v6.dockerfile
+    image: vulcanizer-elasticsearch:v6
+    depends_on:
+      - "elasticsearch-v6"
+    container_name: vulcanizer-elasticsearch-v6-2
+    environment:
+      - cluster.name=vulcanizer-elasticsearch-v6
+      - bootstrap.memory_lock=true
+      - node.name=vulcanizer-elasticsearch-v6-2
+      - "path.repo=/backups"
+      - "discovery.zen.ping.unicast.hosts=vulcanizer-elasticsearch-v6"
+      - "ES_JAVA_OPTS=-Xms512M -Xmx512M"
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - xpack.ml.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - esnet
+    volumes:
+      - backup-volume:/backups
+
+networks:
+    esnet:
+
+volumes:
+  backup-volume:
