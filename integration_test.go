@@ -54,8 +54,18 @@ func TestVerifyRepository(t *testing.T) {
 	}
 }
 
-func TestGetSnapshotStatus(t *testing.T) {
+func TestSnapshots(t *testing.T) {
 	c := vulcanizer.NewClient("localhost", 49200)
+
+	snapshots, err := c.GetSnapshots("backup-repo")
+
+	if err != nil {
+		t.Fatalf("Error getting snapshots: %s", err)
+	}
+
+	if len(snapshots) != 1 || snapshots[0].Name != "snapshot_1" {
+		t.Fatalf("Did not retreive expected snapshots: %+v", snapshots)
+	}
 
 	snapshot, err := c.GetSnapshotStatus("backup-repo", "snapshot_1")
 
@@ -65,5 +75,19 @@ func TestGetSnapshotStatus(t *testing.T) {
 
 	if snapshot.State != "SUCCESS" {
 		t.Fatalf("Expected snapshot to be a success: %+v", snapshot)
+	}
+
+	err = c.DeleteSnapshot("backup-repo", "snapshot_1")
+	if err != nil {
+		t.Fatalf("Error deleting snapshot: %s", err)
+	}
+
+	snapshots, err = c.GetSnapshots("backup-repo")
+	if err != nil {
+		t.Fatalf("Error getting snapshots after delete: %s", err)
+	}
+
+	if len(snapshots) != 0 {
+		t.Fatalf("Expected 0 snapshots, got: %+v", snapshots)
 	}
 }
