@@ -91,3 +91,27 @@ func TestSnapshots(t *testing.T) {
 		t.Fatalf("Expected 0 snapshots, got: %+v", snapshots)
 	}
 }
+
+func TestAllocations(t *testing.T) {
+	c := vulcanizer.NewClient("localhost", 49200)
+
+	val, err := c.SetAllocation("disable")
+
+	if err != nil {
+		t.Fatalf("Error disabling allocation: %s", err)
+	}
+
+	if val != "none" {
+		t.Fatalf("Expected allocation to be none, got %s", val)
+	}
+
+	val, err = c.SetAllocation("enable")
+
+	if err != nil {
+		t.Fatalf("Error enabling allocation: %s", err)
+	}
+
+	if val != "all" {
+		t.Fatalf("Expected allocation to be all, got %s", val)
+	}
+}
