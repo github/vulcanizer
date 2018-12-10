@@ -89,7 +89,7 @@ vulcanizer nodes --host 10.10.2.1 --port 9202
 
 ### Supported Elasticsearch versions
 
-To be determined
+Integration tests are set up to run against the latest v5 and v6 versions of Elasticsearch.
 
 ### Name
 
