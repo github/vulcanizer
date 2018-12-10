@@ -100,6 +100,13 @@ type Snapshot struct {
 	} `json:"failures"`
 }
 
+//Holds information about an Elasticsearch snapshot repository.
+type Repository struct {
+	Name     string
+	Type     string
+	Settings map[string]interface{}
+}
+
 //Initialize a new vulcanizer client to use.
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
@@ -478,4 +485,25 @@ func (c *Client) VerifyRepository(repository string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+//List snapshot respositories on the cluster
+//
+//Use case: Get the names and settings of all the snapshot repositories that are configured on the cluster.
+func (c *Client) ListRepositories() ([]Repository, error) {
+	return []Repository{}, nil
+}
+
+//List snapshot respositories on the cluster
+//
+//Use case: Get the names and settings of all the snapshot repositories that are configured on the cluster.
+func (c *Client) TakeSnapshot(repository string, snapshot string) error {
+	return nil
+}
+
+//Restore an index on the cluster
+//
+//Use case: Restore a single index on the cluster.
+func (c *Client) RestoreIndex(repository, snapshot, index, restoredIndex string) error {
+	return nil
 }
