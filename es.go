@@ -487,23 +487,49 @@ func (c *Client) VerifyRepository(repository string) (bool, error) {
 	return true, nil
 }
 
-//List snapshot respositories on the cluster
-//
-//Use case: Get the names and settings of all the snapshot repositories that are configured on the cluster.
-func (c *Client) ListRepositories() ([]Repository, error) {
-	return []Repository{}, nil
+type repo struct {
+	Type     string                 `json:"type"`
+	Settings map[string]interface{} `json:"settings"`
 }
 
 //List snapshot respositories on the cluster
 //
-//Use case: Get the names and settings of all the snapshot repositories that are configured on the cluster.
+//Use case: You want to see all of the configured backup repositories on the given cluster, what types they are and if they are verified.
+func (c *Client) ListRepositories() ([]Repository, error) {
+
+	var repos map[string]repo
+	var repositories []Repository
+
+	err := handleErrWithStruct(c.buildGetRequest("_snapshot/_all"), &repos)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for name, r := range repos {
+		// Sanitize AWS secrets if they exist in the settings
+		delete(r.Settings, "access_key")
+		delete(r.Settings, "secret_key")
+		repositories = append(repositories, Repository{
+			Name:     name,
+			Type:     r.Type,
+			Settings: r.Settings,
+		})
+	}
+
+	return repositories, nil
+}
+
+//Take a snapshot on the cluster to the given repository
+//
+//Use case: You want to backup all of the indices on the cluster to the given repository.
 func (c *Client) TakeSnapshot(repository string, snapshot string) error {
 	return nil
 }
 
 //Restore an index on the cluster
 //
-//Use case: Restore a single index on the cluster.
+//Use case: You want to restore a particular index onto your cluster with a new name.
 func (c *Client) RestoreIndex(repository, snapshot, index, restoredIndex string) error {
 	return nil
 }

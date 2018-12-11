@@ -697,3 +697,48 @@ func TestVerifyRepository(t *testing.T) {
 		t.Errorf("Expected repository to be verified, got %v", verified)
 	}
 }
+
+func TestListRepositories(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method: "GET",
+		Path:   "/_snapshot/_all",
+		Response: `{
+			"fileSystemRepo": { "type": "fs", "settings": { "location": "/foo/bar" } },
+			"s3Repo": { "type": "s3", "settings": { "bucket": "myBucket", "base_path": "foo", "access_key": "access", "secret_key": "secret" } }
+}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	repos, err := client.ListRepositories()
+
+	if err != nil {
+		t.Fatalf("Got error getting repositories: %s", err)
+	}
+
+	if len(repos) != 2 {
+		t.Fatalf("Expected two repositories, got %d", len(repos))
+	}
+
+	fsRepo := repos[0]
+
+	if fsRepo.Name != "fileSystemRepo" || fsRepo.Type != "fs" || fsRepo.Settings["location"] != "/foo/bar" {
+		t.Fatalf("Unexpected fs repo settings, got: %+v", fsRepo)
+	}
+
+	s3Repo := repos[1]
+
+	if s3Repo.Name != "s3Repo" || s3Repo.Type != "s3" || s3Repo.Settings["bucket"] != "myBucket" {
+		t.Fatalf("Unexpected s3 repo settings, got: %+v", s3Repo)
+	}
+
+	if _, exists := s3Repo.Settings["access_key"]; exists {
+		t.Fatalf("Expected access_key to be scrubbed from s3Repo.")
+	}
+
+	if _, exists := s3Repo.Settings["secret_key"]; exists {
+		t.Fatalf("Expected secret_key to be scrubbed from s3Repo.")
+	}
+}
