@@ -30,9 +30,9 @@ services:
     ports:
       - 49200:9200
     networks:
-      - esnet
+      - vulcanizer-esnet
     volumes:
-      - backup-volume:/backups
+      - vulcanizer-backup-volume:/backups
 
   elasticsearch-v5-2:
     build:
@@ -64,12 +64,12 @@ services:
     cap_add:
       - IPC_LOCK
     networks:
-      - esnet
+      - vulcanizer-esnet
     volumes:
-      - backup-volume:/backups
+      - vulcanizer-backup-volume:/backups
 
 networks:
-    esnet:
+  vulcanizer-esnet:
 
 volumes:
-  backup-volume:
+  vulcanizer-backup-volume:
