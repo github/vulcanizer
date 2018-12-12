@@ -698,7 +698,7 @@ func TestVerifyRepository(t *testing.T) {
 	}
 }
 
-func TestListRepositories(t *testing.T) {
+func TestGetRepositories(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method: "GET",
 		Path:   "/_snapshot/_all",
@@ -712,7 +712,7 @@ func TestListRepositories(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	repos, err := client.ListRepositories()
+	repos, err := client.GetRepositories()
 
 	if err != nil {
 		t.Fatalf("Got error getting repositories: %s", err)
@@ -722,13 +722,19 @@ func TestListRepositories(t *testing.T) {
 		t.Fatalf("Expected two repositories, got %d", len(repos))
 	}
 
-	fsRepo := repos[0]
+	var fsRepo, s3Repo Repository
+
+	for _, r := range repos {
+		if r.Type == "fs" {
+			fsRepo = r
+		} else if r.Type == "s3" {
+			s3Repo = r
+		}
+	}
 
 	if fsRepo.Name != "fileSystemRepo" || fsRepo.Type != "fs" || fsRepo.Settings["location"] != "/foo/bar" {
 		t.Fatalf("Unexpected fs repo settings, got: %+v", fsRepo)
 	}
-
-	s3Repo := repos[1]
 
 	if s3Repo.Name != "s3Repo" || s3Repo.Type != "s3" || s3Repo.Settings["bucket"] != "myBucket" {
 		t.Fatalf("Unexpected s3 repo settings, got: %+v", s3Repo)

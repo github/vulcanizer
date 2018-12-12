@@ -495,7 +495,7 @@ type repo struct {
 //List snapshot respositories on the cluster
 //
 //Use case: You want to see all of the configured backup repositories on the given cluster, what types they are and if they are verified.
-func (c *Client) ListRepositories() ([]Repository, error) {
+func (c *Client) GetRepositories() ([]Repository, error) {
 
 	var repos map[string]repo
 	var repositories []Repository

@@ -57,6 +57,19 @@ func TestVerifyRepository(t *testing.T) {
 func TestSnapshots(t *testing.T) {
 	c := vulcanizer.NewClient("localhost", 49200)
 
+	repos, err := c.GetRepositories()
+	if err != nil {
+		t.Fatalf("Error getting repositories: %s", err)
+	}
+
+	if len(repos) != 1 {
+		t.Fatalf("Expected 1 repository, got: %+v", repos)
+	}
+
+	if repos[0].Name != "backup-repo" || repos[0].Type != "fs" {
+		t.Fatalf("Unexpected repository values, got: %+v", repos[0])
+	}
+
 	snapshots, err := c.GetSnapshots("backup-repo")
 
 	if err != nil {
