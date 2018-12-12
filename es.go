@@ -520,11 +520,47 @@ func (c *Client) GetRepositories() ([]Repository, error) {
 	return repositories, nil
 }
 
-//Take a snapshot on the cluster to the given repository
+//Take a snapshot of specific indices on the cluster to the given repository
+//
+//Use case: You want to backup certain indices on the cluster to the given repository.
+func (c *Client) SnapshotIndices(repository string, snapshot string, indices []string) error {
+	if repository == "" {
+		return fmt.Errorf("Empty string for repository is not allowed.")
+	}
+
+	if snapshot == "" {
+		return fmt.Errorf("Empty string for snapshot is not allowed.")
+	}
+
+	if len(indices) == 0 {
+		return fmt.Errorf("No indices provided to snapshot.")
+	}
+
+	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).
+		Set("Content-Type", "application/json").
+		Send(fmt.Sprintf(`{"indices" : "%s"}`, strings.Join(indices, ",")))
+
+	_, err := handleErrWithBytes(agent)
+
+	return err
+}
+
+//Take a snapshot of all indices on the cluster to the given repository
 //
 //Use case: You want to backup all of the indices on the cluster to the given repository.
-func (c *Client) TakeSnapshot(repository string, snapshot string) error {
-	return nil
+func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
+	if repository == "" {
+		return fmt.Errorf("Empty string for repository is not allowed.")
+	}
+
+	if snapshot == "" {
+		return fmt.Errorf("Empty string for snapshot is not allowed.")
+	}
+
+	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot))
+	_, err := handleErrWithBytes(agent)
+
+	return err
 }
 
 //Restore an index on the cluster
