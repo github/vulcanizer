@@ -24,8 +24,38 @@ func init() {
 		fmt.Printf("Error binding repository configuration flag: %s \n", err)
 		os.Exit(1)
 	}
-
 	cmdSnapshot.AddCommand(cmdSnapshotStatus)
+
+	cmdSnapshotRestore.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
+	err = cmdSnapshotRestore.MarkFlagRequired("snapshot")
+	if err != nil {
+		fmt.Printf("Error binding snapshot configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshotRestore.Flags().StringP("repository", "r", "", "Snapshot repository to query (required)")
+	err = cmdSnapshotRestore.MarkFlagRequired("repository")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshotRestore.Flags().StringP("prefix", "", "restored_", "What to prefix on the restored index")
+	err = cmdSnapshotRestore.MarkFlagRequired("prefix")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshotRestore.Flags().StringP("index", "i", "", "Which index to restore from the snapshot")
+	err = cmdSnapshotRestore.MarkFlagRequired("index")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshot.AddCommand(cmdSnapshotRestore)
+
 	rootCmd.AddCommand(cmdSnapshot)
 }
 
@@ -74,5 +104,47 @@ var cmdSnapshotStatus = &cobra.Command{
 		}
 
 		fmt.Println(renderTable(results, []string{"Metric", "Value"}))
+	},
+}
+
+var cmdSnapshotRestore = &cobra.Command{
+	Use:   "restore",
+	Short: "Restore a snapshot.",
+	Long:  `This command will restore a specific index from a snapshot to the cluster.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
+
+		snapshotName, err := cmd.Flags().GetString("snapshot")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: snapshot. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		repository, err := cmd.Flags().GetString("repository")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: repository. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		prefix, err := cmd.Flags().GetString("prefix")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: prefix. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		index, err := cmd.Flags().GetString("index")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: index. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		err = v.RestoreSnapshotIndices(repository, snapshotName, []string{index}, prefix)
+		if err != nil {
+			fmt.Printf("Error while calling restore snapshot API. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Restore operation called successfully.")
 	},
 }
