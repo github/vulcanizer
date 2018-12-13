@@ -1,0 +1,17 @@
+# http://docs.travis-ci.com/user/languages/go/
+language: go
+
+go: 1.9
+
+os:
+    - linux
+
+env:
+  - YOUR_VAR=your_value
+
+install: true
+
+script: script/test
+
+notifications:
+    email: fals
