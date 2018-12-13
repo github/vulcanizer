@@ -14,6 +14,7 @@ func init() {
 	setupStatusSubCommand()
 	setupRestoreSubCommand()
 	setupListSubCommand()
+	setupCreateSubCommand()
 
 	rootCmd.AddCommand(cmdSnapshot)
 }
@@ -39,6 +40,28 @@ func setupStatusSubCommand() {
 		os.Exit(1)
 	}
 	cmdSnapshot.AddCommand(cmdSnapshotStatus)
+}
+
+func setupCreateSubCommand() {
+	cmdSnapshotCreate.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
+	err := cmdSnapshotCreate.MarkFlagRequired("snapshot")
+	if err != nil {
+		fmt.Printf("Error binding snapshot configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshotCreate.Flags().StringP("repository", "r", "", "Snapshot repository to query (required)")
+	err = cmdSnapshotCreate.MarkFlagRequired("repository")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshotCreate.Flags().BoolP("all-indices", "a", false, "Snapshot all indices on the cluster. Takes precedence over index arguments.")
+
+	cmdSnapshotCreate.Flags().StringSliceP("index", "i", []string{}, "Snapshot specific indices on the cluster. Can be repeated.")
+
+	cmdSnapshot.AddCommand(cmdSnapshotCreate)
 }
 
 func setupListSubCommand() {
@@ -206,5 +229,61 @@ var cmdSnapshotList = &cobra.Command{
 		}
 
 		fmt.Println(renderTable(rows, header))
+	},
+}
+
+var cmdSnapshotCreate = &cobra.Command{
+	Use:   "create",
+	Short: "Create a new snapshot.",
+	Long:  `This command will take a new snapshot of the data of either all or specified indices.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
+
+		snapshotName, err := cmd.Flags().GetString("snapshot")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: snapshot. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		repository, err := cmd.Flags().GetString("repository")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: repository. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		allIndices, err := cmd.Flags().GetBool("all-indices")
+		if err != nil {
+			fmt.Printf("Could not retrieve argument: all-indices. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		indices, err := cmd.Flags().GetStringSlice("index")
+		if err != nil {
+			fmt.Printf("Could not retrieve argument: index. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		if allIndices {
+			err = v.SnapshotAllIndices(repository, snapshotName)
+			if err != nil {
+				fmt.Printf("Error while taking snapshot. Error: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Snapshot operation started.")
+		} else {
+			if len(indices) == 0 {
+				fmt.Printf("Got 0 indices to snapshot. Please specify indices with `--index` or all indices with `--all-indices`.\n")
+				os.Exit(1)
+			}
+
+			err = v.SnapshotIndices(repository, snapshotName, indices)
+			if err != nil {
+				fmt.Printf("Error while taking snapshot. Error: %s\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Println("Snapshot operation started.")
+		}
 	},
 }
