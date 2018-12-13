@@ -43,14 +43,14 @@ func init() {
 	cmdSnapshotRestore.Flags().StringP("prefix", "", "restored_", "What to prefix on the restored index")
 	err = cmdSnapshotRestore.MarkFlagRequired("prefix")
 	if err != nil {
-		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		fmt.Printf("Error binding prefix configuration flag: %s \n", err)
 		os.Exit(1)
 	}
 
 	cmdSnapshotRestore.Flags().StringP("index", "i", "", "Which index to restore from the snapshot")
 	err = cmdSnapshotRestore.MarkFlagRequired("index")
 	if err != nil {
-		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		fmt.Printf("Error binding index configuration flag: %s \n", err)
 		os.Exit(1)
 	}
 
