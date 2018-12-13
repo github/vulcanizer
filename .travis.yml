@@ -14,4 +14,4 @@ install: true
 script: script/test
 
 notifications:
-    email: fals
+    email: false
