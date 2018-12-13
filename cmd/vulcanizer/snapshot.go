@@ -18,6 +18,12 @@ func init() {
 	rootCmd.AddCommand(cmdSnapshot)
 }
 
+var cmdSnapshot = &cobra.Command{
+	Use:   "snapshot",
+	Short: "Interact with a specific snapshot.",
+	Long:  `Use the status, list, and restore subcommands.`,
+}
+
 func setupStatusSubCommand() {
 	cmdSnapshotStatus.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
 	err := cmdSnapshotStatus.MarkFlagRequired("snapshot")
@@ -75,12 +81,6 @@ func setupRestoreSubCommand() {
 	}
 
 	cmdSnapshot.AddCommand(cmdSnapshotRestore)
-}
-
-var cmdSnapshot = &cobra.Command{
-	Use:   "snapshot",
-	Short: "Interact with a specific snapshot.",
-	Long:  `Use the status subcommand to show detailed information about a snapshot.`,
 }
 
 var cmdSnapshotStatus = &cobra.Command{
