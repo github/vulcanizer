@@ -231,7 +231,7 @@ func TestGetNodes(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
 		Path:     "/_cat/nodes",
-		Response: `[{"master": "*", "role": "d", "name": "foo", "ip": "127.0.0.1", "id": "abc"}]`,
+		Response: `[{"master": "*", "role": "d", "name": "foo", "ip": "127.0.0.1", "id": "abc", "jdk": "1.8"}]`,
 	}
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
