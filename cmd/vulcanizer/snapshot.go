@@ -11,6 +11,14 @@ import (
 )
 
 func init() {
+	setupStatusSubCommand()
+	setupRestoreSubCommand()
+	setupListSubCommand()
+
+	rootCmd.AddCommand(cmdSnapshot)
+}
+
+func setupStatusSubCommand() {
 	cmdSnapshotStatus.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
 	err := cmdSnapshotStatus.MarkFlagRequired("snapshot")
 	if err != nil {
@@ -25,9 +33,21 @@ func init() {
 		os.Exit(1)
 	}
 	cmdSnapshot.AddCommand(cmdSnapshotStatus)
+}
 
+func setupListSubCommand() {
+	cmdSnapshotList.Flags().StringP("repository", "r", "", "Snapshot repository to query (required)")
+	err := cmdSnapshotList.MarkFlagRequired("repository")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+	cmdSnapshot.AddCommand(cmdSnapshotList)
+}
+
+func setupRestoreSubCommand() {
 	cmdSnapshotRestore.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
-	err = cmdSnapshotRestore.MarkFlagRequired("snapshot")
+	err := cmdSnapshotRestore.MarkFlagRequired("snapshot")
 	if err != nil {
 		fmt.Printf("Error binding snapshot configuration flag: %s \n", err)
 		os.Exit(1)
@@ -55,8 +75,6 @@ func init() {
 	}
 
 	cmdSnapshot.AddCommand(cmdSnapshotRestore)
-
-	rootCmd.AddCommand(cmdSnapshot)
 }
 
 var cmdSnapshot = &cobra.Command{
@@ -146,5 +164,47 @@ var cmdSnapshotRestore = &cobra.Command{
 		}
 
 		fmt.Println("Restore operation called successfully.")
+	},
+}
+
+var cmdSnapshotList = &cobra.Command{
+	Use:   "list",
+	Short: "Display the snapshots of the cluster.",
+	Long:  `List the 10 most recent snapshots of the given repository`,
+	Run: func(cmd *cobra.Command, args []string) {
+		host, port := getConfiguration()
+		v := vulcanizer.NewClient(host, port)
+
+		repository, err := cmd.Flags().GetString("repository")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: repository. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		snapshots, err := v.GetSnapshots(repository)
+		if err != nil {
+			fmt.Printf("Could not query snapshots. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		header := []string{"State", "Name", "Finished", "Duration"}
+
+		if len(snapshots) > 10 {
+			snapshots = snapshots[len(snapshots)-10:]
+		}
+
+		rows := [][]string{}
+		for _, snapshot := range snapshots {
+			duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.DurationMillis))
+			row := []string{
+				snapshot.State,
+				snapshot.Name,
+				snapshot.EndTime.Format(time.RFC3339),
+				fmt.Sprintf("%v", duration),
+			}
+			rows = append(rows, row)
+		}
+
+		fmt.Println(renderTable(rows, header))
 	},
 }

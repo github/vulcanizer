@@ -36,7 +36,6 @@ Available Commands:
   setting     Interact with cluster settings.
   settings    Display all the settings of the cluster.
   snapshot    Interact with a specific snapshot.
-  snapshots   Display the snapshots of the cluster.
 
 Flags:
   -c, --cluster string      Cluster to connect to defined in config file
