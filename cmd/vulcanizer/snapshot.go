@@ -112,13 +112,13 @@ var cmdSnapshotStatus = &cobra.Command{
 		duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.DurationMillis))
 
 		results := [][]string{
-			[]string{"State", snapshot.State},
-			[]string{"Name", snapshot.Name},
-			[]string{"Indices", strings.Join(snapshot.Indices, ", ")},
-			[]string{"Started", snapshot.StartTime.Format(time.RFC3339)},
-			[]string{"Finished", snapshot.EndTime.Format(time.RFC3339)},
-			[]string{"Duration", fmt.Sprintf("%v", duration)},
-			[]string{"Shards", fmt.Sprintf("Successful shards: %d, failed shards: %d", snapshot.Shards.Successful, snapshot.Shards.Failed)},
+			{"State", snapshot.State},
+			{"Name", snapshot.Name},
+			{"Indices", strings.Join(snapshot.Indices, ", ")},
+			{"Started", snapshot.StartTime.Format(time.RFC3339)},
+			{"Finished", snapshot.EndTime.Format(time.RFC3339)},
+			{"Duration", fmt.Sprintf("%v", duration)},
+			{"Shards", fmt.Sprintf("Successful shards: %d, failed shards: %d", snapshot.Shards.Successful, snapshot.Shards.Failed)},
 		}
 
 		fmt.Println(renderTable(results, []string{"Metric", "Value"}))
