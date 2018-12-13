@@ -78,7 +78,7 @@ func TestSnapshots(t *testing.T) {
 	}
 
 	if len(snapshots) != 1 || snapshots[0].Name != "snapshot_1" {
-		t.Fatalf("Did not retreive expected snapshots: %+v", snapshots)
+		t.Fatalf("Did not retrieve expected snapshots: %+v", snapshots)
 	}
 
 	snapshot, err := c.GetSnapshotStatus("backup-repo", "snapshot_1")

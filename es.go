@@ -467,7 +467,7 @@ func (c *Client) DeleteSnapshot(repository string, snapshot string) error {
 	}
 
 	if !response.Acknowledged {
-		return fmt.Errorf(`Request to delete snapshot "%s" on respository "%s" was not acknowledged. %+v`, snapshot, repository, response)
+		return fmt.Errorf(`Request to delete snapshot "%s" on repository "%s" was not acknowledged. %+v`, snapshot, repository, response)
 	}
 
 	return nil
