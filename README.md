@@ -1,5 +1,8 @@
 # vulcanizer
+
 GitHub's ops focused Elasticsearch library
+
+[![GoDoc](https://godoc.org/github.com/github/vulcanizer?status.svg)](https://godoc.org/github.com/github/vulcanizer)
 
 This project is a golang library for interacting with an Elasticsearch cluster. It's goal is to provide a high level API to help with common tasks that are associated with operating an Elasticsearch cluster such as querying health status of the cluster, migrating data off of nodes, updating cluster settings, etc.
 
