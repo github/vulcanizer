@@ -12,7 +12,7 @@ This project does not aim to be a fully-featured API client for querying or inde
 
 You can perform custom operations in your Go application.
 
-```
+```go
 import "github.com/github/vulcanizer"
 
 v = vulcanizer.NewClient("localhost", 9200)
@@ -60,7 +60,7 @@ The proposed future for vulcanizer can be found in our [ROADMAP](ROADMAP.md).
 
 All commands take `--cluster <name>` to look up information in a configuration file in `~/.vulcanizer.yaml`. The configuration should be in the form of 
 
-```
+```yml
 local:
   host: localhost
   port: 9200
