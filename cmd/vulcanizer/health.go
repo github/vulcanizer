@@ -27,22 +27,20 @@ var cmdHealth = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Println(health[0].Message)
+		fmt.Println(health.Message)
 
 		header := []string{"Cluster", "Status", "Relocating", "Initializing", "Unassigned", "Active %"}
 		rows := [][]string{}
-		for _, cluster := range health {
-			row := []string{
-				cluster.Cluster,
-				cluster.Status,
-				strconv.Itoa(cluster.RelocatingShards),
-				strconv.Itoa(cluster.InitializingShards),
-				strconv.Itoa(cluster.UnassignedShards),
-				cluster.ActiveShardsPercentage,
-			}
-
-			rows = append(rows, row)
+		row := []string{
+			health.Cluster,
+			health.Status,
+			strconv.Itoa(health.RelocatingShards),
+			strconv.Itoa(health.InitializingShards),
+			strconv.Itoa(health.UnassignedShards),
+			strconv.Itoa(health.UnassignedShards),
+			strconv.FormatFloat(health.ActiveShardsPercentage, 'f', -1, 32),
 		}
+		rows = append(rows, row)
 
 		fmt.Println(renderTable(rows, header))
 	},

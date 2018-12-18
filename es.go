@@ -46,15 +46,29 @@ type Index struct {
 	DocumentCount int    `json:"docs.count,string"`
 }
 
-//Holds information about the health of an Elasticsearch cluster, based on the _cat/health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-health.html
+//Holds information about the health of an Elasticsearch cluster, based on the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
 type ClusterHealth struct {
-	Cluster                string `json:"cluster"`
-	Status                 string `json:"status"`
-	RelocatingShards       int    `json:"relo,string"`
-	InitializingShards     int    `json:"init,string"`
-	UnassignedShards       int    `json:"unassign,string"`
-	ActiveShardsPercentage string `json:"active_shards_percent"`
+	Cluster                string  `json:"cluster_name"`
+	Status                 string  `json:"status"`
+	ActiveShards           int     `json:"active_shards"`
+	RelocatingShards       int     `json:"relocating_shards"`
+	InitializingShards     int     `json:"initializing_shards"`
+	UnassignedShards       int     `json:"unassigned_shards"`
+	ActiveShardsPercentage float64 `json:"active_shards_percent_as_number"`
 	Message                string
+	RawIndices             map[string]IndexHealth `json:"indices"`
+	HealthyIndices         []IndexHealth
+	UnhealthyIndices       []IndexHealth
+}
+
+//Holds information about the health of an Elasticsearch index, based on the index level of the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
+type IndexHealth struct {
+	Name               string
+	Status             string `json:"status"`
+	ActiveShards       int    `json:"active_shards"`
+	RelocatingShards   int    `json:"relocating_shards"`
+	InitializingShards int    `json:"initializing_shards"`
+	UnassignedShards   int    `json:"unassigned_shards"`
 }
 
 //Holds slices for persistent and transient cluster settings.
@@ -307,17 +321,24 @@ func (c *Client) GetIndices() ([]Index, error) {
 //Get the health of the cluster.
 //
 //Use case: You want to see information needed to determine if the Elasticsearch cluster is healthy (green) or not (yellow/red).
-func (c *Client) GetHealth() ([]ClusterHealth, error) {
-	var health []ClusterHealth
-	err := handleErrWithStruct(c.buildGetRequest("_cat/health?h=cluster,status,relo,init,unassign,pending_tasks,active_shards_percent"), &health)
-
+func (c *Client) GetHealth() (ClusterHealth, error) {
+	var health ClusterHealth
+	err := handleErrWithStruct(c.buildGetRequest("_cluster/health?level=indices"), &health)
 	if err != nil {
-		return nil, err
+		return ClusterHealth{}, err
 	}
 
-	for i := range health {
-		health[i].Message = captionHealth(health[i].Status)
+	for indexName, index := range health.RawIndices {
+		index.Name = indexName
+
+		if index.Status == "green" {
+			health.HealthyIndices = append(health.HealthyIndices, index)
+		} else {
+			health.UnhealthyIndices = append(health.UnhealthyIndices, index)
+		}
 	}
+
+	health.Message = captionHealth(health)
 
 	return health, nil
 }
