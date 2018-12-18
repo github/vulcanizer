@@ -697,3 +697,233 @@ func TestVerifyRepository(t *testing.T) {
 		t.Errorf("Expected repository to be verified, got %v", verified)
 	}
 }
+
+func TestGetRepositories(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method: "GET",
+		Path:   "/_snapshot/_all",
+		Response: `{
+			"fileSystemRepo": { "type": "fs", "settings": { "location": "/foo/bar" } },
+			"s3Repo": { "type": "s3", "settings": { "bucket": "myBucket", "base_path": "foo", "access_key": "access", "secret_key": "secret" } }
+}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	repos, err := client.GetRepositories()
+
+	if err != nil {
+		t.Fatalf("Got error getting repositories: %s", err)
+	}
+
+	if len(repos) != 2 {
+		t.Fatalf("Expected two repositories, got %d", len(repos))
+	}
+
+	var fsRepo, s3Repo Repository
+
+	for _, r := range repos {
+		if r.Type == "fs" {
+			fsRepo = r
+		} else if r.Type == "s3" {
+			s3Repo = r
+		}
+	}
+
+	if fsRepo.Name != "fileSystemRepo" || fsRepo.Type != "fs" || fsRepo.Settings["location"] != "/foo/bar" {
+		t.Fatalf("Unexpected fs repo settings, got: %+v", fsRepo)
+	}
+
+	if s3Repo.Name != "s3Repo" || s3Repo.Type != "s3" || s3Repo.Settings["bucket"] != "myBucket" {
+		t.Fatalf("Unexpected s3 repo settings, got: %+v", s3Repo)
+	}
+
+	if _, exists := s3Repo.Settings["access_key"]; exists {
+		t.Fatalf("Expected access_key to be scrubbed from s3Repo.")
+	}
+
+	if _, exists := s3Repo.Settings["secret_key"]; exists {
+		t.Fatalf("Expected secret_key to be scrubbed from s3Repo.")
+	}
+}
+
+func TestSnapshotIndices_ErrorConditions(t *testing.T) {
+
+	tt := []struct {
+		Name        string
+		Repository  string
+		Snapshot    string
+		Indices     []string
+		ExpectError bool
+	}{
+		{
+			Name:        "Do not allow blank repository",
+			Repository:  "",
+			Snapshot:    "snapshot1",
+			Indices:     []string{"index1"},
+			ExpectError: true,
+		},
+		{
+			Name:        "Do not allow blank snapshot name",
+			Repository:  "backup",
+			Snapshot:    "",
+			Indices:     []string{"index1"},
+			ExpectError: true,
+		},
+		{
+			Name:        "Do not allow empty indices",
+			Repository:  "backup",
+			Snapshot:    "snapshot1",
+			Indices:     []string{},
+			ExpectError: true,
+		},
+	}
+	client := &Client{}
+
+	for _, test := range tt {
+		t.Run(test.Name, func(st *testing.T) {
+			err := client.SnapshotIndices(test.Repository, test.Snapshot, test.Indices)
+
+			if err == nil && test.ExpectError {
+				st.Errorf("Expected error for test values %+v", test)
+			}
+
+			if err != nil && !test.ExpectError {
+				st.Errorf("Expected no error for test values. Got error %s for test  %+v", err, test)
+			}
+		})
+	}
+}
+
+func TestSnapshotAllIndices_ErrorConditions(t *testing.T) {
+
+	tt := []struct {
+		Name        string
+		Repository  string
+		Snapshot    string
+		ExpectError bool
+	}{
+		{
+			Name:        "Do not allow blank repository",
+			Repository:  "",
+			Snapshot:    "snapshot1",
+			ExpectError: true,
+		},
+		{
+			Name:        "Do not allow blank snapshot name",
+			Repository:  "backup",
+			Snapshot:    "",
+			ExpectError: true,
+		},
+	}
+	client := &Client{}
+
+	for _, test := range tt {
+		t.Run(test.Name, func(st *testing.T) {
+			err := client.SnapshotAllIndices(test.Repository, test.Snapshot)
+
+			if err == nil && test.ExpectError {
+				st.Errorf("Expected error for test values %+v", test)
+			}
+
+			if err != nil && !test.ExpectError {
+				st.Errorf("Expected no error for test values. Got error %s for test  %+v", err, test)
+			}
+		})
+	}
+}
+
+func TestSnapshotIndices(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/_snapshot/backup-repo/snapshot1",
+		Body:     `{"indices":"index1,index2"}`,
+		Response: `{"acknowledged": true }`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.SnapshotIndices("backup-repo", "snapshot1", []string{"index1", "index2"})
+
+	if err != nil {
+		t.Fatalf("Got error taking snapshot: %s", err)
+	}
+}
+
+func TestSnapshotAllIndices(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/_snapshot/backup-repo/snapshot1",
+		Response: `{"acknowledged": true }`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.SnapshotAllIndices("backup-repo", "snapshot1")
+
+	if err != nil {
+		t.Fatalf("Got error taking snapshot: %s", err)
+	}
+}
+
+func TestRestoreSnapshotIndices_ErrorConditions(t *testing.T) {
+	tt := []struct {
+		Name        string
+		Repository  string
+		Snapshot    string
+		ExpectError bool
+	}{
+		{
+			Name:        "Do not allow blank repository",
+			Repository:  "",
+			Snapshot:    "snapshot1",
+			ExpectError: true,
+		},
+		{
+			Name:        "Do not allow blank snapshot name",
+			Repository:  "backup",
+			Snapshot:    "",
+			ExpectError: true,
+		},
+	}
+	client := &Client{}
+
+	for _, test := range tt {
+		t.Run(test.Name, func(st *testing.T) {
+			err := client.RestoreSnapshotIndices(test.Repository, test.Snapshot, []string{}, "")
+
+			if err == nil && test.ExpectError {
+				st.Errorf("Expected error for test values %+v", test)
+			}
+
+			if err != nil && !test.ExpectError {
+				st.Errorf("Expected no error for test values. Got error %s for test  %+v", err, test)
+			}
+		})
+	}
+}
+
+func TestRestoreSnapshotIndices(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/_snapshot/backup-repo/snapshot1/_restore",
+		Body:     `{"indices":"index1,index2","rename_pattern":"(.+)","rename_replacement":"restored_$1"}`,
+		Response: `{"acknowledged": true }`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.RestoreSnapshotIndices("backup-repo", "snapshot1", []string{"index1", "index2"}, "restored_")
+
+	if err != nil {
+		t.Fatalf("Got error taking snapshot: %s", err)
+	}
+}

@@ -36,10 +36,10 @@ Available Commands:
   help        Help about any command
   indices     Display the indices of the cluster.
   nodes       Display the nodes of the cluster.
+  repository  Interact with the configured snapshot repositories.
   setting     Interact with cluster settings.
   settings    Display all the settings of the cluster.
   snapshot    Interact with a specific snapshot.
-  snapshots   Display the snapshots of the cluster.
 
 Flags:
   -c, --cluster string      Cluster to connect to defined in config file

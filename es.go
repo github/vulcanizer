@@ -101,6 +101,13 @@ type Snapshot struct {
 	} `json:"failures"`
 }
 
+//Holds information about an Elasticsearch snapshot repository.
+type Repository struct {
+	Name     string
+	Type     string
+	Settings map[string]interface{}
+}
+
 //Initialize a new vulcanizer client to use.
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
@@ -461,7 +468,7 @@ func (c *Client) DeleteSnapshot(repository string, snapshot string) error {
 	}
 
 	if !response.Acknowledged {
-		return fmt.Errorf(`Request to delete snapshot "%s" on respository "%s" was not acknowledged. %+v`, snapshot, repository, response)
+		return fmt.Errorf(`Request to delete snapshot "%s" on repository "%s" was not acknowledged. %+v`, snapshot, repository, response)
 	}
 
 	return nil
@@ -479,4 +486,101 @@ func (c *Client) VerifyRepository(repository string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+type repo struct {
+	Type     string                 `json:"type"`
+	Settings map[string]interface{} `json:"settings"`
+}
+
+//List snapshot respositories on the cluster
+//
+//Use case: You want to see all of the configured backup repositories on the given cluster, what types they are and if they are verified.
+func (c *Client) GetRepositories() ([]Repository, error) {
+
+	var repos map[string]repo
+	var repositories []Repository
+
+	err := handleErrWithStruct(c.buildGetRequest("_snapshot/_all"), &repos)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for name, r := range repos {
+		// Sanitize AWS secrets if they exist in the settings
+		delete(r.Settings, "access_key")
+		delete(r.Settings, "secret_key")
+		repositories = append(repositories, Repository{
+			Name:     name,
+			Type:     r.Type,
+			Settings: r.Settings,
+		})
+	}
+
+	return repositories, nil
+}
+
+//Take a snapshot of specific indices on the cluster to the given repository
+//
+//Use case: You want to backup certain indices on the cluster to the given repository.
+func (c *Client) SnapshotIndices(repository string, snapshot string, indices []string) error {
+	if repository == "" {
+		return fmt.Errorf("Empty string for repository is not allowed.")
+	}
+
+	if snapshot == "" {
+		return fmt.Errorf("Empty string for snapshot is not allowed.")
+	}
+
+	if len(indices) == 0 {
+		return fmt.Errorf("No indices provided to snapshot.")
+	}
+
+	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).
+		Set("Content-Type", "application/json").
+		Send(fmt.Sprintf(`{"indices" : "%s"}`, strings.Join(indices, ",")))
+
+	_, err := handleErrWithBytes(agent)
+
+	return err
+}
+
+//Take a snapshot of all indices on the cluster to the given repository
+//
+//Use case: You want to backup all of the indices on the cluster to the given repository.
+func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
+	if repository == "" {
+		return fmt.Errorf("Empty string for repository is not allowed.")
+	}
+
+	if snapshot == "" {
+		return fmt.Errorf("Empty string for snapshot is not allowed.")
+	}
+
+	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot))
+	_, err := handleErrWithBytes(agent)
+
+	return err
+}
+
+//Restore an index or indices on the cluster
+//
+//Use case: You want to restore a particular index or indices onto your cluster with a new name.
+func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indices []string, restoredIndexPrefix string) error {
+	if repository == "" {
+		return fmt.Errorf("Empty string for repository is not allowed.")
+	}
+
+	if snapshot == "" {
+		return fmt.Errorf("Empty string for snapshot is not allowed.")
+	}
+
+	agent := c.buildPostRequest(fmt.Sprintf("_snapshot/%s/%s/_restore", repository, snapshot)).
+		Set("Content-Type", "application/json").
+		Send(fmt.Sprintf(`{"indices" : "%s","rename_pattern":"(.+)","rename_replacement":"%s$1"}`, strings.Join(indices, ","), restoredIndexPrefix))
+
+	_, err := handleErrWithBytes(agent)
+
+	return err
 }

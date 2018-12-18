@@ -4,6 +4,7 @@ package vulcanizer_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/github/vulcanizer"
 )
@@ -57,6 +58,19 @@ func TestVerifyRepository(t *testing.T) {
 func TestSnapshots(t *testing.T) {
 	c := vulcanizer.NewClient("localhost", 49200)
 
+	repos, err := c.GetRepositories()
+	if err != nil {
+		t.Fatalf("Error getting repositories: %s", err)
+	}
+
+	if len(repos) != 1 {
+		t.Fatalf("Expected 1 repository, got: %+v", repos)
+	}
+
+	if repos[0].Name != "backup-repo" || repos[0].Type != "fs" {
+		t.Fatalf("Unexpected repository values, got: %+v", repos[0])
+	}
+
 	snapshots, err := c.GetSnapshots("backup-repo")
 
 	if err != nil {
@@ -64,7 +78,7 @@ func TestSnapshots(t *testing.T) {
 	}
 
 	if len(snapshots) != 1 || snapshots[0].Name != "snapshot_1" {
-		t.Fatalf("Did not retreive expected snapshots: %+v", snapshots)
+		t.Fatalf("Did not retrieve expected snapshots: %+v", snapshots)
 	}
 
 	snapshot, err := c.GetSnapshotStatus("backup-repo", "snapshot_1")
@@ -77,6 +91,14 @@ func TestSnapshots(t *testing.T) {
 		t.Fatalf("Expected snapshot to be a success: %+v", snapshot)
 	}
 
+	err = c.SnapshotAllIndices("backup-repo", "snapshot_2")
+	if err != nil {
+		t.Fatalf("Error taking second snapshot: %s", err)
+	}
+
+	// Allow snapshot operation to complete
+	time.Sleep(5 * time.Second)
+
 	err = c.DeleteSnapshot("backup-repo", "snapshot_1")
 	if err != nil {
 		t.Fatalf("Error deleting snapshot: %s", err)
@@ -87,8 +109,37 @@ func TestSnapshots(t *testing.T) {
 		t.Fatalf("Error getting snapshots after delete: %s", err)
 	}
 
-	if len(snapshots) != 0 {
-		t.Fatalf("Expected 0 snapshots, got: %+v", snapshots)
+	if len(snapshots) != 1 || snapshots[0].Name != "snapshot_2" {
+		t.Fatalf("Unexpected snapshots, got: %+v", snapshots)
+	}
+
+	err = c.RestoreSnapshotIndices("backup-repo", "snapshot_2", []string{"integration_test"}, "restored_")
+
+	// Let the restore complete
+	time.Sleep(5 * time.Second)
+
+	indices, err := c.GetIndices()
+
+	if err != nil {
+		t.Fatalf("Error getting indices: %s", err)
+	}
+
+	if len(indices) != 2 {
+		t.Fatalf("Expected 2 indices: %+v", indices)
+	}
+
+	var foundOriginalIndex, foundRestoredIndex bool
+
+	for _, i := range indices {
+		if i.Name == "integration_test" {
+			foundOriginalIndex = true
+		} else if i.Name == "restored_integration_test" {
+			foundRestoredIndex = true
+		}
+	}
+
+	if !foundOriginalIndex || !foundRestoredIndex {
+		t.Fatalf("Couldn't find expected indices: %+v", indices)
 	}
 }
 

@@ -6,6 +6,8 @@ set -e
 # Make sure everything is clear from previous runs
 docker-compose -f integration_data/v5/elasticsearch-cluster-compose.yml down
 docker-compose -f integration_data/v6/elasticsearch-cluster-compose.yml down
+docker volume rm v5_vulcanizer-backup-volume || echo "OK for volume not to exist"
+docker volume rm v6_vulcanizer-backup-volume || echo "OK for volume not to exist"
 
 echo "Running integration tests for Elasticsearch v5"
 cd integration_data/v5
@@ -15,9 +17,9 @@ until foo=$(curl -s localhost:49200)
 do
   sleep 10
 done
-curl -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
-curl -XPUT localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
-curl -XPUT localhost:49200/_snapshot/backup-repo/snapshot_1?wait_for_completion=true
+curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
+curl -s -XPUT localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
+curl -s -XPUT localhost:49200/_snapshot/backup-repo/snapshot_1?wait_for_completion=true
 
 # Run tests
 go test -v github.com/github/vulcanizer/... -tags integration -count=1
@@ -35,9 +37,9 @@ until foo=$(curl -s localhost:49200)
 do
   sleep 10
 done
-curl -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
-curl -XPUT -H 'Content-Type: application/json' localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
-curl -XPUT localhost:49200/_snapshot/backup-repo/snapshot_1?wait_for_completion=true
+curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
+curl -s -XPUT -H 'Content-Type: application/json' localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
+curl -s -XPUT localhost:49200/_snapshot/backup-repo/snapshot_1?wait_for_completion=true
 
 # Run tests
 go test -v github.com/github/vulcanizer/... -tags integration -count=1
