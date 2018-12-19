@@ -37,7 +37,6 @@ var cmdHealth = &cobra.Command{
 			strconv.Itoa(health.RelocatingShards),
 			strconv.Itoa(health.InitializingShards),
 			strconv.Itoa(health.UnassignedShards),
-			strconv.Itoa(health.UnassignedShards),
 			strconv.FormatFloat(health.ActiveShardsPercentage, 'f', -1, 32),
 		}
 		rows = append(rows, row)
