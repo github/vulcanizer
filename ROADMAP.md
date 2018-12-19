@@ -28,13 +28,18 @@ Functionality:
 * Verify a repository
 * Delete a snapshot
 
-#### v0.2.1 - Proposed
+## v0.3.0 - [Released](https://github.com/github/vulcanizer/releases/tag/v0.3.0)
+
+Even more cases around repositories and snapshots.
 
 Functionality:
 * List repositories
-* Create a repository
+* Take snapshots
+* Restore snapshots
 
-### v0.3.0 - Proposed
+### Proposed future development
+
+#### Shards
 
 Show more information around shard allocation and recovery.
 
@@ -44,7 +49,7 @@ Functionality:
 * Show recovery information in a friendly manner, like percentages and maybe calculate an estimated time
 * Show allocation explain information in a friendly manner
 
-### v0.4.0 - Proposed
+#### Indices
 
 Handle more index-related cases.
 
