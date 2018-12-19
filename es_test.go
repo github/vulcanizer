@@ -282,8 +282,8 @@ func TestGetIndices(t *testing.T) {
 func TestGetHealth(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
-		Path:     "/_cat/health",
-		Response: `[{"cluster":"elasticsearch_nickcanz","status":"yellow","relo":"0","init":"0","unassign":"5","pending_tasks":"0","active_shards_percent":"50.0%"}]`,
+		Path:     "/_cluster/health",
+		Response: `{"cluster_name":"mycluster","status":"green","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"active_primary_shards":5,"active_shards":5,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":0,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":100.0,"indices":{"unhealthyIndex":{"status":"yellow"},"healthyIndex":{"status":"green","number_of_shards":5,"number_of_replicas":0,"active_primary_shards":5,"active_shards":5,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":0}}}`,
 	}
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
@@ -296,13 +296,18 @@ func TestGetHealth(t *testing.T) {
 		t.Errorf("Unexpected error expected nil, got %s", err)
 	}
 
-	if len(health) != 1 {
-		t.Errorf("Unexpected health, got %+v", health)
+	if health.ActiveShards != 5 {
+		t.Errorf("Unexpected active shards, expected 5, got %d", health.ActiveShards)
 	}
 
-	if health[0].UnassignedShards != 5 {
-		t.Errorf("Unexpected unassigned shards, expected 5, got %d", health[0].UnassignedShards)
+	if len(health.HealthyIndices) != 1 || health.HealthyIndices[0].Name != "healthyIndex" {
+		t.Errorf("Unexpected values in healthy indices, got %+v", health)
 	}
+
+	if len(health.UnhealthyIndices) != 1 || health.UnhealthyIndices[0].Name != "unhealthyIndex" {
+		t.Errorf("Unexpected values in unhealthy indices, got %+v", health)
+	}
+
 }
 
 func TestGetSettings(t *testing.T) {
