@@ -962,3 +962,29 @@ func TestAnalyzeText(t *testing.T) {
 		t.Fatalf("Unexpected token type, got: %+v", tokens)
 	}
 }
+
+func TestAnalyzeTextWithField(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/myindex/_analyze",
+		Body:     `{"field":"user_email","text":"user@example.com"}`,
+		Response: `{"tokens":[{"token":"user@example.com","start_offset":0,"end_offset":16,"type":"<EMAIL>","position":1}]}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	tokens, err := client.AnalyzeTextWithField("myindex", "user_email", "user@example.com")
+	if err != nil {
+		t.Fatalf("Got error getting analyzing text: %s", err)
+	}
+
+	if len(tokens) != 1 {
+		t.Fatalf("Got wrong number of tokens, expected 1 got %d", len(tokens))
+	}
+
+	if tokens[0].Text != "user@example.com" || tokens[0].Type != "<EMAIL>" {
+		t.Fatalf("Unexpected token got: %+v", tokens)
+	}
+}

@@ -647,5 +647,26 @@ func (c *Client) AnalyzeText(analyzer, text string) ([]Token, error) {
 //
 //Use case: You have a particular field that might have custom analyzers and you want to see how this field will tokenize some particular text.
 func (c *Client) AnalyzeTextWithField(index, field, text string) ([]Token, error) {
-	return nil, nil
+	request := struct {
+		Field string `json:"field"`
+		Text  string `json:"text"`
+	}{
+		field,
+		text,
+	}
+
+	agent := c.buildPostRequest(fmt.Sprintf("%s/_analyze", index)).
+		Set("Content-Type", "application/json").
+		Send(request)
+
+	var tokenWrapper struct {
+		Tokens []Token `json:"tokens"`
+	}
+
+	err := handleErrWithStruct(agent, &tokenWrapper)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokenWrapper.Tokens, nil
 }
