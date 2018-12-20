@@ -932,3 +932,33 @@ func TestRestoreSnapshotIndices(t *testing.T) {
 		t.Fatalf("Got error taking snapshot: %s", err)
 	}
 }
+
+func TestAnalyzeText(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/_analyze",
+		Body:     `{"analyzer":"stop","text":"This is a great test."}`,
+		Response: `{"tokens":[{"token":"great","start_offset":10,"end_offset":15,"type":"word","position":3},{"token":"test","start_offset":16,"end_offset":20,"type":"word","position":4}]}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	tokens, err := client.AnalyzeText("stop", "This is a great test.")
+	if err != nil {
+		t.Fatalf("Got error getting analyzing text: %s", err)
+	}
+
+	if len(tokens) != 2 {
+		t.Fatalf("Got wrong number of tokens, expected 2 got %d", len(tokens))
+	}
+
+	if tokens[0].Text != "great" || tokens[1].Text != "test" {
+		t.Fatalf("Unexpected token text, got: %+v", tokens)
+	}
+
+	if tokens[0].Type != "word" || tokens[1].Type != "word" {
+		t.Fatalf("Unexpected token type, got: %+v", tokens)
+	}
+}
