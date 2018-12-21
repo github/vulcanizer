@@ -122,6 +122,15 @@ type Repository struct {
 	Settings map[string]interface{}
 }
 
+//Holds information about the tokens that Elasticsearch analyzes
+type Token struct {
+	Text        string `json:"token"`
+	StartOffset int    `json:"start_offset"`
+	EndOffset   int    `json:"end_offset"`
+	Type        string `json:"type"`
+	Position    int    `json:"position"`
+}
+
 //Initialize a new vulcanizer client to use.
 func NewClient(host string, port int) *Client {
 	return &Client{host, port}
@@ -604,4 +613,60 @@ func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indi
 	_, err := handleErrWithBytes(agent)
 
 	return err
+}
+
+//Call the analyze API with sample text and an analyzer. https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html
+//
+//Use case: You want to see how Elasticsearch will break up sample text given a specific analyzer.
+func (c *Client) AnalyzeText(analyzer, text string) ([]Token, error) {
+	request := struct {
+		Analyzer string `json:"analyzer"`
+		Text     string `json:"text"`
+	}{
+		analyzer,
+		text,
+	}
+
+	agent := c.buildPostRequest("_analyze").
+		Set("Content-Type", "application/json").
+		Send(request)
+
+	var tokenWrapper struct {
+		Tokens []Token `json:"tokens"`
+	}
+
+	err := handleErrWithStruct(agent, &tokenWrapper)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokenWrapper.Tokens, nil
+}
+
+//Call the analyze API with sample text on an index and a specific field . https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html
+//
+//Use case: You have a particular field that might have custom analyzers and you want to see how this field will tokenize some particular text.
+func (c *Client) AnalyzeTextWithField(index, field, text string) ([]Token, error) {
+	request := struct {
+		Field string `json:"field"`
+		Text  string `json:"text"`
+	}{
+		field,
+		text,
+	}
+
+	agent := c.buildPostRequest(fmt.Sprintf("%s/_analyze", index)).
+		Set("Content-Type", "application/json").
+		Send(request)
+
+	var tokenWrapper struct {
+		Tokens []Token `json:"tokens"`
+	}
+
+	err := handleErrWithStruct(agent, &tokenWrapper)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokenWrapper.Tokens, nil
 }
