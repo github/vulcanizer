@@ -334,6 +334,25 @@ func (c *Client) GetIndices() ([]Index, error) {
 	return indices, nil
 }
 
+//Delete an index in the cluster.
+//
+//Use case: You want to remove an index and all of its data.
+func (c *Client) DeleteIndex(indexName string) error {
+	var response acknowledgedResponse
+
+	err := handleErrWithStruct(c.buildDeleteRequest(indexName), &response)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Acknowledged {
+		return fmt.Errorf(`Request to delete index "%s" was not acknowledged. %+v`, indexName, response)
+	}
+
+	return nil
+}
+
 //Get the health of the cluster.
 //
 //Use case: You want to see information needed to determine if the Elasticsearch cluster is healthy (green) or not (yellow/red).

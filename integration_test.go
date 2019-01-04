@@ -141,6 +141,20 @@ func TestSnapshots(t *testing.T) {
 	if !foundOriginalIndex || !foundRestoredIndex {
 		t.Fatalf("Couldn't find expected indices: %+v", indices)
 	}
+
+	err = c.DeleteIndex("restored_integration_test")
+	if err != nil {
+		t.Fatalf("Error deleting restored_integration_test index: %+v", indices)
+	}
+
+	indices, err = c.GetIndices()
+	if err != nil {
+		t.Fatalf("Error getting indices after index deletion: %s", err)
+	}
+
+	if len(indices) != 1 {
+		t.Fatalf("Expected 1 indices: %+v", indices)
+	}
 }
 
 func TestAllocations(t *testing.T) {
