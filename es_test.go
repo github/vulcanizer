@@ -279,6 +279,24 @@ func TestGetIndices(t *testing.T) {
 	}
 }
 
+func TestDeleteIndex(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "DELETE",
+		Path:     "/badindex",
+		Response: `{"acknowledged": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.DeleteIndex("badindex")
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+}
+
 func TestGetHealth(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
