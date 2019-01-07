@@ -597,7 +597,7 @@ func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
 //Restore an index or indices on the cluster
 //
 //Use case: You want to restore a particular index or indices onto your cluster with a new name.
-func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indices []string, restoredIndexPrefix string) error {
+func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indices []string, restoredIndexPrefix string, indexSettings map[string]interface{}) error {
 	if repository == "" {
 		return fmt.Errorf("Empty string for repository is not allowed.")
 	}
@@ -606,9 +606,21 @@ func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indi
 		return fmt.Errorf("Empty string for snapshot is not allowed.")
 	}
 
+	request := struct {
+		Indices           string                 `json:"indices"`
+		RenamePattern     string                 `json:"rename_pattern"`
+		RenameReplacement string                 `json:"rename_replacement"`
+		IndexSettings     map[string]interface{} `json:"index_settings,omitempty"`
+	}{
+		Indices:           strings.Join(indices, ","),
+		RenamePattern:     "(.+)",
+		RenameReplacement: fmt.Sprintf("%s$1", restoredIndexPrefix),
+		IndexSettings:     indexSettings,
+	}
+
 	agent := c.buildPostRequest(fmt.Sprintf("_snapshot/%s/%s/_restore", repository, snapshot)).
 		Set("Content-Type", "application/json").
-		Send(fmt.Sprintf(`{"indices" : "%s","rename_pattern":"(.+)","rename_replacement":"%s$1"}`, strings.Join(indices, ","), restoredIndexPrefix))
+		Send(request)
 
 	_, err := handleErrWithBytes(agent)
 

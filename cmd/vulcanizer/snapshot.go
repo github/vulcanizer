@@ -180,7 +180,7 @@ var cmdSnapshotRestore = &cobra.Command{
 			os.Exit(1)
 		}
 
-		err = v.RestoreSnapshotIndices(repository, snapshotName, []string{index}, prefix)
+		err = v.RestoreSnapshotIndices(repository, snapshotName, []string{index}, prefix, nil)
 		if err != nil {
 			fmt.Printf("Error while calling restore snapshot API. Error: %s\n", err)
 			os.Exit(1)

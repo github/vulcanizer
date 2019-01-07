@@ -113,7 +113,7 @@ func TestSnapshots(t *testing.T) {
 		t.Fatalf("Unexpected snapshots, got: %+v", snapshots)
 	}
 
-	err = c.RestoreSnapshotIndices("backup-repo", "snapshot_2", []string{"integration_test"}, "restored_")
+	err = c.RestoreSnapshotIndices("backup-repo", "snapshot_2", []string{"integration_test"}, "restored_", nil)
 
 	// Let the restore complete
 	time.Sleep(5 * time.Second)
