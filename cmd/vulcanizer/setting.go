@@ -44,7 +44,7 @@ var cmdSettingUpdate = &cobra.Command{
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
 
-		existingValue, newValue, err := v.SetSetting(settingToUpdate, valueToUpdate)
+		existingValue, newValue, err := v.SetClusterSetting(settingToUpdate, valueToUpdate)
 
 		if err != nil {
 			fmt.Printf("Error when trying to update \"%s\" to \"%s\n", settingToUpdate, valueToUpdate)

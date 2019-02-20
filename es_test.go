@@ -383,7 +383,7 @@ func TestGetHealth_TLS(t *testing.T) {
 
 }
 
-func TestGetSettings(t *testing.T) {
+func TestGetClusterSettings(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
 		Path:     "/_cluster/settings",
@@ -394,7 +394,7 @@ func TestGetSettings(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	clusterSettings, err := client.GetSettings()
+	clusterSettings, err := client.GetClusterSettings()
 
 	if err != nil {
 		t.Errorf("Unexpected error, got %s", err)
@@ -417,8 +417,8 @@ func TestGetSettings(t *testing.T) {
 	}
 }
 
-// TestSetSetting Func is an integration test for all things that use the SetSetting functionality.
-func TestSetSettings(t *testing.T) {
+// TestSetClusterSetting Func is an integration test for all things that use the SetClusterSetting functionality.
+func TestSetClusterSettings(t *testing.T) {
 
 	tt := []struct {
 		Name        string
@@ -484,7 +484,7 @@ func TestSetSettings(t *testing.T) {
 			defer ts.Close()
 			client := NewClient(host, port)
 
-			oldSetting, newSetting, err := client.SetSetting(x.Setting, x.SetValue)
+			oldSetting, newSetting, err := client.SetClusterSetting(x.Setting, x.SetValue)
 
 			if err != nil {
 				st.Errorf("Expected error to be nil, %s", err)
@@ -502,7 +502,7 @@ func TestSetSettings(t *testing.T) {
 	}
 }
 
-// TestSetSetting Func is an integration test for all things that use the SetAllocation functionality.
+// TestAllocationSettings Func is an integration test for all things that use the SetAllocation functionality.
 func TestAllocationSettings(t *testing.T) {
 
 	tt := []struct {
@@ -560,7 +560,7 @@ func TestAllocationSettings(t *testing.T) {
 	}
 }
 
-func TestSetSetting_BadRequest(t *testing.T) {
+func TestSetClusterSetting_BadRequest(t *testing.T) {
 	getSetup := &ServerSetup{
 		Method:   "GET",
 		Path:     "/_cluster/settings",
@@ -578,7 +578,7 @@ func TestSetSetting_BadRequest(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	_, _, err := client.SetSetting("cluster.routing.allocation.enable", "foo")
+	_, _, err := client.SetClusterSetting("cluster.routing.allocation.enable", "foo")
 
 	if err == nil {
 		t.Errorf("Expected error to not be nil, %s", err)
@@ -1083,5 +1083,93 @@ func TestAnalyzeTextWithField(t *testing.T) {
 
 	if tokens[0].Text != "user@example.com" || tokens[0].Type != "<EMAIL>" {
 		t.Fatalf("Unexpected token got: %+v", tokens)
+	}
+}
+
+func TestGetPrettyIndexSettings(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/octocat/_settings",
+		Response: `{"octocat":{"settings":{"index":{"number_of_shards":"5","provided_name":"octocat","creation_date":"1535035072757","analysis":{"analyzer":{"my_custom_analyzer":{"filter":["lowercase","asciifolding"],"char_filter":["html_strip"],"type":"custom","tokenizer":"standard"}}},"number_of_replicas":"0","uuid":"Q_Jm1mD2Syy8JgMUiicqcw","version":{"created":"5061099"}}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	indexSettings, err := client.GetPrettyIndexSettings("octocat")
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if indexSettings == "" {
+		t.Error("Unexpected index settings, got empty string")
+	}
+}
+
+func TestGetIndexSettings(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/octocat/_settings",
+		Response: `{"octocat":{"settings":{"index":{"number_of_shards":"5","provided_name":"octocat","creation_date":"1535035072757","analysis":{"analyzer":{"my_custom_analyzer":{"filter":["lowercase","asciifolding"],"char_filter":["html_strip"],"type":"custom","tokenizer":"standard"}}},"number_of_replicas":"0","uuid":"Q_Jm1mD2Syy8JgMUiicqcw","version":{"created":"5061099"}}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	settings, err := client.GetIndexSettings("octocat")
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if len(settings) != 11 {
+		t.Errorf("Unexpected number of settings, got %d", len(settings))
+	}
+
+	for i := range settings {
+		s := settings[i]
+		if s.Setting == "number_of_shards" && s.Value != "5" {
+			t.Errorf("Unexpected shards value, expected 5, got %s", s.Value)
+		}
+
+		if s.Setting == "number_of_replicas" && s.Value != "0" {
+			t.Errorf("Unexpected replicas value, expected 0, got %s", s.Value)
+		}
+	}
+}
+
+func TestSetIndexSetting(t *testing.T) {
+	getSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/octocat/_settings",
+		Response: `{"octocat":{"settings":{"index":{"number_of_shards":"5","provided_name":"octocat","creation_date":"1535035072757","analysis":{"analyzer":{"my_custom_analyzer":{"filter":["lowercase","asciifolding"],"char_filter":["html_strip"],"type":"custom","tokenizer":"standard"}}},"number_of_replicas":"0","uuid":"Q_Jm1mD2Syy8JgMUiicqcw","version":{"created":"5061099"}}}}}`,
+	}
+
+	updateSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/octocat/_settings",
+		Body:     `{"index":{"number_of_replicas":"2"}}`,
+		Response: `{"accepted": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, updateSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	previous, current, err := client.SetIndexSetting("octocat", "number_of_replicas", "2")
+
+	if err != nil {
+		t.Errorf("Error setting index setting: %s", err)
+	}
+
+	if previous != "0" {
+		t.Errorf("Unexpected previous setting value, expected 0, got %s", previous)
+	}
+
+	if current != "2" {
+		t.Errorf("Unexpected current setting value, expected 2, got %s", current)
 	}
 }
