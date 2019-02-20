@@ -1,6 +1,8 @@
 package vulcanizer
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -73,16 +75,17 @@ type IndexHealth struct {
 
 //Holds slices for persistent and transient cluster settings.
 type ClusterSettings struct {
-	PersistentSettings []ClusterSetting
-	TransientSettings  []ClusterSetting
+	PersistentSettings []Setting
+	TransientSettings  []Setting
 }
 
 //A setting name and value with the setting name to be a "collapsed" version of the setting. A setting of:
 //  { "indices": { "recovery" : { "max_bytes_per_sec": "10mb" } } }
 //would be represented by:
 //  ClusterSetting{ Setting: "indices.recovery.max_bytes_per_sec", Value: "10mb" }
-type ClusterSetting struct {
-	Setting, Value string
+type Setting struct {
+	Setting string
+	Value   string
 }
 
 type snapshotWrapper struct {
@@ -138,7 +141,7 @@ func NewClient(host string, port int) *Client {
 
 const clusterSettingsPath = "_cluster/settings"
 
-func settingsToStructs(rawJson string) ([]ClusterSetting, error) {
+func settingsToStructs(rawJson string) ([]Setting, error) {
 	flatSettings, err := flatten.FlattenString(rawJson, "", flatten.DotStyle)
 	if err != nil {
 		return nil, err
@@ -156,9 +159,9 @@ func settingsToStructs(rawJson string) ([]ClusterSetting, error) {
 
 	sort.Strings(keys)
 
-	var clusterSettings []ClusterSetting
+	var clusterSettings []Setting
 	for _, k := range keys {
-		setting := ClusterSetting{
+		setting := Setting{
 			Setting: k,
 			Value:   settingsMap[k].(string),
 		}
@@ -381,7 +384,7 @@ func (c *Client) GetHealth() (ClusterHealth, error) {
 //Get all the persistent and transient cluster settings.
 //
 //Use case: You want to see the current settings in the cluster.
-func (c *Client) GetSettings() (ClusterSettings, error) {
+func (c *Client) GetClusterSettings() (ClusterSettings, error) {
 	clusterSettings := ClusterSettings{}
 	body, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
 
@@ -438,8 +441,8 @@ func (c *Client) SetAllocation(allocation string) (string, error) {
 
 //Set a new value for a cluster setting
 //
-//Use case: You've doubled the number of nodes in your cluster and you want to increase the number of shards the cluster can relocate at one time. Calling `SetSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "100")` will update that value with the cluster. Once data relocation is complete you can decrease the setting by calling `SetSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "20")`.
-func (c *Client) SetSetting(setting string, value string) (string, string, error) {
+//Use case: You've doubled the number of nodes in your cluster and you want to increase the number of shards the cluster can relocate at one time. Calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "100")` will update that value with the cluster. Once data relocation is complete you can decrease the setting by calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "20")`.
+func (c *Client) SetClusterSetting(setting string, value string) (string, string, error) {
 
 	settingsBody, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
 
@@ -700,4 +703,65 @@ func (c *Client) AnalyzeTextWithField(index, field, text string) ([]Token, error
 	}
 
 	return tokenWrapper.Tokens, nil
+}
+
+//Get the settings of an index in a pretty-printed format.
+//
+//Use case: You can view the custom settings that are set on a particular index.
+func (c *Client) GetPrettyIndexSettings(index string) (string, error) {
+	body, err := handleErrWithBytes(c.buildGetRequest(fmt.Sprintf("%s/_settings", index)))
+
+	if err != nil {
+		return "", err
+	}
+
+	rawSettings := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index", index)).Raw
+
+	var prettyPrinted bytes.Buffer
+	err = json.Indent(&prettyPrinted, []byte(rawSettings), "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return prettyPrinted.String(), nil
+}
+
+//Get the settings of an index in a machine-oriented format.
+//
+//Use case: You can view the custom settings that are set on a particular index.
+func (c *Client) GetIndexSettings(index string) ([]Setting, error) {
+	body, err := handleErrWithBytes(c.buildGetRequest(fmt.Sprintf("%s/_settings", index)))
+
+	if err != nil {
+		return nil, err
+	}
+
+	rawSettings := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index", index)).Raw
+
+	settings, err := settingsToStructs(rawSettings)
+
+	return settings, err
+}
+
+//Set a setting on an index.
+//
+//Use case: Set or update an index setting for a particular index.
+func (c *Client) SetIndexSetting(index, setting, value string) (string, string, error) {
+	settingsPath := fmt.Sprintf("%s/_settings", index)
+	body, err := handleErrWithBytes(c.buildGetRequest(settingsPath))
+	if err != nil {
+		return "", "", err
+	}
+
+	currentValue := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index.%s", index, setting)).Str
+
+	agent := c.buildPutRequest(settingsPath).Set("Content-Type", "application/json").
+		Send(fmt.Sprintf(`{"index" : { "%s" : "%s"}}`, setting, value))
+
+	_, err = handleErrWithBytes(agent)
+	if err != nil {
+		return "", "", err
+	}
+
+	return currentValue, value, nil
 }

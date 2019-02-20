@@ -12,7 +12,7 @@ func init() {
 	rootCmd.AddCommand(cmdSettings)
 }
 
-func printSettings(settings []vulcanizer.ClusterSetting, name string) {
+func printSettings(settings []vulcanizer.Setting, name string) {
 	if len(settings) == 0 {
 		fmt.Println(fmt.Sprintf("No %s are set.\n", name))
 		return
@@ -41,7 +41,7 @@ var cmdSettings = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
-		clusterSettings, err := v.GetSettings()
+		clusterSettings, err := v.GetClusterSettings()
 
 		if err != nil {
 			fmt.Printf("Error getting settings: %s\n", err)
