@@ -113,7 +113,7 @@ func TestSnapshots(t *testing.T) {
 		t.Fatalf("Unexpected snapshots, got: %+v", snapshots)
 	}
 
-	err = c.RestoreSnapshotIndices("backup-repo", "snapshot_2", []string{"integration_test"}, "restored_")
+	err = c.RestoreSnapshotIndices("backup-repo", "snapshot_2", []string{"integration_test"}, "restored_", nil)
 
 	// Let the restore complete
 	time.Sleep(5 * time.Second)
@@ -140,6 +140,20 @@ func TestSnapshots(t *testing.T) {
 
 	if !foundOriginalIndex || !foundRestoredIndex {
 		t.Fatalf("Couldn't find expected indices: %+v", indices)
+	}
+
+	err = c.DeleteIndex("restored_integration_test")
+	if err != nil {
+		t.Fatalf("Error deleting restored_integration_test index: %+v", indices)
+	}
+
+	indices, err = c.GetIndices()
+	if err != nil {
+		t.Fatalf("Error getting indices after index deletion: %s", err)
+	}
+
+	if len(indices) != 1 {
+		t.Fatalf("Expected 1 indices: %+v", indices)
 	}
 }
 

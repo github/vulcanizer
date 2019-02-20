@@ -302,6 +302,24 @@ func TestGetIndices(t *testing.T) {
 	}
 }
 
+func TestDeleteIndex(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "DELETE",
+		Path:     "/badindex",
+		Response: `{"acknowledged": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.DeleteIndex("badindex")
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+}
+
 func TestGetHealth(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
@@ -956,7 +974,7 @@ func TestRestoreSnapshotIndices_ErrorConditions(t *testing.T) {
 
 	for _, test := range tt {
 		t.Run(test.Name, func(st *testing.T) {
-			err := client.RestoreSnapshotIndices(test.Repository, test.Snapshot, []string{}, "")
+			err := client.RestoreSnapshotIndices(test.Repository, test.Snapshot, []string{}, "", nil)
 
 			if err == nil && test.ExpectError {
 				st.Errorf("Expected error for test values %+v", test)
@@ -981,7 +999,31 @@ func TestRestoreSnapshotIndices(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	err := client.RestoreSnapshotIndices("backup-repo", "snapshot1", []string{"index1", "index2"}, "restored_")
+	err := client.RestoreSnapshotIndices("backup-repo", "snapshot1", []string{"index1", "index2"}, "restored_", nil)
+
+	if err != nil {
+		t.Fatalf("Got error taking snapshot: %s", err)
+	}
+}
+
+func TestRestoreSnapshotIndicesWithSettings(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/_snapshot/backup-repo/snapshot1/_restore",
+		Body:     `{"index_settings":{"index.number_of_replicas":0,"index.refresh_interval":"-1"},"indices":"index1,index2","rename_pattern":"(.+)","rename_replacement":"restored_$1"}`,
+		Response: `{"acknowledged": true }`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	indexSettings := map[string]interface{}{
+		"index.number_of_replicas": 0,
+		"index.refresh_interval":   "-1",
+	}
+
+	err := client.RestoreSnapshotIndices("backup-repo", "snapshot1", []string{"index1", "index2"}, "restored_", indexSettings)
 
 	if err != nil {
 		t.Fatalf("Got error taking snapshot: %s", err)

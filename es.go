@@ -374,6 +374,25 @@ func (c *Client) GetIndices() ([]Index, error) {
 	return indices, nil
 }
 
+//Delete an index in the cluster.
+//
+//Use case: You want to remove an index and all of its data.
+func (c *Client) DeleteIndex(indexName string) error {
+	var response acknowledgedResponse
+
+	err := handleErrWithStruct(c.buildDeleteRequest(indexName), &response)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Acknowledged {
+		return fmt.Errorf(`Request to delete index "%s" was not acknowledged. %+v`, indexName, response)
+	}
+
+	return nil
+}
+
 //Get the health of the cluster.
 //
 //Use case: You want to see information needed to determine if the Elasticsearch cluster is healthy (green) or not (yellow/red).
@@ -637,7 +656,7 @@ func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
 //Restore an index or indices on the cluster
 //
 //Use case: You want to restore a particular index or indices onto your cluster with a new name.
-func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indices []string, restoredIndexPrefix string) error {
+func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indices []string, restoredIndexPrefix string, indexSettings map[string]interface{}) error {
 	if repository == "" {
 		return fmt.Errorf("Empty string for repository is not allowed.")
 	}
@@ -646,9 +665,21 @@ func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indi
 		return fmt.Errorf("Empty string for snapshot is not allowed.")
 	}
 
+	request := struct {
+		Indices           string                 `json:"indices"`
+		RenamePattern     string                 `json:"rename_pattern"`
+		RenameReplacement string                 `json:"rename_replacement"`
+		IndexSettings     map[string]interface{} `json:"index_settings,omitempty"`
+	}{
+		Indices:           strings.Join(indices, ","),
+		RenamePattern:     "(.+)",
+		RenameReplacement: fmt.Sprintf("%s$1", restoredIndexPrefix),
+		IndexSettings:     indexSettings,
+	}
+
 	agent := c.buildPostRequest(fmt.Sprintf("_snapshot/%s/%s/_restore", repository, snapshot)).
 		Set("Content-Type", "application/json").
-		Send(fmt.Sprintf(`{"indices" : "%s","rename_pattern":"(.+)","rename_replacement":"%s$1"}`, strings.Join(indices, ","), restoredIndexPrefix))
+		Send(request)
 
 	_, err := handleErrWithBytes(agent)
 
