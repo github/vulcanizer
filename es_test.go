@@ -1,6 +1,7 @@
 package vulcanizer
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,12 +17,8 @@ type ServerSetup struct {
 	HTTPStatus                   int
 }
 
-// setupTestServer sets up an HTTP test server to serve data to the test that come after it.
-
-func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httptest.Server) {
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Server {
+	handlerFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestBytes, _ := ioutil.ReadAll(r.Body)
 		requestBody := string(requestBytes)
 
@@ -44,7 +41,33 @@ func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httpte
 		if !matched {
 			t.Fatalf("No requests matched setup. Got method %s, Path %s, body %s", r.Method, r.URL.EscapedPath(), requestBody)
 		}
-	}))
+	})
+
+	var ts *httptest.Server
+
+	if tls {
+		ts = httptest.NewTLSServer(handlerFunc)
+	} else {
+		ts = httptest.NewServer(handlerFunc)
+	}
+
+	return ts
+}
+
+// setupTestServer sets up an HTTP test server to serve data to the test that come after it.
+func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httptest.Server) {
+
+	ts := buildTestServer(t, setups, false)
+
+	url, _ := url.Parse(ts.URL)
+	port, _ := strconv.Atoi(url.Port())
+	return url.Hostname(), port, ts
+}
+
+func setupTestTLSServers(t *testing.T, setups []*ServerSetup) (string, int, *httptest.Server) {
+
+	ts := buildTestServer(t, setups, true)
+
 	url, _ := url.Parse(ts.URL)
 	port, _ := strconv.Atoi(url.Port())
 	return url.Hostname(), port, ts
@@ -307,6 +330,38 @@ func TestGetHealth(t *testing.T) {
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 	defer ts.Close()
 	client := NewClient(host, port)
+
+	health, err := client.GetHealth()
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+
+	if health.ActiveShards != 5 {
+		t.Errorf("Unexpected active shards, expected 5, got %d", health.ActiveShards)
+	}
+
+	if len(health.HealthyIndices) != 1 || health.HealthyIndices[0].Name != "healthyIndex" {
+		t.Errorf("Unexpected values in healthy indices, got %+v", health)
+	}
+
+	if len(health.UnhealthyIndices) != 1 || health.UnhealthyIndices[0].Name != "unhealthyIndex" {
+		t.Errorf("Unexpected values in unhealthy indices, got %+v", health)
+	}
+}
+
+func TestGetHealth_TLS(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cluster/health",
+		Response: `{"cluster_name":"mycluster","status":"green","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"active_primary_shards":5,"active_shards":5,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":0,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":100.0,"indices":{"unhealthyIndex":{"status":"yellow"},"healthyIndex":{"status":"green","number_of_shards":5,"number_of_replicas":0,"active_primary_shards":5,"active_shards":5,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":0}}}`,
+	}
+
+	host, port, ts := setupTestTLSServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+	client.Secure = true
+	client.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
 	health, err := client.GetHealth()
 
