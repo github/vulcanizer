@@ -2,6 +2,7 @@ package vulcanizer
 
 import (
 	"bytes"
+  "crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,10 +22,19 @@ type ExcludeSettings struct {
 	Ips, Hosts, Names []string
 }
 
+type Auth struct {
+	User     string
+	Password string
+}
+
 //Hold connection information to a Elasticsearch cluster.
 type Client struct {
-	Host string
-	Port int
+	Host      string
+	Port      int
+	Secure    bool
+	TLSConfig *tls.Config
+	Timeout   time.Duration
+	*Auth
 }
 
 //Holds information about an Elasticsearch node, based on the _cat/nodes API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html
@@ -136,7 +146,7 @@ type Token struct {
 
 //Initialize a new vulcanizer client to use.
 func NewClient(host string, port int) *Client {
-	return &Client{host, port}
+	return &Client{Host: host, Port: port}
 }
 
 const clusterSettingsPath = "_cluster/settings"
@@ -199,20 +209,50 @@ func handleErrWithStruct(s *gorequest.SuperAgent, v interface{}) error {
 	return nil
 }
 
+func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
+	agent := gorequest.New().Set("Accept", "application/json")
+	agent.Method = method
+
+	var protocol string
+	if c.Secure {
+		protocol = "https"
+	} else {
+		protocol = "http"
+	}
+
+	agent.Url = fmt.Sprintf("%s://%s:%v/%s", protocol, c.Host, c.Port, path)
+
+	if c.Auth != nil {
+		agent.SetBasicAuth(c.Auth.User, c.Auth.Password)
+	}
+
+	if c.TLSConfig != nil {
+		agent.TLSClientConfig(c.TLSConfig)
+	}
+
+	if c.Timeout != 0 {
+		agent.Timeout(c.Timeout)
+	} else {
+		agent.Timeout(1 * time.Minute)
+	}
+
+	return agent
+}
+
 func (c *Client) buildGetRequest(path string) *gorequest.SuperAgent {
-	return gorequest.New().Get(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path)).Set("Accept", "application/json")
+	return c.getAgent(gorequest.GET, path)
 }
 
 func (c *Client) buildPutRequest(path string) *gorequest.SuperAgent {
-	return gorequest.New().Put(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
+	return c.getAgent(gorequest.PUT, path)
 }
 
 func (c *Client) buildDeleteRequest(path string) *gorequest.SuperAgent {
-	return gorequest.New().Delete(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
+	return c.getAgent(gorequest.DELETE, path)
 }
 
 func (c *Client) buildPostRequest(path string) *gorequest.SuperAgent {
-	return gorequest.New().Post(fmt.Sprintf("http://%s:%v/%s", c.Host, c.Port, path))
+	return c.getAgent(gorequest.POST, path)
 }
 
 // Get current cluster settings for shard allocation exclusion rules.
