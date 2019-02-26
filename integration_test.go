@@ -39,6 +39,36 @@ func TestIndices(t *testing.T) {
 	if indices[0].DocumentCount != 10 {
 		t.Fatalf("Expected 10 docs, got: %v", indices[0].DocumentCount)
 	}
+
+	if indices[0].ReplicaCount != 1 {
+		t.Fatalf("Expected replica count of 1, got: %v", indices[0].ReplicaCount)
+	}
+
+	_, _, err = c.SetIndexSetting(indices[0].Name, "number_of_replicas", "2")
+	if err != nil {
+		t.Fatalf("Error setting index number_of_replicas: %s", err)
+	}
+
+	indexSettings, err := c.GetIndexSettings(indices[0].Name)
+	if err != nil {
+		t.Fatalf("Error getting index settings: %s", err)
+	}
+
+	for i := range indexSettings {
+		setting := indexSettings[i]
+		if setting.Setting == "number_of_replicas" && setting.Value != "2" {
+			t.Fatalf("Expected replica count of 2, got: %v", setting)
+		}
+	}
+
+	indices, err = c.GetIndices()
+	if err != nil {
+		t.Fatalf("Error getting indices: %s", err)
+	}
+
+	if indices[0].ReplicaCount != 2 {
+		t.Fatalf("Expected replica count of 2, got: %v", indices[0].ReplicaCount)
+	}
 }
 
 func TestVerifyRepository(t *testing.T) {
