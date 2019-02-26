@@ -805,3 +805,22 @@ func (c *Client) SetIndexSetting(index, setting, value string) (string, string, 
 
 	return currentValue, value, nil
 }
+
+//Get the mappings of an index in a pretty-printed format.
+//
+//Use case: You can view the custom mappings that are set on a particular index.
+func (c *Client) GetPrettyIndexMappings(index string) (string, error) {
+	body, err := handleErrWithBytes(c.buildGetRequest(fmt.Sprintf("%s/_mappings", index)))
+
+	if err != nil {
+		return "", err
+	}
+
+	var prettyPrinted bytes.Buffer
+	err = json.Indent(&prettyPrinted, body, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return prettyPrinted.String(), nil
+}

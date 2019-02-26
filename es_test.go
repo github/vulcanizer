@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -1171,5 +1172,32 @@ func TestSetIndexSetting(t *testing.T) {
 
 	if current != "2" {
 		t.Errorf("Unexpected current setting value, expected 2, got %s", current)
+	}
+}
+
+func TestGetPrettyIndexMappings(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/octocat/_mappings",
+		Response: `{"octocat":{"mappings":{"doc":{"properties":{"created_at":{"type":"date"}}}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	mappings, err := client.GetPrettyIndexMappings("octocat")
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if mappings == "" {
+		t.Error("Unexpected index mappings, got empty string")
+	}
+
+	lineCount := strings.Count(mappings, "\n")
+	if lineCount != 12 {
+		t.Errorf("Unexpected line count on mappings, expected 12, got %d", lineCount)
 	}
 }
