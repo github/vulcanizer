@@ -37,6 +37,21 @@ Functionality:
 * Take snapshots
 * Restore snapshots
 
+## v0.4.0 - [Released](https://github.com/github/vulcanizer/releases/tag/v0.4.0)
+
+Add functionality for managing indices.
+
+Functionality:
+* Delete index
+* Get pretty index settings
+* Get machine readable index settings
+* Set index settings
+* Get pretty index mappings
+* Analyze text with built in analyzers
+* Analyze text based on a field
+* Additional client options for HTTPS, timeout, HTTP basic auth, and TLS configuration
+
+
 ### Proposed future development
 
 #### Shards
@@ -56,7 +71,4 @@ Handle more index-related cases.
 Functionality:
 * List aliases
 * Modify aliases
-* Show index settings
-* Modify index settings
-* Show mappings
 * Diff mappings
