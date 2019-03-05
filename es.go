@@ -2,7 +2,7 @@ package vulcanizer
 
 import (
 	"bytes"
-  "crypto/tls"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -146,7 +146,10 @@ type Token struct {
 
 //Initialize a new vulcanizer client to use.
 func NewClient(host string, port int) *Client {
-	return &Client{Host: host, Port: port}
+	if port > 0 {
+		return &Client{Host: host, Port: port}
+	}
+	return &Client{Host: host}
 }
 
 const clusterSettingsPath = "_cluster/settings"
@@ -225,7 +228,6 @@ func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
 	} else {
 		agent.Url = fmt.Sprintf("%s://%s/%s", protocol, c.Host, path)
 	}
-
 
 	if c.Auth != nil {
 		agent.SetBasicAuth(c.Auth.User, c.Auth.Password)
