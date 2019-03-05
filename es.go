@@ -220,7 +220,12 @@ func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
 		protocol = "http"
 	}
 
-	agent.Url = fmt.Sprintf("%s://%s:%v/%s", protocol, c.Host, c.Port, path)
+	if c.Port > 0 {
+		agent.Url = fmt.Sprintf("%s://%s:%v/%s", protocol, c.Host, c.Port, path)
+	} else {
+		agent.Url = fmt.Sprintf("%s://%s/%s", protocol, c.Host, path)
+	}
+
 
 	if c.Auth != nil {
 		agent.SetBasicAuth(c.Auth.User, c.Auth.Password)
