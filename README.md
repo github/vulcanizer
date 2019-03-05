@@ -2,7 +2,7 @@
 
 GitHub's ops focused Elasticsearch library
 
-[![build status](https://travis-ci.org/github/vulcanizer.svg)](https://travis-ci.org/github/vulcanizer) [![GoDoc](https://godoc.org/github.com/github/vulcanizer?status.svg)](https://godoc.org/github.com/github/vulcanizer) [![Go Report Card](https://goreportcard.com/badge/github.com/github/vulcanizer)](https://goreportcard.com/report/github.com/github/vulcanizer) [![release](https://img.shields.io/github/release/github/vulcanizer.svg)](https://github.com/github/vulcanzier/releases)
+[![build status](https://travis-ci.org/github/vulcanizer.svg)](https://travis-ci.org/github/vulcanizer) [![GoDoc](https://godoc.org/github.com/github/vulcanizer?status.svg)](https://godoc.org/github.com/github/vulcanizer) [![Go Report Card](https://goreportcard.com/badge/github.com/github/vulcanizer)](https://goreportcard.com/report/github.com/github/vulcanizer) [![release](https://img.shields.io/github/release/github/vulcanizer.svg)](https://github.com/github/vulcanizer/releases)
 
 This project is a golang library for interacting with an Elasticsearch cluster. It's goal is to provide a high level API to help with common tasks that are associated with operating an Elasticsearch cluster such as querying health status of the cluster, migrating data off of nodes, updating cluster settings, etc.
 
