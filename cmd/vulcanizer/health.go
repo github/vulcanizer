@@ -16,7 +16,7 @@ func init() {
 var cmdHealth = &cobra.Command{
 	Use:   "health",
 	Short: "Display the health of the cluster.",
-	Long:  `Get detailed information about what consitutes the health of the cluster`,
+	Long:  `Get detailed information about what constitutes the health of the cluster`,
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
