@@ -29,6 +29,7 @@ Usage:
   vulcanizer [command]
 
 Available Commands:
+  aliases     Interact with aliases of the cluster.
   allocation  Set shard allocation on the cluster.
   drain       Drain a server or see what servers are draining.
   fill        Fill servers with data, removing shard allocation exclusion rules.

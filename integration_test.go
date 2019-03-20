@@ -71,6 +71,28 @@ func TestIndices(t *testing.T) {
 	}
 }
 
+func TestAliases(t *testing.T) {
+	c := vulcanizer.NewClient("localhost", 49200)
+
+	aliases, err := c.GetAliases()
+
+	if err != nil {
+		t.Fatalf("Error getting aliases: %s", err)
+	}
+
+	if len(aliases) != 1 {
+		t.Fatalf("Expected 1 index, got: %v", len(aliases))
+	}
+
+	if aliases[0].Name != "integration_test_alias" {
+		t.Fatalf("Expected aliases with name integration_test_alias, got: %v", aliases[0].Name)
+	}
+
+	if aliases[0].IndexName != "integration_test" {
+		t.Fatalf("Expected index name integration_test, got: %v", aliases[0].IndexName)
+	}
+}
+
 func TestVerifyRepository(t *testing.T) {
 	c := vulcanizer.NewClient("localhost", 49200)
 
