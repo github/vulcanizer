@@ -19,8 +19,9 @@ var cmdShards = &cobra.Command{
 	Short: "Get shard data by cluster node(s).",
 	Long:  `This command gets shard related data by node from the cluster.  Default is to return all shards.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 		shards, err := v.GetShards(nodesToCheck)
 
 		if err != nil {
