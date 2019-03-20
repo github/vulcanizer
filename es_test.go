@@ -1201,3 +1201,98 @@ func TestGetPrettyIndexMappings(t *testing.T) {
 		t.Errorf("Unexpected line count on mappings, expected 12, got %d", lineCount)
 	}
 }
+
+// Shared server setup for GetShards tests
+var getShardsTestSetup = &ServerSetup{
+	Method:   "GET",
+	Path:     "/_cat/shards",
+	Response: `[{"index":"code:index-3:slice-1","shard":"1","prirep":"p","state":"STARTED","docs":"0","store":"162b","ip":"172.16.27.16","node":"search-storage-abc123"},{"index":"code:index-3:slice-1","shard":"1","prirep":"r","state":"STARTED","docs":"0","store":"162b","ip":"172.16.26.28","node":"search-storage-def456"}]`,
+}
+
+func TestGetShards_OneNode(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardsTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	shards, err := client.GetShards([]string{"search-storage-abc123"})
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if shards == nil {
+		t.Error("Expected slice of shards, got nil instead")
+	}
+
+	if len(shards) > 1 {
+		t.Errorf("Expected slice of 1 shard, got %d instead", len(shards))
+	}
+
+}
+
+func TestGetShards_Regexp(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardsTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	shards, err := client.GetShards([]string{"search-\\w+-[a-c]{3}\\d+$"})
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if shards == nil {
+		t.Error("Expected slice of shards, got nil instead")
+	}
+
+	if len(shards) > 1 {
+		t.Errorf("Expected slice of 1 shard, got %d instead", len(shards))
+	}
+
+	if shards[0].Node != "search-storage-abc123" {
+		t.Errorf("Expected to find Node name search-storage-abc123, found %s instead", shards[0].Node)
+	}
+
+}
+
+func TestGetShards_MultiNode(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardsTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	shards, err := client.GetShards([]string{"search-storage-abc123", "search-storage-def456"})
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if shards == nil {
+		t.Error("Expected slice of shards, got nil instead")
+	}
+
+	if len(shards) != 2 {
+		t.Errorf("Expected slice of 2 shards, got %d instead", len(shards))
+	}
+
+}
+
+func TestGetShards_NoNodes(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardsTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	shards, err := client.GetShards(nil)
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if shards == nil {
+		t.Error("Expected slice of shards, got nil instead")
+	}
+
+	if len(shards) != 2 {
+		t.Errorf("Expected slice of 2 shards, got %d instead", len(shards))
+	}
+
+}

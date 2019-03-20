@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -56,6 +57,18 @@ type Index struct {
 	ReplicaCount  int    `json:"rep,string"`
 	IndexSize     string `json:"store.size"`
 	DocumentCount int    `json:"docs.count,string"`
+}
+
+//Holds information about an index shard, based on the _cat/shards API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-shards.html
+type Shard struct {
+	Index string `json:"index"`
+	Shard string `json:"shard"`
+	Type  string `json:"prirep"`
+	State string `json:"state"`
+	Docs  string `json:"docs"`
+	Store string `json:"store"`
+	IP    string `json:"ip"`
+	Node  string `json:"node"`
 }
 
 //Holds information about the health of an Elasticsearch cluster, based on the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
@@ -830,4 +843,65 @@ func (c *Client) GetPrettyIndexMappings(index string) (string, error) {
 	}
 
 	return prettyPrinted.String(), nil
+}
+
+//Get shard data for all or a subset of nodes
+//
+//Use case: You can view shard information on all nodes or a subset.
+func (c *Client) GetShards(nodes []string) ([]Shard, error) {
+	var response []Shard
+	req := c.buildGetRequest("_cat/shards")
+	body, err := handleErrWithBytes(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	d := json.NewDecoder(strings.NewReader(string(body)))
+
+	// Read opening bracket
+	_, err = d.Token()
+
+	if err != nil {
+		fmt.Printf("Error parsing JSON. Expected '['")
+	}
+
+	// Iterate over the array elements for single pass filtering
+	for d.More() {
+		var shard Shard
+		// Get Shard object from array
+		err = d.Decode(&shard)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if len(nodes) == 0 {
+			// No nodes passed, so return all shards
+			response = append(response, shard)
+		} else if len(nodes) > 0 {
+			// Only return nodes of interest
+			for _, node := range nodes {
+				// Support regexp matching of node name
+				matches, err := regexp.MatchString(node, shard.Node)
+
+				if err != nil {
+					return nil, err
+				}
+
+				if matches {
+					response = append(response, shard)
+				}
+			}
+		}
+	}
+
+	// Read closing bracket
+	_, err = d.Token()
+
+	if err != nil {
+		fmt.Printf("Error parsing JSON. Expected ']'")
+	}
+
+	return response, nil
 }

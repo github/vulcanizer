@@ -39,6 +39,7 @@ Available Commands:
   repository  Interact with the configured snapshot repositories.
   setting     Interact with cluster settings.
   settings    Display all the settings of the cluster.
+  shards      Get shard data by cluster node(s).
   snapshot    Interact with a specific snapshot.
 
 Flags:
