@@ -333,6 +333,77 @@ func TestGetAliases(t *testing.T) {
 	}
 }
 
+func TestModifyAliases(t *testing.T) {
+	tt := []struct {
+		Name     string
+		Actions  []AliasAction
+		Body     string
+		Response string
+	}{
+		{
+			Name: "add alias",
+			Actions: []AliasAction{
+				{
+					ActionType: AddAlias,
+					IndexName:  "test",
+					AliasName:  "test_alias",
+				},
+			},
+			Body:     `{"actions":[{"add":{"alias":"test_alias","index":"test"}}]}`,
+			Response: `{"acknowledged": true}`,
+		},
+		{
+			Name: "update alias",
+			Actions: []AliasAction{
+				{
+					ActionType: AddAlias,
+					IndexName:  "test",
+					AliasName:  "test_alias",
+				},
+				{
+					ActionType: RemoveAlias,
+					IndexName:  "test",
+					AliasName:  "test_alias",
+				},
+			},
+			Body:     `{"actions":[{"add":{"alias":"test_alias","index":"test"}},{"remove":{"alias":"test_alias","index":"test"}}]}`,
+			Response: `{"acknowledged": true}`,
+		},
+		{
+			Name: "delete alias",
+			Actions: []AliasAction{
+				{
+					ActionType: RemoveAlias,
+					IndexName:  "test",
+					AliasName:  "test_alias",
+				},
+			},
+			Body:     `{"actions":[{"remove":{"alias":"test_alias","index":"test"}}]}`,
+			Response: `{"acknowledged": true}`,
+		},
+	}
+
+	for _, x := range tt {
+		t.Run(x.Name, func(t *testing.T) {
+			testSetup := &ServerSetup{
+				Method:   "POST",
+				Path:     "/_aliases",
+				Body:     x.Body,
+				Response: x.Response,
+			}
+
+			host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+			defer ts.Close()
+			client := NewClient(host, port)
+
+			err := client.ModifyAliases(x.Actions)
+			if err != nil {
+				t.Errorf("Unexpected error expected nil, got %s", err)
+			}
+		})
+	}
+}
+
 func TestDeleteIndex(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "DELETE",

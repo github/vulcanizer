@@ -92,6 +92,103 @@ func TestAliases(t *testing.T) {
 	}
 }
 
+func TestAliasesAddDeleteUpdate(t *testing.T) {
+	c := vulcanizer.NewClient("localhost", 49200)
+
+	t.Run("update index alias", func(t *testing.T) {
+		actions := []vulcanizer.AliasAction{
+			{
+				ActionType: vulcanizer.AddAlias,
+				IndexName:  "integration_test",
+				AliasName:  "integration_test_new_alias",
+			},
+			{
+				ActionType: vulcanizer.RemoveAlias,
+				IndexName:  "integration_test",
+				AliasName:  "integration_test_alias",
+			},
+		}
+
+		err := c.ModifyAliases(actions)
+		if err != nil {
+			t.Fatalf("Error modifying aliases: %s", err)
+		}
+
+		aliases, err := c.GetAliases()
+		if err != nil {
+			t.Fatalf("Error getting aliases: %s", err)
+		}
+
+		if len(aliases) != 1 {
+			t.Fatalf("Expected 1 index, got: %v", len(aliases))
+		}
+
+		if aliases[0].Name != "integration_test_new_alias" {
+			t.Fatalf("Expected aliases with name integration_test_alias, got: %v", aliases[0].Name)
+		}
+
+		if aliases[0].IndexName != "integration_test" {
+			t.Fatalf("Expected indes name integration_test, got: %v", aliases[0].IndexName)
+		}
+	})
+
+	t.Run("delete index alias", func(t *testing.T) {
+		actions := []vulcanizer.AliasAction{
+			{
+				ActionType: vulcanizer.RemoveAlias,
+				IndexName:  "integration_test",
+				AliasName:  "integration_test_new_alias",
+			},
+		}
+
+		err := c.ModifyAliases(actions)
+		if err != nil {
+			t.Fatalf("Error modifying aliases: %s", err)
+		}
+
+		aliases, err := c.GetAliases()
+		if err != nil {
+			t.Fatalf("Error getting aliases: %s", err)
+		}
+
+		if len(aliases) != 0 {
+			t.Fatalf("Expected 0 index, got: %v", len(aliases))
+		}
+	})
+
+	t.Run("add new index alias", func(t *testing.T) {
+		actions := []vulcanizer.AliasAction{
+			{
+				ActionType: vulcanizer.AddAlias,
+				IndexName:  "integration_test",
+				AliasName:  "integration_test_new_alias_again",
+			},
+		}
+
+		err := c.ModifyAliases(actions)
+		if err != nil {
+			t.Fatalf("Error modifying aliases: %s", err)
+		}
+
+		aliases, err := c.GetAliases()
+		if err != nil {
+			t.Fatalf("Error getting aliases: %s", err)
+		}
+
+		if len(aliases) != 1 {
+			t.Fatalf("Expected 1 index, got: %v", len(aliases))
+		}
+
+		if aliases[0].Name != "integration_test_new_alias_again" {
+			t.Fatalf("Expected aliases with name integration_test_new_alias_again, got: %v", aliases[0].Name)
+		}
+
+		if aliases[0].IndexName != "integration_test" {
+			t.Fatalf("Expected indes name integration_test, got: %v", aliases[0].IndexName)
+		}
+	})
+}
+
 func TestVerifyRepository(t *testing.T) {
 	c := vulcanizer.NewClient("localhost", 49200)
 
