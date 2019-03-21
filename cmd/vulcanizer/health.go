@@ -18,8 +18,9 @@ var cmdHealth = &cobra.Command{
 	Short: "Display the health of the cluster.",
 	Long:  `Get detailed information about what constitutes the health of the cluster`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 		health, err := v.GetHealth()
 
 		if err != nil {

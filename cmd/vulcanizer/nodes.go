@@ -17,8 +17,9 @@ var cmdNodes = &cobra.Command{
 	Short: "Display the nodes of the cluster.",
 	Long:  `Show what nodes are part of the cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 		nodes, err := v.GetNodes()
 
 		if err != nil {

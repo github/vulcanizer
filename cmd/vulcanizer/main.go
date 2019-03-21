@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/github/vulcanizer"
 	"os"
 
 	"github.com/olekukonko/tablewriter"
@@ -10,9 +11,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-func getConfiguration() (string, int) {
+func getConfiguration() (string, int, *vulcanizer.Auth) {
 	var host string
 	var port int
+	var auth vulcanizer.Auth
 
 	if viper.GetString("cluster") != "" {
 		config := viper.Sub(viper.GetString("cluster"))
@@ -24,12 +26,20 @@ func getConfiguration() (string, int) {
 
 		host = config.GetString("host")
 		port = config.GetInt("port")
+		auth = vulcanizer.Auth{
+			User:     config.GetString("user"),
+			Password: config.GetString("password"),
+		}
 	} else {
 		host = viper.GetString("host")
 		port = viper.GetInt("port")
+		auth = vulcanizer.Auth{
+			User:     viper.GetString("user"),
+			Password: viper.GetString("password"),
+		}
 	}
 
-	return host, port
+	return host, port, &auth
 }
 
 func renderTable(rows [][]string, header []string) string {
@@ -50,6 +60,8 @@ func main() {
 
 	rootCmd.PersistentFlags().StringP("host", "", "localhost", "Host to connect to")
 	rootCmd.PersistentFlags().IntP("port", "p", 9200, "Port to connect to")
+	rootCmd.PersistentFlags().StringP("user", "", "", "User to use during authentication")
+	rootCmd.PersistentFlags().StringP("password", "", "", "Password to use during authentication")
 	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Cluster to connect to defined in config file")
 	rootCmd.PersistentFlags().StringP("configFile", "f", "", "Configuration file to read in (default to \"~/.vulcanizer.yaml\")")
 
@@ -66,6 +78,16 @@ func main() {
 	err = viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
 	if err != nil {
 		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("user", rootCmd.PersistentFlags().Lookup("user"))
+	if err != nil {
+		fmt.Printf("Error binding user flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("password", rootCmd.PersistentFlags().Lookup("password"))
+	if err != nil {
+		fmt.Printf("Error binding password flag: %s \n", err)
 		os.Exit(1)
 	}
 

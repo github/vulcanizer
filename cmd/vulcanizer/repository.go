@@ -39,8 +39,9 @@ var cmdRepositoryVerify = &cobra.Command{
 	Short: "Verify the specified repository.",
 	Long:  `This command will verify the repository is configured correctly on all nodes.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 
 		repository, err := cmd.Flags().GetString("repository")
 		if err != nil {
@@ -68,8 +69,9 @@ var cmdRepositoryList = &cobra.Command{
 	Short: "List configured snapshot repositories.",
 	Long:  `This command will list all the the snapshot repositories on the cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 
 		repos, err := v.GetRepositories()
 		if err != nil {

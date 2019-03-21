@@ -47,7 +47,9 @@ Flags:
   -f, --configFile string   Configuration file to read in (default to "~/.vulcanizer.yaml")
   -h, --help                help for vulcanizer
       --host string         Host to connect to (default "localhost")
+      --password string     Password to use during authentication
   -p, --port int            Port to connect to (default 9200)
+      --user string         User to use during authentication
 
 Use "vulcanizer [command] --help" for more information about a command.
 ```
