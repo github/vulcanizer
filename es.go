@@ -71,6 +71,15 @@ type Shard struct {
 	Node  string `json:"node"`
 }
 
+// Holds information about an Elasticsearch alias, based on the _cat/aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-alias.html
+type Alias struct {
+	Name          string `json:"alias"`
+	IndexName     string `json:"index"`
+	Filter        string `json:"filter"`
+	RoutingIndex  string `json:"routing.index"`
+	RoutingSearch string `json:"routing.search"`
+}
+
 //Holds information about the health of an Elasticsearch cluster, based on the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
 type ClusterHealth struct {
 	Cluster                string  `json:"cluster_name"`
@@ -395,6 +404,21 @@ func (c *Client) GetIndices() ([]Index, error) {
 	}
 
 	return indices, nil
+}
+
+//Get all the aliases in the cluster.
+//
+//Use case: You want to see some basic info on all the aliases of the cluster
+func (c *Client) GetAliases() ([]Alias, error) {
+	var aliases []Alias
+
+	err := handleErrWithStruct(c.buildGetRequest("_cat/aliases?h=alias,index,filter,routing.index,routing.search"), &aliases)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return aliases, nil
 }
 
 //Delete an index in the cluster.

@@ -21,6 +21,7 @@ done
 curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
 curl -s -XPUT localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
 curl -s -XPUT localhost:49200/_snapshot/backup-repo/snapshot_1?wait_for_completion=true
+curl -s -H "Content-Type: application/json" XPOST localhost:49200/_aliases -d '{ "actions" : [ { "add" : { "index" : "integration_test", "alias" : "integration_test_alias" } } ] }'
 
 # Run tests
 go test -v github.com/github/vulcanizer/... -tags integration -count=1
@@ -41,6 +42,7 @@ done
 curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
 curl -s -XPUT -H 'Content-Type: application/json' localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
 curl -s -XPUT localhost:49200/_snapshot/backup-repo/snapshot_1?wait_for_completion=true
+curl -s -H "Content-Type: application/json" XPOST localhost:49200/_aliases -d '{ "actions" : [ { "add" : { "index" : "integration_test", "alias" : "integration_test_alias" } } ] }'
 
 # Run tests
 go test -v github.com/github/vulcanizer/... -tags integration -count=1
