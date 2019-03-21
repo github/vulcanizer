@@ -39,8 +39,10 @@ var cmdSettings = &cobra.Command{
 	Short: "Display all the settings of the cluster.",
 	Long:  `This command displays all the transient and persistent settings that have been set on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
+
 		clusterSettings, err := v.GetClusterSettings()
 
 		if err != nil {

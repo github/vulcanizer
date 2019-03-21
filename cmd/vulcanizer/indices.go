@@ -18,8 +18,9 @@ var cmdIndices = &cobra.Command{
 	Short: "Display the indices of the cluster.",
 	Long:  `Show what indices are created on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 		indices, err := v.GetIndices()
 
 		if err != nil {

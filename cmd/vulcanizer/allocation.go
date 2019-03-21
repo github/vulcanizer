@@ -24,8 +24,9 @@ var cmdAllocationEnable = &cobra.Command{
 	Short: "Enable allocation on the cluster.",
 	Long:  `This commands enables allocation on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 		response, err := v.SetAllocation("enable")
 		if err != nil {
 			fmt.Printf("Error setting allocation: %s \n", err)
@@ -41,8 +42,9 @@ var cmdAllocationDisable = &cobra.Command{
 	Short: "Disable allocation on the cluster.",
 	Long:  `This commands disables allocation on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port := getConfiguration()
+		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
+		v.Auth = auth
 		response, err := v.SetAllocation("disable")
 		if err != nil {
 			fmt.Printf("Error setting allocation: %s \n", err)
