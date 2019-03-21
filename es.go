@@ -234,6 +234,21 @@ func handleErrWithStruct(s *gorequest.SuperAgent, v interface{}) error {
 	return nil
 }
 
+// Can we safely remove nodes without data loss?
+func (s ShardOverlap) SafeToRemove() bool {
+	return !(s.PrimaryFound && s.ReplicasFound >= s.ReplicasTotal)
+}
+
+// Check if we should consider shard as a primary shard
+func (s ShardOverlap) isPrimaryShard(shard Shard) bool {
+	return shard.Type == "p" && (shard.State == "STARTED" || shard.State == "RELOCATING")
+}
+
+// Check if we should consider shard as a replica shard
+func (s ShardOverlap) isReplicaShard(shard Shard) bool {
+	return shard.Type == "r" && (shard.State == "STARTED" || shard.State == "RELOCATING")
+}
+
 func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
 	agent := gorequest.New().Set("Accept", "application/json")
 	agent.Method = method
@@ -893,13 +908,15 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 			// Only return nodes of interest
 			for _, node := range nodes {
 				// Support regexp matching of node name
-				matches, err := regexp.MatchString(node, shard.Node)
+				pattern, err := regexp.Compile(node)
 
 				if err != nil {
-					return nil, err
+					fmt.Printf("Error compiling regexp pattern: %s", err)
 				}
 
-				if matches {
+				matches := pattern.FindString(shard.Node)
+
+				if len(matches) > 0 {
 					response = append(response, shard)
 				}
 			}
@@ -943,15 +960,15 @@ func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error
 	}
 
 	for _, shard := range shards {
-		// Map key is the concatenation of the index name and shard number
-		name := shard.Index + shard.Shard
+		// Map key is the concatenation of the index name + "_" + shard number
+		name := fmt.Sprintf("%s_%s", shard.Index, shard.Shard)
 
 		val, ok := overlap[name]
 		if ok {
 			// We've already seen this index/shard combo
-			if shard.Type == "p" {
+			if val.isPrimaryShard(shard) {
 				val.PrimaryFound = true
-			} else {
+			} else if val.isReplicaShard(shard) {
 				val.ReplicasFound += 1
 			}
 			overlap[name] = val
@@ -960,11 +977,12 @@ func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error
 			val := ShardOverlap{
 				Index:         shard.Index,
 				Shard:         shard.Shard,
-				PrimaryFound:  shard.Type == "p",
+				PrimaryFound:  val.isPrimaryShard(shard),
 				ReplicasFound: 0,
 				ReplicasTotal: indices[shard.Index].ReplicaCount,
 			}
-			if shard.Type == "r" {
+			// Ensure we're only counting fully started replica shards
+			if val.isReplicaShard(shard) {
 				val.ReplicasFound = 1
 			}
 			overlap[name] = val
