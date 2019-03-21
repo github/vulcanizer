@@ -1296,3 +1296,32 @@ func TestGetShards_NoNodes(t *testing.T) {
 	}
 
 }
+
+func TestGetShardOverlap(t *testing.T) {
+	getIndicesTestSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/indices",
+		Response: `[{"health":"green","status":"open","index":"code:index-3:slice-1","pri":"5","rep":"1","store.size":"3.6kb", "docs.count":"1500"}]`,
+	}
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardsTestSetup, getIndicesTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	overlap, err := client.GetShardOverlap([]string{"search-storage-abc123"})
+
+	if err != nil {
+		t.Errorf("Unexpected error, get %s", err)
+	}
+
+	if overlap == nil {
+		t.Errorf("Expected slice of shards, got nil instead")
+	}
+
+	if val, ok := overlap["code:index-3:slice-11"]; ok {
+		if !val.PrimaryFound || val.ReplicasFound != 0 || val.ReplicasTotal != 1 {
+			t.Errorf("Unexpected overlap data %v, expected PrimaryFound=true, ReplicasFound=0, ReplicasTotal=1", val)
+		}
+	} else {
+		t.Errorf("Expected overlap data, got nil instead")
+	}
+}
