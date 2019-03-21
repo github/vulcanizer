@@ -71,6 +71,15 @@ type Shard struct {
 	Node  string `json:"node"`
 }
 
+//Holds information about overlapping shards for a given set of cluster nodes
+type ShardOverlap struct {
+	Index         string
+	Shard         string
+	PrimaryFound  bool
+	ReplicasFound int
+	ReplicasTotal int
+}
+
 //Holds information about the health of an Elasticsearch cluster, based on the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
 type ClusterHealth struct {
 	Cluster                string  `json:"cluster_name"`
@@ -864,6 +873,7 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 
 	if err != nil {
 		fmt.Printf("Error parsing JSON. Expected '['")
+		return nil, err
 	}
 
 	// Iterate over the array elements for single pass filtering
@@ -901,7 +911,64 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 
 	if err != nil {
 		fmt.Printf("Error parsing JSON. Expected ']'")
+		return nil, err
 	}
 
 	return response, nil
+}
+
+//Get details regarding shard distribution across a given set of cluster nodes.
+//
+//Use case: You can leverage this information to determine if it's safe to remove cluster nodes without losing data.
+func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error) {
+	shards, err := c.GetShards(nodes)
+	overlap := map[string]ShardOverlap{}
+
+	if err != nil {
+		fmt.Printf("Error getting shards: %s", err)
+		return nil, err
+	}
+
+	_indices, err := c.GetIndices()
+
+	if err != nil {
+		fmt.Printf("Error getting indices: %s", err)
+		return nil, err
+	}
+
+	// Map-ify this slice of indices for easy lookup
+	indices := map[string]Index{}
+	for _, index := range _indices {
+		indices[index.Name] = index
+	}
+
+	for _, shard := range shards {
+		// Map key is the concatenation of the index name and shard number
+		name := shard.Index + shard.Shard
+
+		val, ok := overlap[name]
+		if ok {
+			// We've already seen this index/shard combo
+			if shard.Type == "p" {
+				val.PrimaryFound = true
+			} else {
+				val.ReplicasFound += 1
+			}
+			overlap[name] = val
+		} else {
+			// First occurrence of index/shard combo
+			val := ShardOverlap{
+				Index:         shard.Index,
+				Shard:         shard.Shard,
+				PrimaryFound:  shard.Type == "p",
+				ReplicasFound: 0,
+				ReplicasTotal: indices[shard.Index].ReplicaCount,
+			}
+			if shard.Type == "r" {
+				val.ReplicasFound = 1
+			}
+			overlap[name] = val
+		}
+	}
+	return overlap, nil
 }
