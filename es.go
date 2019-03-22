@@ -71,6 +71,15 @@ type Shard struct {
 	Node  string `json:"node"`
 }
 
+//Holds information about overlapping shards for a given set of cluster nodes
+type ShardOverlap struct {
+	Index         string
+	Shard         string
+	PrimaryFound  bool
+	ReplicasFound int
+	ReplicasTotal int
+}
+
 // Holds information about an Elasticsearch alias, based on the _cat/aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-alias.html
 type Alias struct {
 	Name          string `json:"alias"`
@@ -232,6 +241,21 @@ func handleErrWithStruct(s *gorequest.SuperAgent, v interface{}) error {
 		return errors.New(errorMessage)
 	}
 	return nil
+}
+
+// Can we safely remove nodes without data loss?
+func (s ShardOverlap) SafeToRemove() bool {
+	return !(s.PrimaryFound && s.ReplicasFound >= s.ReplicasTotal)
+}
+
+// Check if we should consider shard as a primary shard
+func (s ShardOverlap) isPrimaryShard(shard Shard) bool {
+	return shard.Type == "p" && (shard.State == "STARTED" || shard.State == "RELOCATING")
+}
+
+// Check if we should consider shard as a replica shard
+func (s ShardOverlap) isReplicaShard(shard Shard) bool {
+	return shard.Type == "r" && (shard.State == "STARTED" || shard.State == "RELOCATING")
 }
 
 func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
@@ -888,6 +912,7 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 
 	if err != nil {
 		fmt.Printf("Error parsing JSON. Expected '['")
+		return nil, err
 	}
 
 	// Iterate over the array elements for single pass filtering
@@ -907,13 +932,15 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 			// Only return nodes of interest
 			for _, node := range nodes {
 				// Support regexp matching of node name
-				matches, err := regexp.MatchString(node, shard.Node)
+				pattern, err := regexp.Compile(node)
 
 				if err != nil {
-					return nil, err
+					fmt.Printf("Error compiling regexp pattern: %s", err)
 				}
 
-				if matches {
+				matches := pattern.FindString(shard.Node)
+
+				if len(matches) > 0 {
 					response = append(response, shard)
 				}
 			}
@@ -925,7 +952,65 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 
 	if err != nil {
 		fmt.Printf("Error parsing JSON. Expected ']'")
+		return nil, err
 	}
 
 	return response, nil
+}
+
+//Get details regarding shard distribution across a given set of cluster nodes.
+//
+//Use case: You can leverage this information to determine if it's safe to remove cluster nodes without losing data.
+func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error) {
+	shards, err := c.GetShards(nodes)
+	overlap := map[string]ShardOverlap{}
+
+	if err != nil {
+		fmt.Printf("Error getting shards: %s", err)
+		return nil, err
+	}
+
+	_indices, err := c.GetIndices()
+
+	if err != nil {
+		fmt.Printf("Error getting indices: %s", err)
+		return nil, err
+	}
+
+	// Map-ify this slice of indices for easy lookup
+	indices := map[string]Index{}
+	for _, index := range _indices {
+		indices[index.Name] = index
+	}
+
+	for _, shard := range shards {
+		// Map key is the concatenation of the index name + "_" + shard number
+		name := fmt.Sprintf("%s_%s", shard.Index, shard.Shard)
+
+		val, ok := overlap[name]
+		if ok {
+			// We've already seen this index/shard combo
+			if val.isPrimaryShard(shard) {
+				val.PrimaryFound = true
+			} else if val.isReplicaShard(shard) {
+				val.ReplicasFound += 1
+			}
+			overlap[name] = val
+		} else {
+			// First occurrence of index/shard combo
+			val := ShardOverlap{
+				Index:         shard.Index,
+				Shard:         shard.Shard,
+				PrimaryFound:  val.isPrimaryShard(shard),
+				ReplicasFound: 0,
+				ReplicasTotal: indices[shard.Index].ReplicaCount,
+			}
+			// Ensure we're only counting fully started replica shards
+			if val.isReplicaShard(shard) {
+				val.ReplicasFound = 1
+			}
+			overlap[name] = val
+		}
+	}
+	return overlap, nil
 }

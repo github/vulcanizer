@@ -3,10 +3,9 @@
 package vulcanizer_test
 
 import (
+	"github.com/github/vulcanizer"
 	"testing"
 	"time"
-
-	"github.com/github/vulcanizer"
 )
 
 func TestNodes(t *testing.T) {
@@ -268,4 +267,31 @@ func TestGetShards_Regexp(t *testing.T) {
 	if len(val) != 10 {
 		t.Fatalf("Expected 15 shards, got %d instead", len(val))
 	}
+}
+
+func TestGetShardOverlap(t *testing.T) {
+	c := vulcanizer.NewClient("localhost", 49200)
+
+	val, err := c.GetShardOverlap([]string{"vulcanizer-elasticsearch-v(\\d|\\d-\\d)"})
+
+	if err != nil {
+		t.Fatalf("Error fetching shard overlap data: %s", err)
+	}
+
+	if val == nil {
+		t.Fatal("Excepted a map, got nil instead")
+	}
+
+	if val["integration_test_0"].PrimaryFound != true {
+		t.Fatal("Expected PrimaryFound == false, got true instead")
+	}
+
+	if val["integration_test_0"].ReplicasFound != 1 {
+		t.Fatalf("Expected 1 ReplicasFound, got %d instead", val["integration_test0"].ReplicasFound)
+	}
+
+	if val["integration_test_0"].ReplicasTotal != 2 {
+		t.Fatalf("Expected 2 ReplicasTotal, got %d instead", val["integration_test0"].ReplicasTotal)
+	}
+
 }

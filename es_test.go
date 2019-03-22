@@ -1236,7 +1236,7 @@ func TestGetPrettyIndexMappings(t *testing.T) {
 var getShardsTestSetup = &ServerSetup{
 	Method:   "GET",
 	Path:     "/_cat/shards",
-	Response: `[{"index":"code:index-3:slice-1","shard":"1","prirep":"p","state":"STARTED","docs":"0","store":"162b","ip":"172.16.27.16","node":"search-storage-abc123"},{"index":"code:index-3:slice-1","shard":"1","prirep":"r","state":"STARTED","docs":"0","store":"162b","ip":"172.16.26.28","node":"search-storage-def456"}]`,
+	Response: `[{"index":"test_index","shard":"1","prirep":"p","state":"STARTED","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-abc123"},{"index":"test_index","shard":"1","prirep":"r","state":"STARTED","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-def456"}]`,
 }
 
 func TestGetShards_OneNode(t *testing.T) {
@@ -1244,7 +1244,7 @@ func TestGetShards_OneNode(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	shards, err := client.GetShards([]string{"search-storage-abc123"})
+	shards, err := client.GetShards([]string{"node-abc123"})
 
 	if err != nil {
 		t.Errorf("Unexpected error, got %s", err)
@@ -1265,7 +1265,7 @@ func TestGetShards_Regexp(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	shards, err := client.GetShards([]string{"search-\\w+-[a-c]{3}\\d+$"})
+	shards, err := client.GetShards([]string{"node-[a-c]{3}\\d+$"})
 
 	if err != nil {
 		t.Errorf("Unexpected error, got %s", err)
@@ -1279,8 +1279,8 @@ func TestGetShards_Regexp(t *testing.T) {
 		t.Errorf("Expected slice of 1 shard, got %d instead", len(shards))
 	}
 
-	if shards[0].Node != "search-storage-abc123" {
-		t.Errorf("Expected to find Node name search-storage-abc123, found %s instead", shards[0].Node)
+	if shards[0].Node != "node-abc123" {
+		t.Errorf("Expected to find Node name node-abc123, found %s instead", shards[0].Node)
 	}
 
 }
@@ -1290,7 +1290,7 @@ func TestGetShards_MultiNode(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	shards, err := client.GetShards([]string{"search-storage-abc123", "search-storage-def456"})
+	shards, err := client.GetShards([]string{"node-abc123", "node-def456"})
 
 	if err != nil {
 		t.Errorf("Unexpected error, got %s", err)
@@ -1325,4 +1325,116 @@ func TestGetShards_NoNodes(t *testing.T) {
 		t.Errorf("Expected slice of 2 shards, got %d instead", len(shards))
 	}
 
+}
+
+func TestGetShardOverlap_Safe(t *testing.T) {
+	getShardsTestSetup = &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/shards",
+		Response: `[{"index":"test_index","shard":"1","prirep":"p","state":"STARTED","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-abc123"},{"index":"test_index","shard":"1","prirep":"r","state":"UNASSIGNED","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-abc123"}]`,
+	}
+
+	getIndicesTestSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/indices",
+		Response: `[{"health":"green","status":"open","index":"test_index","pri":"5","rep":"1","store.size":"3.6kb", "docs.count":"1500"}]`,
+	}
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardsTestSetup, getIndicesTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	overlap, err := client.GetShardOverlap([]string{"node-abc123"})
+
+	if err != nil {
+		t.Errorf("Unexpected error, get %s", err)
+	}
+
+	if overlap == nil {
+		t.Errorf("Expected slice of shards, got nil instead")
+	}
+
+	if val, ok := overlap["test_index_1"]; ok {
+
+		if !val.SafeToRemove() {
+			t.Error("Expected SafeToRemove=true, got false instead")
+		}
+	} else {
+		t.Errorf("Expected overlap data, got nil instead")
+	}
+
+	fmt.Println(overlap)
+}
+
+func TestGetShardOverlap_UnSafe(t *testing.T) {
+	getShardOverlapTestSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/shards",
+		Response: `[{"index":"test_index","shard":"1","prirep":"p","state":"STARTED","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-abc123"},{"index":"test_index","shard":"1","prirep":"r","state":"STARTED","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-abc123"}]`,
+	}
+
+	getIndicesTestSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/indices",
+		Response: `[{"health":"green","status":"open","index":"test_index","pri":"5","rep":"1","store.size":"3.6kb", "docs.count":"1500"}]`,
+	}
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardOverlapTestSetup, getIndicesTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	overlap, err := client.GetShardOverlap([]string{"node-abc123"})
+
+	if err != nil {
+		t.Errorf("Unexpected error, get %s", err)
+	}
+
+	if overlap == nil {
+		t.Errorf("Expected slice of shards, got nil instead")
+	}
+
+	if val, ok := overlap["test_index_1"]; ok {
+		if val.SafeToRemove() {
+			t.Error("Expected SafeToRemove=false, got true instead")
+		}
+	} else {
+		t.Errorf("Expected overlap data, got nil instead")
+	}
+
+	fmt.Println(overlap)
+}
+
+func TestGetShardOverlap_UnSafeRelocating(t *testing.T) {
+	getShardsTestSetup = &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/shards",
+		Response: `[{"index":"test_index","shard":"1","prirep":"p","state":"RELOCATING","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-def456 -> 123.123.123.123 bDke_wlKn4Lk node-abc123"},{"index":"test_index","shard":"1","prirep":"r","state":"STARTED","docs":"0","store":"162b","ip":"123.123.123.123","node":"node-abc123"}]`,
+	}
+
+	getIndicesTestSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/indices",
+		Response: `[{"health":"green","status":"open","index":"test_index","pri":"5","rep":"1","store.size":"3.6kb", "docs.count":"1500"}]`,
+	}
+	host, port, ts := setupTestServers(t, []*ServerSetup{getShardsTestSetup, getIndicesTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	overlap, err := client.GetShardOverlap([]string{"node-abc123"})
+
+	if err != nil {
+		t.Errorf("Unexpected error, get %s", err)
+	}
+
+	if overlap == nil {
+		t.Errorf("Expected slice of shards, got nil instead")
+	}
+
+	if val, ok := overlap["test_index_1"]; ok {
+		if val.SafeToRemove() {
+			t.Error("Expected SafeToRemove=false, got true instead")
+		}
+	} else {
+		t.Errorf("Expected overlap data, got nil instead")
+	}
+
+	fmt.Println(overlap)
 }
