@@ -260,15 +260,15 @@ func TestGetShardOverlap(t *testing.T) {
 		t.Fatal("Excepted a map, got nil instead")
 	}
 
-	if val["integration_test0"].PrimaryFound != true {
+	if val["integration_test_0"].PrimaryFound != true {
 		t.Fatal("Expected PrimaryFound == false, got true instead")
 	}
 
-	if val["integration_test0"].ReplicasFound != 1 {
+	if val["integration_test_0"].ReplicasFound != 1 {
 		t.Fatalf("Expected 1 ReplicasFound, got %d instead", val["integration_test0"].ReplicasFound)
 	}
 
-	if val["integration_test0"].ReplicasTotal != 2 {
+	if val["integration_test_0"].ReplicasTotal != 2 {
 		t.Fatalf("Expected 2 ReplicasTotal, got %d instead", val["integration_test0"].ReplicasTotal)
 	}
 
