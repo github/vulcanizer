@@ -89,6 +89,35 @@ type Alias struct {
 	RoutingSearch string `json:"routing.search"`
 }
 
+//Represent the two possible aliases actions: add or remove
+type AliasActionType string
+
+const (
+	AddAlias    AliasActionType = "add"
+	RemoveAlias AliasActionType = "remove"
+)
+
+//Holds information needed to perform an alias modification, based on the aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/indices-aliases.html
+type AliasAction struct {
+	ActionType AliasActionType
+	IndexName  string `json:"index"`
+	AliasName  string `json:"alias"`
+}
+
+func (ac *AliasAction) MarshalJSON() ([]byte, error) {
+	return json.Marshal(
+		&map[AliasActionType]struct {
+			IndexName string `json:"index"`
+			AliasName string `json:"alias"`
+		}{
+			ac.ActionType: {
+				IndexName: ac.IndexName,
+				AliasName: ac.AliasName,
+			},
+		},
+	)
+}
+
 //Holds information about the health of an Elasticsearch cluster, based on the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
 type ClusterHealth struct {
 	Cluster                string  `json:"cluster_name"`
@@ -443,6 +472,26 @@ func (c *Client) GetAliases() ([]Alias, error) {
 	}
 
 	return aliases, nil
+}
+
+//Interact with aliases in the cluster.
+//
+//Use case: You want to add, delete or update an index alias
+func (c *Client) ModifyAliases(actions []AliasAction) error {
+	request := map[string][]AliasAction{"actions": actions}
+
+	agent := c.buildPostRequest("_aliases").
+		Set("Content-Type", "application/json").
+		Send(request)
+
+	var response struct{ Acknowledged bool `json:"acknowledged"` }
+	err := handleErrWithStruct(agent, &response)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //Delete an index in the cluster.
