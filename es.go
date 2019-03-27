@@ -71,6 +71,15 @@ type Shard struct {
 	Node  string `json:"node"`
 }
 
+//Holds information about overlapping shards for a given set of cluster nodes
+type ShardOverlap struct {
+	Index         string
+	Shard         string
+	PrimaryFound  bool
+	ReplicasFound int
+	ReplicasTotal int
+}
+
 // Holds information about an Elasticsearch alias, based on the _cat/aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-alias.html
 type Alias struct {
 	Name          string `json:"alias"`
@@ -78,6 +87,35 @@ type Alias struct {
 	Filter        string `json:"filter"`
 	RoutingIndex  string `json:"routing.index"`
 	RoutingSearch string `json:"routing.search"`
+}
+
+//Represent the two possible aliases actions: add or remove
+type AliasActionType string
+
+const (
+	AddAlias    AliasActionType = "add"
+	RemoveAlias AliasActionType = "remove"
+)
+
+//Holds information needed to perform an alias modification, based on the aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/indices-aliases.html
+type AliasAction struct {
+	ActionType AliasActionType
+	IndexName  string `json:"index"`
+	AliasName  string `json:"alias"`
+}
+
+func (ac *AliasAction) MarshalJSON() ([]byte, error) {
+	return json.Marshal(
+		&map[AliasActionType]struct {
+			IndexName string `json:"index"`
+			AliasName string `json:"alias"`
+		}{
+			ac.ActionType: {
+				IndexName: ac.IndexName,
+				AliasName: ac.AliasName,
+			},
+		},
+	)
 }
 
 //Holds information about the health of an Elasticsearch cluster, based on the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
@@ -232,6 +270,21 @@ func handleErrWithStruct(s *gorequest.SuperAgent, v interface{}) error {
 		return errors.New(errorMessage)
 	}
 	return nil
+}
+
+// Can we safely remove nodes without data loss?
+func (s ShardOverlap) SafeToRemove() bool {
+	return !(s.PrimaryFound && s.ReplicasFound >= s.ReplicasTotal)
+}
+
+// Check if we should consider shard as a primary shard
+func (s ShardOverlap) isPrimaryShard(shard Shard) bool {
+	return shard.Type == "p" && (shard.State == "STARTED" || shard.State == "RELOCATING")
+}
+
+// Check if we should consider shard as a replica shard
+func (s ShardOverlap) isReplicaShard(shard Shard) bool {
+	return shard.Type == "r" && (shard.State == "STARTED" || shard.State == "RELOCATING")
 }
 
 func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
@@ -419,6 +472,28 @@ func (c *Client) GetAliases() ([]Alias, error) {
 	}
 
 	return aliases, nil
+}
+
+//Interact with aliases in the cluster.
+//
+//Use case: You want to add, delete or update an index alias
+func (c *Client) ModifyAliases(actions []AliasAction) error {
+	request := map[string][]AliasAction{"actions": actions}
+
+	agent := c.buildPostRequest("_aliases").
+		Set("Content-Type", "application/json").
+		Send(request)
+
+	var response struct {
+		Acknowledged bool `json:"acknowledged"`
+	}
+	err := handleErrWithStruct(agent, &response)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //Delete an index in the cluster.
@@ -909,4 +984,61 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 	}
 
 	return filteredShards, nil
+}
+
+//Get details regarding shard distribution across a given set of cluster nodes.
+//
+//Use case: You can leverage this information to determine if it's safe to remove cluster nodes without losing data.
+func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error) {
+	shards, err := c.GetShards(nodes)
+	overlap := map[string]ShardOverlap{}
+
+	if err != nil {
+		fmt.Printf("Error getting shards: %s", err)
+		return nil, err
+	}
+
+	_indices, err := c.GetIndices()
+
+	if err != nil {
+		fmt.Printf("Error getting indices: %s", err)
+		return nil, err
+	}
+
+	// Map-ify this slice of indices for easy lookup
+	indices := map[string]Index{}
+	for _, index := range _indices {
+		indices[index.Name] = index
+	}
+
+	for _, shard := range shards {
+		// Map key is the concatenation of the index name + "_" + shard number
+		name := fmt.Sprintf("%s_%s", shard.Index, shard.Shard)
+
+		val, ok := overlap[name]
+		if ok {
+			// We've already seen this index/shard combo
+			if val.isPrimaryShard(shard) {
+				val.PrimaryFound = true
+			} else if val.isReplicaShard(shard) {
+				val.ReplicasFound += 1
+			}
+			overlap[name] = val
+		} else {
+			// First occurrence of index/shard combo
+			val := ShardOverlap{
+				Index:         shard.Index,
+				Shard:         shard.Shard,
+				PrimaryFound:  val.isPrimaryShard(shard),
+				ReplicasFound: 0,
+				ReplicasTotal: indices[shard.Index].ReplicaCount,
+			}
+			// Ensure we're only counting fully started replica shards
+			if val.isReplicaShard(shard) {
+				val.ReplicasFound = 1
+			}
+			overlap[name] = val
+		}
+	}
+	return overlap, nil
 }
