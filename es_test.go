@@ -18,7 +18,7 @@ type ServerSetup struct {
 	HTTPStatus                   int
 }
 
-func buildTestServer(t testing.TB, setups []*ServerSetup, tls bool) *httptest.Server {
+func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Server {
 	handlerFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestBytes, _ := ioutil.ReadAll(r.Body)
 		requestBody := string(requestBytes)
@@ -56,7 +56,7 @@ func buildTestServer(t testing.TB, setups []*ServerSetup, tls bool) *httptest.Se
 }
 
 // setupTestServer sets up an HTTP test server to serve data to the test that come after it.
-func setupTestServers(t testing.TB, setups []*ServerSetup) (string, int, *httptest.Server) {
+func setupTestServers(t *testing.T, setups []*ServerSetup) (string, int, *httptest.Server) {
 
 	ts := buildTestServer(t, setups, false)
 
@@ -65,7 +65,7 @@ func setupTestServers(t testing.TB, setups []*ServerSetup) (string, int, *httpte
 	return url.Hostname(), port, ts
 }
 
-func setupTestTLSServers(t testing.TB, setups []*ServerSetup) (string, int, *httptest.Server) {
+func setupTestTLSServers(t *testing.T, setups []*ServerSetup) (string, int, *httptest.Server) {
 
 	ts := buildTestServer(t, setups, true)
 
@@ -1324,122 +1324,5 @@ func TestGetShards_NoNodes(t *testing.T) {
 	if len(shards) != 2 {
 		t.Errorf("Expected slice of 2 shards, got %d instead", len(shards))
 	}
-}
 
-func benchmarkShardSetup(numShards int) *ServerSetup {
-	setup := ServerSetup{
-		Method: "GET",
-		Path:   "/_cat/shards",
-	}
-
-	var largeShardList []string
-	shard := `{"index":"example_index","shard":"1","prirep":"p","state":"STARTED","docs":"0","store":"162b","ip":"172.16.27.16","node":"search-storage-abc123"}`
-	for n := 0; n < numShards; n++ {
-		largeShardList = append(largeShardList, shard)
-	}
-
-	setup.Response = fmt.Sprintf("[%s]", strings.Join(largeShardList, ","))
-
-	return &setup
-}
-
-var resultShards []Shard
-
-func BenchmarkShards_NoNodes_100Shards(b *testing.B) {
-	host, port, ts := setupTestServers(b, []*ServerSetup{benchmarkShardSetup(100)})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	var shards []Shard
-
-	for n := 0; n < b.N; n++ {
-		shards, _ = client.GetShards(nil)
-	}
-
-	resultShards = shards
-}
-
-func BenchmarkShards_NoNodes_1kShards(b *testing.B) {
-	host, port, ts := setupTestServers(b, []*ServerSetup{benchmarkShardSetup(1000)})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	var shards []Shard
-
-	for n := 0; n < b.N; n++ {
-		shards, _ = client.GetShards(nil)
-	}
-
-	resultShards = shards
-}
-
-func BenchmarkShards_NoNodes_100kShards(b *testing.B) {
-	host, port, ts := setupTestServers(b, []*ServerSetup{benchmarkShardSetup(100000)})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	var shards []Shard
-
-	for n := 0; n < b.N; n++ {
-		shards, _ = client.GetShards(nil)
-	}
-
-	resultShards = shards
-}
-
-func BenchmarkShards_5Nodes_100Shards(b *testing.B) {
-	host, port, ts := setupTestServers(b, []*ServerSetup{benchmarkShardSetup(100)})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	var shards []Shard
-	var nodes []string
-
-	for i := 0; i < 5; i++ {
-		nodes = append(nodes, fmt.Sprintf("elasticsearch_%d", i))
-	}
-
-	for n := 0; n < b.N; n++ {
-		shards, _ = client.GetShards(nodes)
-	}
-
-	resultShards = shards
-}
-
-func BenchmarkShards_5Nodes_1kShards(b *testing.B) {
-	host, port, ts := setupTestServers(b, []*ServerSetup{benchmarkShardSetup(1000)})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	var shards []Shard
-	var nodes []string
-
-	for i := 0; i < 5; i++ {
-		nodes = append(nodes, fmt.Sprintf("elasticsearch_%d", i))
-	}
-
-	for n := 0; n < b.N; n++ {
-		shards, _ = client.GetShards(nodes)
-	}
-
-	resultShards = shards
-}
-
-func BenchmarkShards_5Nodes_100kShards(b *testing.B) {
-	host, port, ts := setupTestServers(b, []*ServerSetup{benchmarkShardSetup(100000)})
-	defer ts.Close()
-	client := NewClient(host, port)
-
-	var shards []Shard
-	var nodes []string
-
-	for i := 0; i < 5; i++ {
-		nodes = append(nodes, fmt.Sprintf("elasticsearch_%d", i))
-	}
-
-	for n := 0; n < b.N; n++ {
-		shards, _ = client.GetShards(nodes)
-	}
-
-	resultShards = shards
 }
