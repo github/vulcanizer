@@ -484,7 +484,9 @@ func (c *Client) ModifyAliases(actions []AliasAction) error {
 		Set("Content-Type", "application/json").
 		Send(request)
 
-	var response struct{ Acknowledged bool `json:"acknowledged"` }
+	var response struct {
+		Acknowledged bool `json:"acknowledged"`
+	}
 	err := handleErrWithStruct(agent, &response)
 
 	if err != nil {
@@ -946,65 +948,42 @@ func (c *Client) GetPrettyIndexMappings(index string) (string, error) {
 //
 //Use case: You can view shard information on all nodes or a subset.
 func (c *Client) GetShards(nodes []string) ([]Shard, error) {
-	var response []Shard
+	var allShards []Shard
 	req := c.buildGetRequest("_cat/shards")
-	body, err := handleErrWithBytes(req)
+	err := handleErrWithStruct(req, &allShards)
 
 	if err != nil {
 		return nil, err
 	}
 
-	d := json.NewDecoder(strings.NewReader(string(body)))
-
-	// Read opening bracket
-	_, err = d.Token()
-
-	if err != nil {
-		fmt.Printf("Error parsing JSON. Expected '['")
-		return nil, err
+	// No nodes passed, so return all shards
+	if len(nodes) == 0 {
+		return allShards, nil
 	}
 
-	// Iterate over the array elements for single pass filtering
-	for d.More() {
-		var shard Shard
-		// Get Shard object from array
-		err = d.Decode(&shard)
+	var filteredShards []Shard
+	var nodeRegexps []*regexp.Regexp
 
+	for _, node := range nodes {
+		nodeRegexp, err := regexp.Compile(node)
 		if err != nil {
 			return nil, err
 		}
+		nodeRegexps = append(nodeRegexps, nodeRegexp)
+	}
 
-		if len(nodes) == 0 {
-			// No nodes passed, so return all shards
-			response = append(response, shard)
-		} else if len(nodes) > 0 {
-			// Only return nodes of interest
-			for _, node := range nodes {
-				// Support regexp matching of node name
-				pattern, err := regexp.Compile(node)
+	for _, shard := range allShards {
+		for _, nodeRegexp := range nodeRegexps {
+			// Support regexp matching of node name
+			matches := nodeRegexp.MatchString(shard.Node)
 
-				if err != nil {
-					fmt.Printf("Error compiling regexp pattern: %s", err)
-				}
-
-				matches := pattern.FindString(shard.Node)
-
-				if len(matches) > 0 {
-					response = append(response, shard)
-				}
+			if matches {
+				filteredShards = append(filteredShards, shard)
 			}
 		}
 	}
 
-	// Read closing bracket
-	_, err = d.Token()
-
-	if err != nil {
-		fmt.Printf("Error parsing JSON. Expected ']'")
-		return nil, err
-	}
-
-	return response, nil
+	return filteredShards, nil
 }
 
 //Get details regarding shard distribution across a given set of cluster nodes.
