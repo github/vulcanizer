@@ -80,6 +80,32 @@ type ShardOverlap struct {
 	ReplicasTotal int
 }
 
+//Holds information about shard recovery based on the _cat/recovery API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-recovery.html
+type ShardRecovery struct {
+	Index                string `json:"index"`
+	Shard                string `json:"shard"`
+	Time                 string `json:"time"`
+	Type                 string `json:"type"`
+	Stage                string `json:"stage"`
+	SourceHost           string `json:"source_host"`
+	SourceNode           string `json:"source_node"`
+	TargetHost           string `json:"target_host"`
+	TargetNode           string `json:"target_node"`
+	Repository           string `json:"repository"`
+	Snapshot             string `json:"snapshot"`
+	Files                int    `json:"files,string"`
+	FilesRecovered       int    `json:"files_recovered,string"`
+	FilesPercent         string `json:"files_percent"`
+	FilesTotal           int    `json:"files_total,string"`
+	Bytes                int    `json:"bytes,string"`
+	BytesRecovered       int    `json:"bytes_recovered,string"`
+	BytesPercent         string `json:"bytes_percent"`
+	BytesTotal           int    `json:"bytes_total,string"`
+	TranslogOps          int    `json:"translog_ops,string"`
+	TranslogOpsRecovered int    `json:"translog_ops_recovered,string"`
+	TranslogOpsPercent   string `json:"translog_ops_percent"`
+}
+
 // Holds information about an Elasticsearch alias, based on the _cat/aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-alias.html
 type Alias struct {
 	Name          string `json:"alias"`
@@ -1041,4 +1067,54 @@ func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error
 		}
 	}
 	return overlap, nil
+}
+
+//Get details regarding shard recovery operations across a set of cluster nodes.
+//
+//Use case: You can view the shard recovery progress of the cluster.
+func (c *Client) GetShardRecovery(nodes []string, onlyActive bool) ([]ShardRecovery, error) {
+	var allRecoveries []ShardRecovery
+	uri := "_cat/recovery"
+
+	if onlyActive {
+		uri = fmt.Sprintf("%s?active_only=true", uri)
+	}
+
+	req := c.buildGetRequest(uri)
+	err := handleErrWithStruct(req, &allRecoveries)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// No nodes passed, so return all shards
+	if len(nodes) == 0 {
+		return allRecoveries, nil
+	}
+
+	var filteredRecoveries []ShardRecovery
+	var nodeRegexps []*regexp.Regexp
+
+	for _, node := range nodes {
+		nodeRegexp, err := regexp.Compile(node)
+		if err != nil {
+			return nil, err
+		}
+		nodeRegexps = append(nodeRegexps, nodeRegexp)
+	}
+
+	for _, shard := range allRecoveries {
+		for _, nodeRegexp := range nodeRegexps {
+			// Support regexp matching of node name
+			matchesSource := nodeRegexp.MatchString(shard.SourceNode)
+			matchesTarget := nodeRegexp.MatchString(shard.TargetNode)
+
+			// Return if either source node or target node matches
+			if matchesSource || matchesTarget {
+				filteredRecoveries = append(filteredRecoveries, shard)
+			}
+		}
+	}
+
+	return filteredRecoveries, nil
 }
