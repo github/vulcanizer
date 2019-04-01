@@ -133,14 +133,14 @@ var cmdSnapshotStatus = &cobra.Command{
 			os.Exit(1)
 		}
 
-		duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.DurationMillis))
+		duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.GetDuration()))
 
 		results := [][]string{
 			{"State", snapshot.State},
 			{"Name", snapshot.Name},
 			{"Indices", strings.Join(snapshot.Indices, ", ")},
 			{"Started", snapshot.StartTime.Format(time.RFC3339)},
-			{"Finished", snapshot.EndTime.Format(time.RFC3339)},
+			{"Finished", snapshot.GetEndTime()},
 			{"Duration", fmt.Sprintf("%v", duration)},
 			{"Shards", fmt.Sprintf("Successful shards: %d, failed shards: %d", snapshot.Shards.Successful, snapshot.Shards.Failed)},
 		}
@@ -221,11 +221,11 @@ var cmdSnapshotList = &cobra.Command{
 
 		rows := [][]string{}
 		for _, snapshot := range snapshots {
-			duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.DurationMillis))
+			duration, _ := time.ParseDuration(fmt.Sprintf("%dms", snapshot.GetDuration()))
 			row := []string{
 				snapshot.State,
 				snapshot.Name,
-				snapshot.EndTime.Format(time.RFC3339),
+				snapshot.GetEndTime(),
 				fmt.Sprintf("%v", duration),
 			}
 			rows = append(rows, row)
