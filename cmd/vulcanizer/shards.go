@@ -13,7 +13,7 @@ var activeOnly bool
 func init() {
 	cmdShards.Flags().StringSliceVarP(&nodesToCheck, "nodes", "n", []string{}, "Elasticsearch node(s) to get shard information from")
 	cmdShardsRecovery.Flags().StringSliceVarP(&nodesToCheck, "nodes", "n", []string{}, "Elasticsearch node(s) to get shard information from")
-	cmdShardsRecovery.Flags().BoolVar(&activeOnly, "active", false, "Only display active recoveries")
+	cmdShardsRecovery.Flags().BoolVar(&activeOnly, "active", true, "Only display active recoveries")
 
 	cmdShards.AddCommand(cmdShardsRecovery)
 	rootCmd.AddCommand(cmdShards)
