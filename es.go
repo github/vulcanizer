@@ -298,6 +298,19 @@ func handleErrWithStruct(s *gorequest.SuperAgent, v interface{}) error {
 	return nil
 }
 
+// Estimate time remaining for recovery
+func (s ShardRecovery) TimeRemaining() (time.Duration, error) {
+	elapsed, err := time.ParseDuration(s.Time)
+	if err != nil {
+		return time.Second, err
+	}
+	// Calculate the rate of change
+	rate := float64(s.BytesRecovered) / elapsed.Seconds()
+	bytesLeft := s.BytesTotal - s.BytesRecovered
+	// Divide the remaining bytes to recover by the rate of change
+	return time.Duration(float64(bytesLeft)/rate) * time.Second, nil
+}
+
 // Can we safely remove nodes without data loss?
 func (s ShardOverlap) SafeToRemove() bool {
 	return !(s.PrimaryFound && s.ReplicasFound >= s.ReplicasTotal)
