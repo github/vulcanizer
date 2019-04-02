@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // ServerSetup type contains the Method, Path, Body and Response strings, as well as the HTTP Status code.
@@ -1511,13 +1512,13 @@ func TestGetShardOverlap_UnSafeRelocating(t *testing.T) {
 	fmt.Println(overlap)
 }
 
-func TestGetShardRecovery(t *testing.T) {
-	getRecoveryTestSetup := &ServerSetup{
-		Method:   "GET",
-		Path:     "/_cat/recovery",
-		Response: `[{"index":"test_index","shard":"0","time":"2h","type":"peer","stage":"index","source_host":"123.123.123.123","source_node":"node-0","target_host":"124.124.124.124","target_node":"node-1","repository":"n/a","snapshot":"n/a","files":"400","files_recovered":"100","files_percent":"25%","files_total":"400","bytes":"400","bytes_recovered":"100","bytes_percent":"25%","bytes_total":"400","translog_ops":"400","translog_ops_recovered":"0","translog_ops_percent":"0.0%"}]`,
-	}
+var getRecoveryTestSetup = &ServerSetup{
+	Method:   "GET",
+	Path:     "/_cat/recovery",
+	Response: `[{"index":"test_index","shard":"0","time":"2h","type":"peer","stage":"index","source_host":"123.123.123.123","source_node":"node-0","target_host":"124.124.124.124","target_node":"node-1","repository":"n/a","snapshot":"n/a","files":"400","files_recovered":"100","files_percent":"25%","files_total":"400","bytes":"400","bytes_recovered":"100","bytes_percent":"25%","bytes_total":"400","translog_ops":"400","translog_ops_recovered":"0","translog_ops_percent":"0.0%"}]`,
+}
 
+func TestGetShardRecovery(t *testing.T) {
 	host, port, ts := setupTestServers(t, []*ServerSetup{getRecoveryTestSetup})
 	defer ts.Close()
 	client := NewClient(host, port)
@@ -1555,4 +1556,22 @@ func TestGetShardRecovery(t *testing.T) {
 		TranslogOpsPercent:   "0.0%",
 	})
 
+}
+
+func TestGetShardRecoveryRemaining(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{getRecoveryTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	recoveries, err := client.GetShardRecovery([]string{}, false)
+	if err != nil {
+		t.Errorf("Unexpected error getting shard recoveries: %s", err)
+	}
+
+	estRemaining, err := recoveries[0].TimeRemaining()
+	if err != nil {
+		t.Errorf("Error getting estimated time remaining: %s", err)
+	}
+
+	assert.Equal(t, estRemaining, time.Hour*6)
 }
