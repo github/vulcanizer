@@ -1131,3 +1131,23 @@ func (c *Client) GetShardRecovery(nodes []string, onlyActive bool) ([]ShardRecov
 
 	return filteredRecoveries, nil
 }
+
+// GetDuration gets the total duration of a snapshot
+func (s *Snapshot) GetDuration() int {
+	if s.DurationMillis > 0 {
+		return s.DurationMillis
+	}
+	// This will avoid returning incorrect values like "-1554114611822"
+	return int(time.Since(s.StartTime) / time.Millisecond)
+
+}
+
+// GetEndTime gets the time when a snapshot ended
+func (s *Snapshot) GetEndTime() string {
+	if s.DurationMillis > 0 {
+		return s.EndTime.Format(time.RFC3339)
+	}
+	// This will avoid returning incorrect values like "1970-01-01T00:00:00.000Z"
+	return ""
+
+}
