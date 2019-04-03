@@ -3,6 +3,7 @@ package vulcanizer
 import (
 	"crypto/tls"
 	"fmt"
+	"gotest.tools/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // ServerSetup type contains the Method, Path, Body and Response strings, as well as the HTTP Status code.
@@ -1508,4 +1510,68 @@ func TestGetShardOverlap_UnSafeRelocating(t *testing.T) {
 	}
 
 	fmt.Println(overlap)
+}
+
+var getRecoveryTestSetup = &ServerSetup{
+	Method:   "GET",
+	Path:     "/_cat/recovery",
+	Response: `[{"index":"test_index","shard":"0","time":"2h","type":"peer","stage":"index","source_host":"123.123.123.123","source_node":"node-0","target_host":"124.124.124.124","target_node":"node-1","repository":"n/a","snapshot":"n/a","files":"400","files_recovered":"100","files_percent":"25%","files_total":"400","bytes":"400","bytes_recovered":"100","bytes_percent":"25%","bytes_total":"400","translog_ops":"400","translog_ops_recovered":"0","translog_ops_percent":"0.0%"}]`,
+}
+
+func TestGetShardRecovery(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{getRecoveryTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	recoveries, err := client.GetShardRecovery([]string{}, false)
+
+	if err != nil {
+		t.Errorf("Unexpected error getting shard recoveries: %s", err)
+	}
+
+	assert.Equal(t, len(recoveries), 1)
+
+	assert.DeepEqual(t, recoveries[0], ShardRecovery{
+		Index:                "test_index",
+		Shard:                "0",
+		Time:                 "2h",
+		Type:                 "peer",
+		Stage:                "index",
+		SourceHost:           "123.123.123.123",
+		SourceNode:           "node-0",
+		TargetHost:           "124.124.124.124",
+		TargetNode:           "node-1",
+		Repository:           "n/a",
+		Snapshot:             "n/a",
+		Bytes:                400,
+		BytesTotal:           400,
+		BytesRecovered:       100,
+		BytesPercent:         "25%",
+		Files:                400,
+		FilesTotal:           400,
+		FilesRecovered:       100,
+		FilesPercent:         "25%",
+		TranslogOps:          400,
+		TranslogOpsRecovered: 0,
+		TranslogOpsPercent:   "0.0%",
+	})
+
+}
+
+func TestGetShardRecoveryRemaining(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{getRecoveryTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	recoveries, err := client.GetShardRecovery([]string{}, false)
+	if err != nil {
+		t.Errorf("Unexpected error getting shard recoveries: %s", err)
+	}
+
+	estRemaining, err := recoveries[0].TimeRemaining()
+	if err != nil {
+		t.Errorf("Error getting estimated time remaining: %s", err)
+	}
+
+	assert.Equal(t, estRemaining, time.Hour*6)
 }
