@@ -27,7 +27,7 @@ var cmdNodes = &cobra.Command{
 			os.Exit(1)
 		}
 
-		header := []string{"Master", "Role", "Name", "Ip", "Id", "JDK"}
+		header := []string{"Master", "Role", "Name", "Ip", "Id", "JDK", "Version"}
 		rows := [][]string{}
 		for _, node := range nodes {
 			row := []string{
@@ -37,6 +37,7 @@ var cmdNodes = &cobra.Command{
 				node.Ip,
 				node.Id,
 				node.Jdk,
+				node.Version,
 			}
 
 			rows = append(rows, row)

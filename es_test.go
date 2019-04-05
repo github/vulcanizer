@@ -257,7 +257,7 @@ func TestGetNodes(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
 		Path:     "/_cat/nodes",
-		Response: `[{"master": "*", "role": "d", "name": "foo", "ip": "127.0.0.1", "id": "abc", "jdk": "1.8"}]`,
+		Response: `[{"master": "*", "role": "d", "name": "foo", "ip": "127.0.0.1", "id": "abc", "jdk": "1.8", "version": "6.4.0"}]`,
 	}
 
 	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
@@ -276,6 +276,10 @@ func TestGetNodes(t *testing.T) {
 
 	if nodes[0].Name != "foo" {
 		t.Errorf("Unexpected node name, expected foo, got %s", nodes[0].Name)
+	}
+
+	if nodes[0].Version != "6.4.0" {
+		t.Errorf("Unexpected version, expected 6.4.0, got %s", nodes[0].Version)
 	}
 }
 

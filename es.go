@@ -40,12 +40,13 @@ type Client struct {
 
 //Holds information about an Elasticsearch node, based on the _cat/nodes API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html
 type Node struct {
-	Name   string `json:"name"`
-	Ip     string `json:"ip"`
-	Id     string `json:"id"`
-	Role   string `json:"role"`
-	Master string `json:"master"`
-	Jdk    string `json:"jdk"`
+	Name    string `json:"name"`
+	Ip      string `json:"ip"`
+	Id      string `json:"id"`
+	Role    string `json:"role"`
+	Master  string `json:"master"`
+	Jdk     string `json:"jdk"`
+	Version string `json:"version"`
 }
 
 //Holds information about an Elasticsearch index, based on the _cat/indices API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-indices.html
@@ -474,7 +475,7 @@ func (c *Client) FillAll() (ExcludeSettings, error) {
 func (c *Client) GetNodes() ([]Node, error) {
 	var nodes []Node
 
-	agent := c.buildGetRequest("_cat/nodes?h=master,role,name,ip,id,jdk")
+	agent := c.buildGetRequest("_cat/nodes?h=master,role,name,ip,id,jdk,version")
 	err := handleErrWithStruct(agent, &nodes)
 
 	if err != nil {
