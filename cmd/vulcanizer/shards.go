@@ -71,7 +71,7 @@ var cmdShardsRecovery = &cobra.Command{
 			os.Exit(1)
 		}
 
-		header := []string{"Index", "Shard", "Time", "Stage", "Source Node", "Target Node", "Bytes Percent", "Est Minutes Remain"}
+		header := []string{"Index", "Shard", "Time", "Stage", "Source Node", "Target Node", "Bytes Percent", "Est Remaining"}
 		var rows [][]string
 
 		for _, shard := range recovery {
@@ -85,7 +85,7 @@ var cmdShardsRecovery = &cobra.Command{
 				shard.SourceNode,
 				shard.TargetNode,
 				shard.BytesPercent,
-				fmt.Sprintf("%f", remaining.Minutes()),
+				remaining.String(),
 			}
 			rows = append(rows, row)
 		}
