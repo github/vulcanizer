@@ -567,6 +567,50 @@ func (c *Client) DeleteIndex(indexName string) error {
 	return nil
 }
 
+//Open an index on the cluster
+//
+//Use case: You want to open a closed index
+func (c *Client) OpenIndex(indexName string) error {
+	// var response acknowledgedResponse
+
+	var response struct {
+		Acknowledged bool `json:"acknowledged"`
+	}
+	err := handleErrWithStruct(c.buildPostRequest(fmt.Sprintf("%s/_open", indexName)), &response)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Acknowledged {
+		return fmt.Errorf(`Request to open index "%s" was not acknowledged. %+v`, indexName, response)
+	}
+
+	return nil
+}
+
+//Close an index on the cluster
+//
+//Use case: You want to close an opened index
+func (c *Client) CloseIndex(indexName string) error {
+	// var response acknowledgedResponse
+
+	var response struct {
+		Acknowledged bool `json:"acknowledged"`
+	}
+	err := handleErrWithStruct(c.buildPostRequest(fmt.Sprintf("%s/_close", indexName)), &response)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Acknowledged {
+		return fmt.Errorf(`Request to open index "%s" was not acknowledged. %+v`, indexName, response)
+	}
+
+	return nil
+}
+
 //Get the health of the cluster.
 //
 //Use case: You want to see information needed to determine if the Elasticsearch cluster is healthy (green) or not (yellow/red).
