@@ -29,9 +29,9 @@ var cmdIndices = &cobra.Command{
 		var err error
 		var indices []vulcanizer.Index
 		if len(args) > 0 {
-			indices, err = v.GetSomeIndices(args[0])
+			indices, err = v.GetIndices(args[0])
 		} else {
-			indices, err = v.GetIndices()
+			indices, err = v.GetAllIndices()
 		}
 
 		if err != nil {
