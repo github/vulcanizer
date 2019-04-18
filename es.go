@@ -499,6 +499,18 @@ func (c *Client) GetIndices() ([]Index, error) {
 	return indices, nil
 }
 
+// Get a subset of indices
+func (c *Client) GetSomeIndices(index string) ([]Index, error) {
+	var indices []Index
+	err := handleErrWithStruct(c.buildGetRequest(fmt.Sprintf("_cat/indices/%s?h=health,status,index,pri,rep,store.size,docs.count", index)), &indices)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return indices, nil
+}
+
 //Get all the aliases in the cluster.
 //
 //Use case: You want to see some basic info on all the aliases of the cluster
