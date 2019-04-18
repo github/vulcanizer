@@ -488,7 +488,7 @@ func (c *Client) GetNodes() ([]Node, error) {
 //Get all the indices in the cluster.
 //
 //Use case: You want to see some basic info on all the indices of the cluster.
-func (c *Client) GetIndices() ([]Index, error) {
+func (c *Client) GetAllIndices() ([]Index, error) {
 	var indices []Index
 	err := handleErrWithStruct(c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count"), &indices)
 
@@ -500,7 +500,7 @@ func (c *Client) GetIndices() ([]Index, error) {
 }
 
 // Get a subset of indices
-func (c *Client) GetSomeIndices(index string) ([]Index, error) {
+func (c *Client) GetIndices(index string) ([]Index, error) {
 	var indices []Index
 	err := handleErrWithStruct(c.buildGetRequest(fmt.Sprintf("_cat/indices/%s?h=health,status,index,pri,rep,store.size,docs.count", index)), &indices)
 
@@ -1094,7 +1094,7 @@ func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error
 		return nil, err
 	}
 
-	_indices, err := c.GetIndices()
+	_indices, err := c.GetAllIndices()
 
 	if err != nil {
 		fmt.Printf("Error getting indices: %s", err)
