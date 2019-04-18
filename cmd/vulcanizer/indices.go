@@ -14,14 +14,23 @@ func init() {
 }
 
 var cmdIndices = &cobra.Command{
-	Use:   "indices",
-	Short: "Display the indices of the cluster.",
-	Long:  `Show what indices are created on the given cluster.`,
+	Use:     "indices",
+	Aliases: []string{"index"},
+	Short:   "Display the indices of the cluster.",
+	Long:    `Show what indices are created on the given cluster.`,
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		host, port, auth := getConfiguration()
 		v := vulcanizer.NewClient(host, port)
 		v.Auth = auth
-		indices, err := v.GetIndices()
+
+		var err error
+		var indices []vulcanizer.Index
+		if len(args) > 0 {
+			indices, err = v.GetSomeIndices(args[0])
+		} else {
+			indices, err = v.GetIndices()
+		}
 
 		if err != nil {
 			fmt.Printf("Error getting indices: %s\n", err)
