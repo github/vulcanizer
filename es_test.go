@@ -454,6 +454,42 @@ func TestDeleteIndex(t *testing.T) {
 	}
 }
 
+func TestOpenIndex(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/openindex*/_open",
+		Response: `{"acknowledged": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.OpenIndex("openindex*")
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+}
+
+func TestCloseIndex(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/closeindex*/_close",
+		Response: `{"acknowledged": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.CloseIndex("closeindex*")
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+}
+
 func TestGetHealth(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
