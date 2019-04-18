@@ -283,7 +283,7 @@ func TestGetNodes(t *testing.T) {
 	}
 }
 
-func TestGetIndices(t *testing.T) {
+func TestGetAllIndices(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
 		Path:     "/_cat/indices",
@@ -294,7 +294,7 @@ func TestGetIndices(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	indices, err := client.GetIndices()
+	indices, err := client.GetAllIndices()
 
 	if err != nil {
 		t.Errorf("Unexpected error expected nil, got %s", err)
@@ -309,7 +309,7 @@ func TestGetIndices(t *testing.T) {
 	}
 }
 
-func TestGetSomeIndices(t *testing.T) {
+func TestGetIndices(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
 		Path:     "/_cat/indices/test*",
@@ -320,7 +320,7 @@ func TestGetSomeIndices(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	indices, err := client.GetSomeIndices("test*")
+	indices, err := client.GetIndices("test*")
 
 	if err != nil {
 		t.Errorf("Unexpected error expected nil, got %s", err)
