@@ -309,6 +309,32 @@ func TestGetIndices(t *testing.T) {
 	}
 }
 
+func TestGetSomeIndices(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/indices/test*",
+		Response: `[{"health":"yellow","status":"open","index":"test_one","pri":"5","rep":"1","store.size":"3.6kb", "docs.count":"1500"}]`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	indices, err := client.GetSomeIndices("test*")
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+
+	if len(indices) != 1 {
+		t.Errorf("Unexpected indices, got %v", indices)
+	}
+
+	if indices[0].Health != "yellow" || indices[0].ReplicaCount != 1 || indices[0].DocumentCount != 1500 {
+		t.Errorf("Unexpected index values, got %v", indices[0])
+	}
+}
+
 func TestGetAliases(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
