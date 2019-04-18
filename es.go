@@ -605,7 +605,7 @@ func (c *Client) CloseIndex(indexName string) error {
 	}
 
 	if !response.Acknowledged {
-		return fmt.Errorf(`Request to open index "%s" was not acknowledged. %+v`, indexName, response)
+		return fmt.Errorf(`Request to close index "%s" was not acknowledged. %+v`, indexName, response)
 	}
 
 	return nil
