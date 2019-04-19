@@ -488,9 +488,21 @@ func (c *Client) GetNodes() ([]Node, error) {
 //Get all the indices in the cluster.
 //
 //Use case: You want to see some basic info on all the indices of the cluster.
-func (c *Client) GetIndices() ([]Index, error) {
+func (c *Client) GetAllIndices() ([]Index, error) {
 	var indices []Index
 	err := handleErrWithStruct(c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count"), &indices)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return indices, nil
+}
+
+// Get a subset of indices
+func (c *Client) GetIndices(index string) ([]Index, error) {
+	var indices []Index
+	err := handleErrWithStruct(c.buildGetRequest(fmt.Sprintf("_cat/indices/%s?h=health,status,index,pri,rep,store.size,docs.count", index)), &indices)
 
 	if err != nil {
 		return nil, err
@@ -550,6 +562,50 @@ func (c *Client) DeleteIndex(indexName string) error {
 
 	if !response.Acknowledged {
 		return fmt.Errorf(`Request to delete index "%s" was not acknowledged. %+v`, indexName, response)
+	}
+
+	return nil
+}
+
+//Open an index on the cluster
+//
+//Use case: You want to open a closed index
+func (c *Client) OpenIndex(indexName string) error {
+	// var response acknowledgedResponse
+
+	var response struct {
+		Acknowledged bool `json:"acknowledged"`
+	}
+	err := handleErrWithStruct(c.buildPostRequest(fmt.Sprintf("%s/_open", indexName)), &response)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Acknowledged {
+		return fmt.Errorf(`Request to open index "%s" was not acknowledged. %+v`, indexName, response)
+	}
+
+	return nil
+}
+
+//Close an index on the cluster
+//
+//Use case: You want to close an opened index
+func (c *Client) CloseIndex(indexName string) error {
+	// var response acknowledgedResponse
+
+	var response struct {
+		Acknowledged bool `json:"acknowledged"`
+	}
+	err := handleErrWithStruct(c.buildPostRequest(fmt.Sprintf("%s/_close", indexName)), &response)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Acknowledged {
+		return fmt.Errorf(`Request to close index "%s" was not acknowledged. %+v`, indexName, response)
 	}
 
 	return nil
@@ -1038,7 +1094,7 @@ func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error
 		return nil, err
 	}
 
-	_indices, err := c.GetIndices()
+	_indices, err := c.GetAllIndices()
 
 	if err != nil {
 		fmt.Printf("Error getting indices: %s", err)

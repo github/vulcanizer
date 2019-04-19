@@ -25,7 +25,7 @@ func TestNodes(t *testing.T) {
 func TestIndices(t *testing.T) {
 	c := vulcanizer.NewClient("localhost", 49200)
 
-	indices, err := c.GetIndices()
+	indices, err := c.GetAllIndices()
 
 	if err != nil {
 		t.Fatalf("Error getting indices: %s", err)
@@ -60,7 +60,7 @@ func TestIndices(t *testing.T) {
 		}
 	}
 
-	indices, err = c.GetIndices()
+	indices, err = c.GetAllIndices()
 	if err != nil {
 		t.Fatalf("Error getting indices: %s", err)
 	}
@@ -266,7 +266,7 @@ func TestSnapshots(t *testing.T) {
 	// Let the restore complete
 	time.Sleep(5 * time.Second)
 
-	indices, err := c.GetIndices()
+	indices, err := c.GetAllIndices()
 
 	if err != nil {
 		t.Fatalf("Error getting indices: %s", err)
@@ -295,7 +295,7 @@ func TestSnapshots(t *testing.T) {
 		t.Fatalf("Error deleting restored_integration_test index: %+v", indices)
 	}
 
-	indices, err = c.GetIndices()
+	indices, err = c.GetAllIndices()
 	if err != nil {
 		t.Fatalf("Error getting indices after index deletion: %s", err)
 	}
