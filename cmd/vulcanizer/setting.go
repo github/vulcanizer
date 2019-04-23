@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -41,9 +40,8 @@ var cmdSettingUpdate = &cobra.Command{
 	Short: "Update a cluster setting.",
 	Long:  `This command will update the cluster's settings with the provided value.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		existingValue, newValue, err := v.SetClusterSetting(settingToUpdate, valueToUpdate)
 

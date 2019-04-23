@@ -30,9 +30,8 @@ var cmdAnalyze = &cobra.Command{
 	Short: "Analyze text given an analyzer or a field and index.",
 	Long:  `Use Elasticsearch's analyze API to display the tokens of example text. Either "analyzer" OR "field" and "index" arguments are required.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		text, err := cmd.Flags().GetString("text")
 		if err != nil {

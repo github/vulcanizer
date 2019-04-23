@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -111,9 +110,8 @@ var cmdSnapshotStatus = &cobra.Command{
 	Short: "Display info about a snapshot.",
 	Long:  `This command will display detailed information about the given snapshot.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		snapshotName, err := cmd.Flags().GetString("snapshot")
 		if err != nil {
@@ -154,9 +152,8 @@ var cmdSnapshotRestore = &cobra.Command{
 	Short: "Restore a snapshot.",
 	Long:  `This command will restore a specific index from a snapshot to the cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		snapshotName, err := cmd.Flags().GetString("snapshot")
 		if err != nil {
@@ -197,9 +194,8 @@ var cmdSnapshotList = &cobra.Command{
 	Short: "Display the snapshots of the cluster.",
 	Long:  `List the 10 most recent snapshots of the given repository`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		repository, err := cmd.Flags().GetString("repository")
 		if err != nil {
@@ -240,9 +236,8 @@ var cmdSnapshotCreate = &cobra.Command{
 	Short: "Create a new snapshot.",
 	Long:  `This command will take a new snapshot of the data of either all or specified indices.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		snapshotName, err := cmd.Flags().GetString("snapshot")
 		if err != nil {

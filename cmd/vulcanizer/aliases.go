@@ -92,9 +92,8 @@ var cmdAliasesList = &cobra.Command{
 	Short: "Display the aliases of the cluster",
 	Long:  `Show what aliases are created on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+		v := getClient()
+
 		aliases, err := v.GetAliases()
 
 		if err != nil {
@@ -127,9 +126,8 @@ var cmdAliasesUpdate = &cobra.Command{
 	Short: "Update an index's alias",
 	Long:  `In one atomic operation delete an existing alias and create a new one for a given index on the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		indexName, err := cmd.Flags().GetString("index")
 		if err != nil {
@@ -175,9 +173,8 @@ var cmdAliasesAdd = &cobra.Command{
 	Short: "Add an alias",
 	Long:  `Add a new alias to a given index in the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		indexName, err := cmd.Flags().GetString("index")
 		if err != nil {
@@ -212,9 +209,8 @@ var cmdAliasesDelete = &cobra.Command{
 	Short: "Delete an alias",
 	Long:  `Delete an alias associated to a given index in the given cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		indexName, err := cmd.Flags().GetString("index")
 		if err != nil || indexName == "" {
