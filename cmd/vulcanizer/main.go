@@ -23,7 +23,6 @@ type Config struct {
 }
 
 func getConfiguration() Config {
-	var config Config
 
 	v := viper.GetViper()
 
@@ -34,9 +33,15 @@ func getConfiguration() Config {
 			fmt.Printf("Could not retrieve configuration for cluster \"%s\"\n", viper.GetString("cluster"))
 			os.Exit(1)
 		}
+
+		err := v.BindPFlags(rootCmd.PersistentFlags())
+		if err != nil {
+			fmt.Printf("Could not bind commandline flags to configuration: %s\n", err)
+		}
+
 	}
 
-	config = Config{
+	config := Config{
 		Host:     v.GetString("host"),
 		Port:     v.GetInt("port"),
 		Protocol: v.GetString("protocol"),
@@ -47,6 +52,7 @@ func getConfiguration() Config {
 
 		TLSSkipVerify: v.GetBool("skipverify"),
 	}
+
 	return config
 }
 
