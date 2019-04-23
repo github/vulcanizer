@@ -115,17 +115,17 @@ func main() {
 	}
 	err = viper.BindPFlag("path", rootCmd.PersistentFlags().Lookup("path"))
 	if err != nil {
-		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		fmt.Printf("Error binding path flag: %s \n", err)
 		os.Exit(1)
 	}
 	err = viper.BindPFlag("protocol", rootCmd.PersistentFlags().Lookup("protocol"))
 	if err != nil {
-		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		fmt.Printf("Error binding protocol flag: %s \n", err)
 		os.Exit(1)
 	}
 	err = viper.BindPFlag("skipverify", rootCmd.PersistentFlags().Lookup("skipverify"))
 	if err != nil {
-		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		fmt.Printf("Error binding skipverify flag: %s \n", err)
 		os.Exit(1)
 	}
 	err = viper.BindPFlag("user", rootCmd.PersistentFlags().Lookup("user"))
