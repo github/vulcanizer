@@ -50,6 +50,28 @@ func getConfiguration() Config {
 	return config
 }
 
+func getClient() *vulcanizer.Client {
+
+	c := getConfiguration()
+
+	v := vulcanizer.NewClient(
+		c.Host,
+		c.Port,
+	)
+	v.Path = c.Path
+	v.Auth = &vulcanizer.Auth{User: c.User, Password: c.Password}
+
+	if c.Protocol == "https" {
+		v.Secure = true
+	}
+
+	if c.TLSSkipVerify {
+		v.TLSConfig = &tls.Config{InsecureSkipVerify: c.TLSSkipVerify}
+	}
+
+	return v
+}
+
 func renderTable(rows [][]string, header []string) string {
 	var result bytes.Buffer
 	table := tablewriter.NewWriter(&result)
