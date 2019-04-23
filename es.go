@@ -33,6 +33,7 @@ type Client struct {
 	Host      string
 	Port      int
 	Secure    bool
+	Path      string
 	TLSConfig *tls.Config
 	Timeout   time.Duration
 	*Auth
@@ -336,6 +337,10 @@ func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
 		protocol = "https"
 	} else {
 		protocol = "http"
+	}
+
+	if c.Path != "" {
+		path = fmt.Sprintf("%s/%s", c.Path, path)
 	}
 
 	if c.Port > 0 {
