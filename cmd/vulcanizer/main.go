@@ -11,35 +11,35 @@ import (
 	"github.com/spf13/viper"
 )
 
-func getConfiguration() (string, int, *vulcanizer.Auth) {
-	var host string
-	var port int
-	var auth vulcanizer.Auth
+type Config struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+}
+
+func getConfiguration() Config {
+	var config Config
+
+	v := viper.GetViper()
 
 	if viper.GetString("cluster") != "" {
-		config := viper.Sub(viper.GetString("cluster"))
+		v = viper.Sub(viper.GetString("cluster"))
 
-		if config == nil {
+		if v == nil {
 			fmt.Printf("Could not retrieve configuration for cluster \"%s\"\n", viper.GetString("cluster"))
 			os.Exit(1)
 		}
-
-		host = config.GetString("host")
-		port = config.GetInt("port")
-		auth = vulcanizer.Auth{
-			User:     config.GetString("user"),
-			Password: config.GetString("password"),
-		}
-	} else {
-		host = viper.GetString("host")
-		port = viper.GetInt("port")
-		auth = vulcanizer.Auth{
-			User:     viper.GetString("user"),
-			Password: viper.GetString("password"),
-		}
 	}
 
-	return host, port, &auth
+	config = Config{
+		Host: v.GetString("host"),
+		Port: v.GetInt("port"),
+
+		User:     v.GetString("user"),
+		Password: v.GetString("password"),
+	}
+	return config
 }
 
 func renderTable(rows [][]string, header []string) string {
