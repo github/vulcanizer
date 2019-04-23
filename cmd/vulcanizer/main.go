@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"github.com/github/vulcanizer"
 	"os"
@@ -12,10 +13,13 @@ import (
 )
 
 type Config struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
+	Host          string
+	Port          int
+	Protocol      string
+	Path          string
+	User          string
+	Password      string
+	TLSSkipVerify bool
 }
 
 func getConfiguration() Config {
@@ -33,11 +37,15 @@ func getConfiguration() Config {
 	}
 
 	config = Config{
-		Host: v.GetString("host"),
-		Port: v.GetInt("port"),
+		Host:     v.GetString("host"),
+		Port:     v.GetInt("port"),
+		Protocol: v.GetString("protocol"),
+		Path:     v.GetString("path"),
 
 		User:     v.GetString("user"),
 		Password: v.GetString("password"),
+
+		TLSSkipVerify: v.GetBool("skipverify"),
 	}
 	return config
 }
@@ -63,6 +71,9 @@ func main() {
 	rootCmd.PersistentFlags().StringP("user", "", "", "User to use during authentication")
 	rootCmd.PersistentFlags().StringP("password", "", "", "Password to use during authentication")
 	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Cluster to connect to defined in config file")
+	rootCmd.PersistentFlags().StringP("path", "", "/", "Path to prepend to queries, in case Elasticsearch is behind a reverse proxy")
+	rootCmd.PersistentFlags().StringP("protocol", "", "http", "Protocol to use when querying the cluster. Either 'http' or 'https'. Defaults to 'http'")
+	rootCmd.PersistentFlags().StringP("skipverify", "k", "false", "Skip verifying server's TLS certificate. Defaults to 'false', ie. verify the server's certificate")
 	rootCmd.PersistentFlags().StringP("configFile", "f", "", "Configuration file to read in (default to \"~/.vulcanizer.yaml\")")
 
 	err := viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
@@ -76,6 +87,21 @@ func main() {
 		os.Exit(1)
 	}
 	err = viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
+	if err != nil {
+		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("path", rootCmd.PersistentFlags().Lookup("path"))
+	if err != nil {
+		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("protocol", rootCmd.PersistentFlags().Lookup("protocol"))
+	if err != nil {
+		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("skipverify", rootCmd.PersistentFlags().Lookup("skipverify"))
 	if err != nil {
 		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
 		os.Exit(1)
