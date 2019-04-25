@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"github.com/github/vulcanizer"
 	"os"
@@ -11,35 +12,70 @@ import (
 	"github.com/spf13/viper"
 )
 
-func getConfiguration() (string, int, *vulcanizer.Auth) {
-	var host string
-	var port int
-	var auth vulcanizer.Auth
+type Config struct {
+	Host          string
+	Port          int
+	Protocol      string
+	Path          string
+	User          string
+	Password      string
+	TLSSkipVerify bool
+}
+
+func getConfiguration() Config {
+
+	v := viper.GetViper()
 
 	if viper.GetString("cluster") != "" {
-		config := viper.Sub(viper.GetString("cluster"))
+		v = viper.Sub(viper.GetString("cluster"))
 
-		if config == nil {
+		if v == nil {
 			fmt.Printf("Could not retrieve configuration for cluster \"%s\"\n", viper.GetString("cluster"))
 			os.Exit(1)
 		}
 
-		host = config.GetString("host")
-		port = config.GetInt("port")
-		auth = vulcanizer.Auth{
-			User:     config.GetString("user"),
-			Password: config.GetString("password"),
+		err := v.BindPFlags(rootCmd.PersistentFlags())
+		if err != nil {
+			fmt.Printf("Could not bind commandline flags to configuration: %s\n", err)
 		}
-	} else {
-		host = viper.GetString("host")
-		port = viper.GetInt("port")
-		auth = vulcanizer.Auth{
-			User:     viper.GetString("user"),
-			Password: viper.GetString("password"),
-		}
+
 	}
 
-	return host, port, &auth
+	config := Config{
+		Host:     v.GetString("host"),
+		Port:     v.GetInt("port"),
+		Protocol: v.GetString("protocol"),
+		Path:     v.GetString("path"),
+
+		User:     v.GetString("user"),
+		Password: v.GetString("password"),
+
+		TLSSkipVerify: v.GetBool("skipverify"),
+	}
+
+	return config
+}
+
+func getClient() *vulcanizer.Client {
+
+	c := getConfiguration()
+
+	v := vulcanizer.NewClient(
+		c.Host,
+		c.Port,
+	)
+	v.Path = c.Path
+	v.Auth = &vulcanizer.Auth{User: c.User, Password: c.Password}
+
+	if c.Protocol == "https" {
+		v.Secure = true
+	}
+
+	if c.TLSSkipVerify {
+		v.TLSConfig = &tls.Config{InsecureSkipVerify: c.TLSSkipVerify}
+	}
+
+	return v
 }
 
 func renderTable(rows [][]string, header []string) string {
@@ -63,6 +99,9 @@ func main() {
 	rootCmd.PersistentFlags().StringP("user", "", "", "User to use during authentication")
 	rootCmd.PersistentFlags().StringP("password", "", "", "Password to use during authentication")
 	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Cluster to connect to defined in config file")
+	rootCmd.PersistentFlags().StringP("path", "", "/", "Path to prepend to queries, in case Elasticsearch is behind a reverse proxy")
+	rootCmd.PersistentFlags().StringP("protocol", "", "http", "Protocol to use when querying the cluster. Either 'http' or 'https'. Defaults to 'http'")
+	rootCmd.PersistentFlags().StringP("skipverify", "k", "false", "Skip verifying server's TLS certificate. Defaults to 'false', ie. verify the server's certificate")
 	rootCmd.PersistentFlags().StringP("configFile", "f", "", "Configuration file to read in (default to \"~/.vulcanizer.yaml\")")
 
 	err := viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
@@ -78,6 +117,21 @@ func main() {
 	err = viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
 	if err != nil {
 		fmt.Printf("Error binding cluster configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("path", rootCmd.PersistentFlags().Lookup("path"))
+	if err != nil {
+		fmt.Printf("Error binding path flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("protocol", rootCmd.PersistentFlags().Lookup("protocol"))
+	if err != nil {
+		fmt.Printf("Error binding protocol flag: %s \n", err)
+		os.Exit(1)
+	}
+	err = viper.BindPFlag("skipverify", rootCmd.PersistentFlags().Lookup("skipverify"))
+	if err != nil {
+		fmt.Printf("Error binding skipverify flag: %s \n", err)
 		os.Exit(1)
 	}
 	err = viper.BindPFlag("user", rootCmd.PersistentFlags().Lookup("user"))

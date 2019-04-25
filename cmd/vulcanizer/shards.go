@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -24,9 +23,9 @@ var cmdShards = &cobra.Command{
 	Short: "Get shard data by cluster node(s).",
 	Long:  `This command gets shard related data by node from the cluster.  Default is to return all shards.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
+
 		shards, err := v.GetShards(nodesToCheck)
 
 		if err != nil {
@@ -61,9 +60,9 @@ var cmdShardsRecovery = &cobra.Command{
 	Short: "Get shard recovery status",
 	Long:  `This command gets shard recovery status from the cluster.  Default is to return all shards.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
+
 		recovery, err := v.GetShardRecovery(nodesToCheck, activeOnly)
 
 		if err != nil {

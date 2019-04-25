@@ -22,9 +22,8 @@ var cmdIndices = &cobra.Command{
 	Long:    `Show what indices are created on the given cluster.`,
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		var err error
 		var indices []vulcanizer.Index
@@ -67,9 +66,8 @@ var cmdOpen = &cobra.Command{
 	Long:  `Given a name or pattern, opens the index/indices`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		err := v.OpenIndex(args[0])
 		if err != nil {
@@ -85,9 +83,8 @@ var cmdClose = &cobra.Command{
 	Long:  `Given a name or pattern, closes the index/indices`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		err := v.CloseIndex(args[0])
 		if err != nil {

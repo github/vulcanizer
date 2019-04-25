@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -33,9 +32,8 @@ var cmdFillAll = &cobra.Command{
 	Short: "Fill all servers with data, removing all exclusion rules.",
 	Long:  `This command will remove all shard allocation exclusion rules from the cluster, allowing all servers to fill with data.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		excludeSettings, err := v.FillAll()
 		if err != nil {
@@ -52,9 +50,8 @@ var cmdFillServer = &cobra.Command{
 	Short: "Fill one server with data, removing exclusion rules from it.",
 	Long:  `This command will remove shard allocation exclusion rules from a particular Elasticsearch node, allowing shards to allocated to it.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
 
 		excludeSettings, err := v.FillOneServer(serverToFill)
 		if err != nil {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -33,9 +32,9 @@ var cmdDrainServer = &cobra.Command{
 	Short: "Drain a server by excluding shards from it.",
 	Long:  `This command will set the shard allocation rules to exclude the given server name. This will cause shards to be moved away from this server, draining the data away.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
+
 		fmt.Printf("drain server name is: %s\n", serverToDrain)
 
 		excludedServers, err := v.DrainServer(serverToDrain)
@@ -53,9 +52,9 @@ var cmdDrainStatus = &cobra.Command{
 	Short: "See what servers are set to drain.",
 	Long:  `This command will display what servers are set in the clusters allocation exclude rules.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		host, port, auth := getConfiguration()
-		v := vulcanizer.NewClient(host, port)
-		v.Auth = auth
+
+		v := getClient()
+
 		excludeSettings, err := v.GetClusterExcludeSettings()
 		if err != nil {
 			fmt.Printf("Error getting exclude settings: %s \n", err)
