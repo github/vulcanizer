@@ -99,7 +99,7 @@ func main() {
 	rootCmd.PersistentFlags().StringP("user", "", "", "User to use during authentication")
 	rootCmd.PersistentFlags().StringP("password", "", "", "Password to use during authentication")
 	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Cluster to connect to defined in config file")
-	rootCmd.PersistentFlags().StringP("path", "", "/", "Path to prepend to queries, in case Elasticsearch is behind a reverse proxy")
+	rootCmd.PersistentFlags().StringP("path", "", "", "Path to prepend to queries, in case Elasticsearch is behind a reverse proxy")
 	rootCmd.PersistentFlags().StringP("protocol", "", "http", "Protocol to use when querying the cluster. Either 'http' or 'https'. Defaults to 'http'")
 	rootCmd.PersistentFlags().StringP("skipverify", "k", "false", "Skip verifying server's TLS certificate. Defaults to 'false', ie. verify the server's certificate")
 	rootCmd.PersistentFlags().StringP("configFile", "f", "", "Configuration file to read in (default to \"~/.vulcanizer.yaml\")")
