@@ -24,13 +24,14 @@ oldSetting, newSetting, err := v.SetSetting("indices.recovery.max_bytes_per_sec"
 This project produces a `vulcanizer` binary that is a command line application that can be used to manage your Elasticsearch cluster.
 
 ```
-$ vulcanizer -h
+$ vulcanizer help
 Usage:
   vulcanizer [command]
 
 Available Commands:
   aliases     Interact with aliases of the cluster.
   allocation  Set shard allocation on the cluster.
+  analyze     Analyze text given an analyzer or a field and index.
   drain       Drain a server or see what servers are draining.
   fill        Fill servers with data, removing shard allocation exclusion rules.
   health      Display the health of the cluster.
@@ -49,7 +50,10 @@ Flags:
   -h, --help                help for vulcanizer
       --host string         Host to connect to (default "localhost")
       --password string     Password to use during authentication
+      --path string         Path to prepend to queries, in case Elasticsearch is behind a reverse proxy
   -p, --port int            Port to connect to (default 9200)
+      --protocol string     Protocol to use when querying the cluster. Either 'http' or 'https'. Defaults to 'http' (default "http")
+  -k, --skipverify string   Skip verifying server's TLS certificate. Defaults to 'false', ie. verify the server's certificate (default "false")
       --user string         User to use during authentication
 
 Use "vulcanizer [command] --help" for more information about a command.

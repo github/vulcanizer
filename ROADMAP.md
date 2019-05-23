@@ -51,24 +51,12 @@ Functionality:
 * Analyze text based on a field
 * Additional client options for HTTPS, timeout, HTTP basic auth, and TLS configuration
 
-
-### Proposed future development
-
-#### Shards
-
-Show more information around shard allocation and recovery.
+## v0.5.0 - [Released](https://github.com/github/vulcanizer/releases/tag/v0.5.0)
 
 Functionality:
-* List shards on a node
-* List shards moving to / from a node
-* Show recovery information in a friendly manner, like percentages and maybe calculate an estimated time
-* Show allocation explain information in a friendly manner
-
-#### Indices
-
-Handle more index-related cases.
-
-Functionality:
-* List aliases
-* Modify aliases
-* Diff mappings
+* Open index
+* Close index
+* List/add/update/remove aliases
+* List shards
+* Display shard recovery information
+* New client configuration options: user, password, path, protocol, TLS verification
