@@ -519,10 +519,26 @@ func (c *Client) GetIndices(index string) ([]Index, error) {
 //Get all the aliases in the cluster.
 //
 //Use case: You want to see some basic info on all the aliases of the cluster
-func (c *Client) GetAliases() ([]Alias, error) {
+func (c *Client) GetAllAliases() ([]Alias, error) {
 	var aliases []Alias
 
 	err := handleErrWithStruct(c.buildGetRequest("_cat/aliases?h=alias,index,filter,routing.index,routing.search"), &aliases)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return aliases, nil
+}
+
+//Get a subset the aliases in the cluster.
+//
+//Use case: You want to see some basic info on a subset of the aliases of the cluster
+func (c *Client) GetAliases(alias string) ([]Alias, error) {
+	var aliases []Alias
+
+	path := fmt.Sprintf("_cat/aliases/%s?h=alias,index,filter,routing.index,routing.search", alias)
+	err := handleErrWithStruct(c.buildGetRequest(path), &aliases)
 
 	if err != nil {
 		return nil, err

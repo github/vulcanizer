@@ -91,10 +91,17 @@ var cmdAliasesList = &cobra.Command{
 	Use:   "list",
 	Short: "Display the aliases of the cluster",
 	Long:  `Show what aliases are created on the given cluster.`,
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		v := getClient()
 
-		aliases, err := v.GetAliases()
+		var err error
+		var aliases []vulcanizer.Alias
+		if len(args) > 0 {
+			aliases, err = v.GetAllAliases()
+		} else {
+			aliases, err = v.GetAliases(args[0])
+		}
 
 		if err != nil {
 			fmt.Printf("Error getting aliases: %s\n", err)
