@@ -335,7 +335,7 @@ func TestGetIndices(t *testing.T) {
 	}
 }
 
-func TestGetAliases(t *testing.T) {
+func TestGetAllAliases(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
 		Path:     "/_cat/aliases",
@@ -346,7 +346,37 @@ func TestGetAliases(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	aliases, err := client.GetAliases()
+	aliases, err := client.GetAllAliases()
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+
+	if len(aliases) != 2 {
+		t.Errorf("Unexpected aliases, got %v", aliases)
+	}
+
+	if aliases[0].Name != "test" || aliases[0].IndexName != "test_v1" || aliases[0].Filter != "-filter" || aliases[0].RoutingIndex != "-routing.index" || aliases[0].RoutingSearch != "-routing.search" {
+		t.Errorf("Unexpected index values, got %v", aliases[0])
+	}
+
+	if aliases[1].Name != "test_again" || aliases[1].IndexName != "test_again_v1" || aliases[1].Filter != "--filter" || aliases[1].RoutingIndex != "--routing.index" || aliases[1].RoutingSearch != "--routing.search" {
+		t.Errorf("Unexpected index values, got %v", aliases[1])
+	}
+}
+
+func TestGetAliases(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/aliases/test*",
+		Response: `[{"alias": "test","index": "test_v1","filter": "-filter","routing.index": "-routing.index","routing.search": "-routing.search"},{"alias": "test_again","index": "test_again_v1","filter": "--filter","routing.index": "--routing.index","routing.search": "--routing.search"}]`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	aliases, err := client.GetAliases("test*")
 
 	if err != nil {
 		t.Errorf("Unexpected error expected nil, got %s", err)

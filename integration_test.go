@@ -73,7 +73,7 @@ func TestIndices(t *testing.T) {
 func TestAliases(t *testing.T) {
 	c := vulcanizer.NewClient("localhost", 49200)
 
-	aliases, err := c.GetAliases()
+	aliases, err := c.GetAllAliases()
 
 	if err != nil {
 		t.Fatalf("Error getting aliases: %s", err)
@@ -114,7 +114,7 @@ func TestAliasesAddDeleteUpdate(t *testing.T) {
 			t.Fatalf("Error modifying aliases: %s", err)
 		}
 
-		aliases, err := c.GetAliases()
+		aliases, err := c.GetAllAliases()
 		if err != nil {
 			t.Fatalf("Error getting aliases: %s", err)
 		}
@@ -146,7 +146,7 @@ func TestAliasesAddDeleteUpdate(t *testing.T) {
 			t.Fatalf("Error modifying aliases: %s", err)
 		}
 
-		aliases, err := c.GetAliases()
+		aliases, err := c.GetAllAliases()
 		if err != nil {
 			t.Fatalf("Error getting aliases: %s", err)
 		}
@@ -170,7 +170,7 @@ func TestAliasesAddDeleteUpdate(t *testing.T) {
 			t.Fatalf("Error modifying aliases: %s", err)
 		}
 
-		aliases, err := c.GetAliases()
+		aliases, err := c.GetAliases("integration_test*")
 		if err != nil {
 			t.Fatalf("Error getting aliases: %s", err)
 		}
