@@ -170,7 +170,7 @@ func TestAliasesAddDeleteUpdate(t *testing.T) {
 			t.Fatalf("Error modifying aliases: %s", err)
 		}
 
-		aliases, err := c.GetAllAliases()
+		aliases, err := c.GetAliases("integration_test*")
 		if err != nil {
 			t.Fatalf("Error getting aliases: %s", err)
 		}
