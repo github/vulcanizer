@@ -343,8 +343,8 @@ func TestGetShards_AllNodes(t *testing.T) {
 	}
 
 	// Account for the unassigned replicas
-	if len(val) != 15 {
-		t.Fatalf("Expected 15 shards, got %d instead", len(val))
+	if len(val) != 6 {
+		t.Fatalf("Expected 6 shards, got %d instead", len(val))
 	}
 }
 
@@ -361,8 +361,8 @@ func TestGetShards_Regexp(t *testing.T) {
 		t.Fatal("Expected a slice of Shard, got nil instead")
 	}
 
-	if len(val) != 10 {
-		t.Fatalf("Expected 15 shards, got %d instead", len(val))
+	if len(val) != 4 {
+		t.Fatalf("Expected 4 shards, got %d instead", len(val))
 	}
 }
 
