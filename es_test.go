@@ -1600,8 +1600,6 @@ func TestGetShardOverlap_UnSafeRelocating(t *testing.T) {
 	} else {
 		t.Errorf("Expected overlap data, got nil instead")
 	}
-
-	fmt.Println(overlap)
 }
 
 var getRecoveryTestSetup = &ServerSetup{
