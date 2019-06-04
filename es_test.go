@@ -1530,8 +1530,6 @@ func TestGetShardOverlap_Safe(t *testing.T) {
 	} else {
 		t.Errorf("Expected overlap data, got nil instead")
 	}
-
-	fmt.Println(overlap)
 }
 
 func TestGetShardOverlap_UnSafe(t *testing.T) {
@@ -1567,8 +1565,6 @@ func TestGetShardOverlap_UnSafe(t *testing.T) {
 	} else {
 		t.Errorf("Expected overlap data, got nil instead")
 	}
-
-	fmt.Println(overlap)
 }
 
 func TestGetShardOverlap_UnSafeRelocating(t *testing.T) {
@@ -1604,8 +1600,6 @@ func TestGetShardOverlap_UnSafeRelocating(t *testing.T) {
 	} else {
 		t.Errorf("Expected overlap data, got nil instead")
 	}
-
-	fmt.Println(overlap)
 }
 
 var getRecoveryTestSetup = &ServerSetup{
