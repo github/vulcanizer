@@ -98,9 +98,9 @@ var cmdAliasesList = &cobra.Command{
 		var err error
 		var aliases []vulcanizer.Alias
 		if len(args) > 0 {
-			aliases, err = v.GetAllAliases()
-		} else {
 			aliases, err = v.GetAliases(args[0])
+		} else {
+			aliases, err = v.GetAllAliases()
 		}
 
 		if err != nil {
