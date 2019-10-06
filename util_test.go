@@ -60,3 +60,17 @@ Third error`
 		t.Errorf("Unexpected error message, got %s", combinedError.Error())
 	}
 }
+
+func TestEscapeIndexName(t *testing.T) {
+	if escapeIndexName(".secret-index") != "\\.secret-index" {
+		t.Errorf("Index name not escaped.")
+	}
+
+	if escapeIndexName(".multiple.periods.in.index") != "\\.multiple\\.periods\\.in\\.index" {
+		t.Errorf("Index name not escaped.")
+	}
+
+	if escapeIndexName("regular-index") != "regular-index" {
+		t.Errorf("Index name changed when it shouldn't have.")
+	}
+}

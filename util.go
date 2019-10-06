@@ -63,3 +63,7 @@ func combineErrors(errs []error) error {
 	}
 	return errors.New(strings.Join(errorText, "\n"))
 }
+
+func escapeIndexName(index string) string {
+	return strings.ReplaceAll(index, ".", "\\.")
+}

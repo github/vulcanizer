@@ -991,7 +991,7 @@ func (c *Client) GetPrettyIndexSettings(index string) (string, error) {
 		return "", err
 	}
 
-	rawSettings := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index", index)).Raw
+	rawSettings := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index", escapeIndexName(index))).Raw
 
 	var prettyPrinted bytes.Buffer
 	err = json.Indent(&prettyPrinted, []byte(rawSettings), "", "  ")
@@ -1012,7 +1012,7 @@ func (c *Client) GetIndexSettings(index string) ([]Setting, error) {
 		return nil, err
 	}
 
-	rawSettings := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index", index)).Raw
+	rawSettings := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index", escapeIndexName(index))).Raw
 
 	settings, err := settingsToStructs(rawSettings)
 
@@ -1029,7 +1029,7 @@ func (c *Client) SetIndexSetting(index, setting, value string) (string, string, 
 		return "", "", err
 	}
 
-	currentValue := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index.%s", index, setting)).Str
+	currentValue := gjson.GetBytes(body, fmt.Sprintf("%s.settings.index.%s", escapeIndexName(index), setting)).Str
 
 	agent := c.buildPutRequest(settingsPath).Set("Content-Type", "application/json").
 		Send(fmt.Sprintf(`{"index" : { "%s" : "%s"}}`, setting, value))
