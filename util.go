@@ -65,5 +65,5 @@ func combineErrors(errs []error) error {
 }
 
 func escapeIndexName(index string) string {
-	return strings.ReplaceAll(index, ".", "\\.")
+	return strings.Replace(index, ".", "\\.", -1)
 }
