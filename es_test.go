@@ -1308,6 +1308,28 @@ func TestGetPrettyIndexSettings(t *testing.T) {
 	}
 }
 
+func TestGetPrettyIndexSettings_SpecialName(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/.special/_settings",
+		Response: `{".special":{"settings":{"index":{"number_of_shards":"5","provided_name":"octocat","creation_date":"1535035072757","analysis":{"analyzer":{"my_custom_analyzer":{"filter":["lowercase","asciifolding"],"char_filter":["html_strip"],"type":"custom","tokenizer":"standard"}}},"number_of_replicas":"0","uuid":"Q_Jm1mD2Syy8JgMUiicqcw","version":{"created":"5061099"}}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	indexSettings, err := client.GetPrettyIndexSettings(".special")
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if indexSettings == "" {
+		t.Error("Unexpected index settings, got empty string")
+	}
+}
+
 func TestGetIndexSettings(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "GET",
@@ -1320,6 +1342,39 @@ func TestGetIndexSettings(t *testing.T) {
 	client := NewClient(host, port)
 
 	settings, err := client.GetIndexSettings("octocat")
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if len(settings) != 11 {
+		t.Errorf("Unexpected number of settings, got %d", len(settings))
+	}
+
+	for i := range settings {
+		s := settings[i]
+		if s.Setting == "number_of_shards" && s.Value != "5" {
+			t.Errorf("Unexpected shards value, expected 5, got %s", s.Value)
+		}
+
+		if s.Setting == "number_of_replicas" && s.Value != "0" {
+			t.Errorf("Unexpected replicas value, expected 0, got %s", s.Value)
+		}
+	}
+}
+
+func TestGetIndexSettings_SpecialName(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/.special/_settings",
+		Response: `{".special":{"settings":{"index":{"number_of_shards":"5","provided_name":"octocat","creation_date":"1535035072757","analysis":{"analyzer":{"my_custom_analyzer":{"filter":["lowercase","asciifolding"],"char_filter":["html_strip"],"type":"custom","tokenizer":"standard"}}},"number_of_replicas":"0","uuid":"Q_Jm1mD2Syy8JgMUiicqcw","version":{"created":"5061099"}}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	settings, err := client.GetIndexSettings(".special")
 
 	if err != nil {
 		t.Errorf("Unexpected error, got %s", err)
@@ -1360,6 +1415,39 @@ func TestSetIndexSetting(t *testing.T) {
 	client := NewClient(host, port)
 
 	previous, current, err := client.SetIndexSetting("octocat", "number_of_replicas", "2")
+
+	if err != nil {
+		t.Errorf("Error setting index setting: %s", err)
+	}
+
+	if previous != "0" {
+		t.Errorf("Unexpected previous setting value, expected 0, got %s", previous)
+	}
+
+	if current != "2" {
+		t.Errorf("Unexpected current setting value, expected 2, got %s", current)
+	}
+}
+
+func TestSetIndexSetting_SpecialName(t *testing.T) {
+	getSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/.special/_settings",
+		Response: `{".special":{"settings":{"index":{"number_of_shards":"5","provided_name":"octocat","creation_date":"1535035072757","analysis":{"analyzer":{"my_custom_analyzer":{"filter":["lowercase","asciifolding"],"char_filter":["html_strip"],"type":"custom","tokenizer":"standard"}}},"number_of_replicas":"0","uuid":"Q_Jm1mD2Syy8JgMUiicqcw","version":{"created":"5061099"}}}}}`,
+	}
+
+	updateSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/.special/_settings",
+		Body:     `{"index":{"number_of_replicas":"2"}}`,
+		Response: `{"accepted": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{getSetup, updateSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	previous, current, err := client.SetIndexSetting(".special", "number_of_replicas", "2")
 
 	if err != nil {
 		t.Errorf("Error setting index setting: %s", err)
