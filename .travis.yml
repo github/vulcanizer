@@ -2,9 +2,9 @@
 language: go
 
 go:
-    - "1.10.x"
     - "1.11.x"
     - "1.12.x"
+    - "1.13.x"
 
 services:
     - docker
@@ -14,7 +14,7 @@ os:
 install: true
 
 before_script:
-    curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $GOPATH/bin v1.15.0
+    curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $GOPATH/bin v1.18.0
 
 script: script/integration-test
 
