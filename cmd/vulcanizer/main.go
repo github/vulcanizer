@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/github/vulcanizer"
+	"io/ioutil"
 	"os"
 
 	"github.com/olekukonko/tablewriter"
@@ -19,6 +21,9 @@ type Config struct {
 	Path          string
 	User          string
 	Password      string
+	Cert          string
+	Key           string
+	Cacert        string
 	TLSSkipVerify bool
 }
 
@@ -50,6 +55,10 @@ func getConfiguration() Config {
 		User:     v.GetString("user"),
 		Password: v.GetString("password"),
 
+		Cert:   v.GetString("cert"),
+		Key:    v.GetString("key"),
+		Cacert: v.GetString("cacert"),
+
 		TLSSkipVerify: v.GetBool("skipverify"),
 	}
 
@@ -71,8 +80,33 @@ func getClient() *vulcanizer.Client {
 		v.Secure = true
 	}
 
+	v.TLSConfig = &tls.Config{}
+
 	if c.TLSSkipVerify {
-		v.TLSConfig = &tls.Config{InsecureSkipVerify: c.TLSSkipVerify}
+		v.TLSConfig.InsecureSkipVerify = c.TLSSkipVerify
+	}
+
+	if c.Cert != "" && c.Key != "" {
+		cert, err := tls.LoadX509KeyPair(c.Cert, c.Key)
+		if err != nil {
+			fmt.Printf("Error loading X509 key pair: %s \n", err)
+			os.Exit(1)
+		}
+
+		v.TLSConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	if c.Cacert != "" {
+		caCert, err := ioutil.ReadFile(c.Cacert)
+		if err != nil {
+			fmt.Printf("Error loading cacert file: %s \n", err)
+			os.Exit(1)
+		}
+
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		v.TLSConfig.RootCAs = caCertPool
 	}
 
 	return v
@@ -103,6 +137,9 @@ func main() {
 	rootCmd.PersistentFlags().StringP("protocol", "", "http", "Protocol to use when querying the cluster. Either 'http' or 'https'. Defaults to 'http'")
 	rootCmd.PersistentFlags().StringP("skipverify", "k", "false", "Skip verifying server's TLS certificate. Defaults to 'false', ie. verify the server's certificate")
 	rootCmd.PersistentFlags().StringP("configFile", "f", "", "Configuration file to read in (default to \"~/.vulcanizer.yaml\")")
+	rootCmd.PersistentFlags().StringP("cert", "", "", "Path to the certificate to use for client certificate authentication")
+	rootCmd.PersistentFlags().StringP("key", "", "", "Path to the key to use for client certificate authentication")
+	rootCmd.PersistentFlags().StringP("cacert", "", "", "Path to the certificate to check the cluster certificates against")
 
 	err := viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
 	if err != nil {
