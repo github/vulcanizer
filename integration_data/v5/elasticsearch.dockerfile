@@ -4,4 +4,6 @@ USER root
 
 RUN mkdir /backups && chown elasticsearch:elasticsearch /backups
 
+RUN sysctl -w vm.max_map_count=262144
+
 USER elasticsearch
