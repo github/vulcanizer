@@ -23,12 +23,9 @@ do
   until foo=$(curl -s localhost:49200)
   do
     sleep 30
-    docker-compose -f elasticsearch-cluster-compose.yml ps
-    docker-compose -f elasticsearch-cluster-compose.yml logs
-    docker exec vulcanizer-elasticsearch-v5 sysctl -n vm.max_map_count
-    docker exec vulcanizer-elasticsearch-v5 sysctl -w vm.max_map_count=262144
     systectl -n vm.max_map_count
     systectl -w vm.max_map_count=262144
+    docker-compose -f elasticsearch-cluster-compose.yml ps
   done
 
   echo "Creating integration_test index"
