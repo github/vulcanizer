@@ -13,7 +13,6 @@ do
   docker volume rm ${v}_vulcanizer-backup-volume || echo "OK for volume not to exist"
 done
 
-sudo sysctl -w vm.max_map_count=262144
 for v in "${elasticsearch_versions[@]}"
 do
   cd integration_data/$v
