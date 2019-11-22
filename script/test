@@ -12,4 +12,5 @@ else
 fi
 
 echo $PATH
+go env
 golangci-lint -v run
