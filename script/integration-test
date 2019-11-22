@@ -15,10 +15,9 @@ done
 
 for v in "${elasticsearch_versions[@]}"
 do
-
   cd integration_data/$v
   echo "Running integration tests for Elasticsearch $v"
-  docker-compose -f elasticsearch-cluster-compose.yml up -d
+  docker-compose -f elasticsearch-cluster-compose.yml up --build -d
   echo "Wait for Elasticsearch $v to start..."
   until foo=$(curl -s localhost:49200)
   do
