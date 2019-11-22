@@ -16,5 +16,5 @@ jobs:
         go-version: ${{ matrix.go }}
     - name: Run tests
       run: |
-        curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.18.0
+        curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b . v1.18.0
         script/integration-test
