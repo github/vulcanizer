@@ -39,7 +39,7 @@ services:
   elasticsearch-v7-2:
     build:
       context: .
-      dockerfile: elasticsearch-v7.dockerfile
+      dockerfile: elasticsearch.dockerfile
     image: vulcanizer-elasticsearch:v7
     depends_on:
       - "elasticsearch-v7"
