@@ -37,7 +37,7 @@ services:
   elasticsearch-v5-2:
     build:
       context: .
-      dockerfile: elasticsearch-v5.dockerfile
+      dockerfile: elasticsearch.dockerfile
     image: vulcanizer-elasticsearch:v5
     depends_on:
       - "elasticsearch-v5"
