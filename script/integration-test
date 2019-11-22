@@ -22,7 +22,9 @@ do
   echo "Wait for Elasticsearch $v to start..."
   until foo=$(curl -s localhost:49200)
   do
-    sleep 10
+    sleep 30
+    docker-compose -f elasticsearch-cluster-compose.yml ps
+    docker-compose -f elasticsearch-cluster-compose.yml logs
   done
 
   echo "Creating integration_test index"
