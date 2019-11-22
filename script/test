@@ -11,6 +11,4 @@ else
     go test -v github.com/github/vulcanizer/...
 fi
 
-echo $PATH
-go env
 golangci-lint -v run
