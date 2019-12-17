@@ -210,9 +210,5 @@ func initConfig() {
 		viper.SetConfigName(".vulcanizer")
 	}
 
-	err = viper.ReadInConfig()
-	if err != nil {
-		fmt.Printf("Fatal error config file: %s \n", err)
-		os.Exit(1)
-	}
+	_ = viper.ReadInConfig()
 }
