@@ -217,8 +217,8 @@ type acknowledgedResponse struct {
 type Snapshot struct {
 	State          string    `json:"state"`
 	Name           string    `json:"snapshot"`
-	StartTime      time.Time `json:"start_time,string"`
-	EndTime        time.Time `json:"end_time,string"`
+	StartTime      time.Time `json:"start_time"`
+	EndTime        time.Time `json:"end_time"`
 	DurationMillis int       `json:"duration_in_millis"`
 	Indices        []string  `json:"indices"`
 	Shards         struct {
