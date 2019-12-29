@@ -39,15 +39,34 @@ type Client struct {
 	*Auth
 }
 
-//Holds information about an Elasticsearch node, based on the _cat/nodes API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html
+//Holds information about an Elasticsearch node, based on a combination of the _cat/nodes and _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html, https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
 type Node struct {
-	Name    string `json:"name"`
-	Ip      string `json:"ip"`
-	Id      string `json:"id"`
-	Role    string `json:"role"`
-	Master  string `json:"master"`
-	Jdk     string `json:"jdk"`
-	Version string `json:"version"`
+	Name        string `json:"name"`
+	Ip          string `json:"ip"`
+	Id          string `json:"id"`
+	Role        string `json:"role"`
+	Master      string `json:"master"`
+	Jdk         string `json:"jdk"`
+	Version     string `json:"version"`
+	Shards      string
+	DiskIndices string
+	DiskUsed    string
+	DiskAvail   string
+	DiskTotal   string
+	DiskPercent string
+}
+
+// DiskAllocation holds disk allocation information per node, based on _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
+type DiskAllocation struct {
+	Name        string `json:"name"`
+	Ip          string `json:"ip"`
+	Node        string `json:"node"`
+	Shards      string `json:"shards"`
+	DiskIndices string `json:"disk.indices"`
+	DiskUsed    string `json:"disk.used"`
+	DiskAvail   string `json:"disk.avail"`
+	DiskTotal   string `json:"disk.total"`
+	DiskPercent string `json:"disk.percent"`
 }
 
 //Holds information about an Elasticsearch index, based on the _cat/indices API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-indices.html
