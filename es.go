@@ -509,6 +509,33 @@ func (c *Client) GetNodes() ([]Node, error) {
 	return nodes, nil
 }
 
+//Get all the nodes and their allocation/disk usage in the cluster.
+//
+//Use case: You want to see how much disk is being used by the nodes in the cluster.
+func (c *Client) GetNodeAllocations() ([]Node, error) {
+	var nodes []Node
+	var nodeErr error
+	// Get the node info first
+	nodes, nodeErr = c.GetNodes()
+
+	if nodeErr != nil {
+		return nil, nodeErr
+	}
+
+	// Now get the allocation info and decorate the existing nodes
+	var allocations []DiskAllocation
+	agent := c.buildGetRequest("_cat/allocation?v&h=shards,disk.indices,disk.used,disk.avail,disk.total,disk.percent,ip,name,node")
+	err := handleErrWithStruct(agent, &allocations)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodes = enrichNodesWithAllocations(nodes, allocations)
+
+	return nodes, nil
+}
+
 //Get all the indices in the cluster.
 //
 //Use case: You want to see some basic info on all the indices of the cluster.
