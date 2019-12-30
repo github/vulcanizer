@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/github/vulcanizer"
+	"github.com/leosunmo/vulcanizer"
 	"github.com/spf13/cobra"
 )
 

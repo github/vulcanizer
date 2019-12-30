@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/github/vulcanizer"
+	"github.com/leosunmo/vulcanizer"
 	"github.com/spf13/cobra"
 )
 

@@ -40,7 +40,7 @@ do
   curl -s -H "Content-Type: application/json" XPOST localhost:49200/_aliases -d '{ "actions" : [ { "add" : { "index" : "integration_test", "alias" : "integration_test_alias" } } ] }'
 
   # Run tests
-  go test -v github.com/github/vulcanizer/... -tags integration -count=1
+  go test -v github.com/leosunmo/vulcanizer/... -tags integration -count=1
 
   docker-compose -f elasticsearch-cluster-compose.yml down
   cd ../../

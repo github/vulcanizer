@@ -5,10 +5,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/github/vulcanizer"
 	"io"
 	"io/ioutil"
 	"os"
+
+	"github.com/leosunmo/vulcanizer"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"

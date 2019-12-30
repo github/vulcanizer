@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/github/vulcanizer/pkg/cli"
+	"github.com/leosunmo/vulcanizer/pkg/cli"
 )
 
 func main() {

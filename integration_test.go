@@ -3,7 +3,7 @@
 package vulcanizer_test
 
 import (
-	"github.com/github/vulcanizer"
+	"github.com/leosunmo/vulcanizer"
 	"testing"
 	"time"
 )
