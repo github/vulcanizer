@@ -1,4 +1,6 @@
-module github.com/github/vulcanizer
+module github.com/leosunmo/vulcanizer
+
+replace github.com/github/vulcanizer v0.5.1 => github.com/leosunmo/vulcanizer v0.5.1
 
 go 1.13
 
