@@ -56,6 +56,33 @@ func captionHealth(clusterHealth ClusterHealth) (caption string) {
 	}
 }
 
+func enrichNodesWithAllocations(nodes []Node, allocations []DiskAllocation) []Node {
+	var enrichedNodes []Node
+	nodeAllocation := make(map[string]DiskAllocation)
+	for _, alloc := range allocations {
+		nodeAllocation[alloc.Node] = alloc
+	}
+	for _, node := range nodes {
+		enrichedNode := Node{
+			Name:        node.Name,
+			Ip:          node.Ip,
+			Id:          node.Id,
+			Role:        node.Role,
+			Master:      node.Master,
+			Jdk:         node.Jdk,
+			Version:     node.Version,
+			Shards:      nodeAllocation[node.Name].Shards,
+			DiskIndices: nodeAllocation[node.Name].DiskIndices,
+			DiskUsed:    nodeAllocation[node.Name].DiskUsed,
+			DiskAvail:   nodeAllocation[node.Name].DiskAvail,
+			DiskTotal:   nodeAllocation[node.Name].DiskTotal,
+			DiskPercent: nodeAllocation[node.Name].DiskPercent,
+		}
+		enrichedNodes = append(enrichedNodes, enrichedNode)
+	}
+	return enrichedNodes
+}
+
 func combineErrors(errs []error) error {
 	errorText := []string{}
 	for _, err := range errs {

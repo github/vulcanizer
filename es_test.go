@@ -3,7 +3,6 @@ package vulcanizer
 import (
 	"crypto/tls"
 	"fmt"
-	"gotest.tools/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"gotest.tools/assert"
 )
 
 // ServerSetup type contains the Method, Path, Body and Response strings, as well as the HTTP Status code.
@@ -280,6 +281,58 @@ func TestGetNodes(t *testing.T) {
 
 	if nodes[0].Version != "6.4.0" {
 		t.Errorf("Unexpected version, expected 6.4.0, got %s", nodes[0].Version)
+	}
+}
+
+func TestGetNodeAllocations(t *testing.T) {
+	nodeSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/nodes",
+		Response: `[{"master": "*", "role": "d", "name": "foo", "ip": "127.0.0.1", "id": "abc", "jdk": "1.8", "version": "6.4.0"}]`,
+	}
+
+	allocationSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/allocation",
+		Response: `[{"shards": "108", "disk.indices": "683.8gb", "disk.used": "735.2gb", "disk.avail": "248gb", "disk.total": "983.3gb", "disk.percent": "74", "ip": "127.0.0.1", "node": "foo"}]`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{nodeSetup, allocationSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	nodes, err := client.GetNodeAllocations()
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+
+	if len(nodes) != 1 {
+		t.Errorf("Unexpected nodes, got %s", nodes)
+	}
+
+	if nodes[0].Name != "foo" {
+		t.Errorf("Unexpected node name, expected foo, got %s", nodes[0].Name)
+	}
+
+	if nodes[0].Version != "6.4.0" {
+		t.Errorf("Unexpected version, expected 6.4.0, got %s", nodes[0].Version)
+	}
+
+	if nodes[0].Shards != "108" {
+		t.Errorf("Unexpected Shards, expected 108, got %s", nodes[0].Shards)
+	}
+
+	if nodes[0].DiskPercent != "74" {
+		t.Errorf("Unexpected DiskPercent, expected 74, got %s", nodes[0].DiskPercent)
+	}
+
+	if nodes[0].DiskUsed != "735.2gb" {
+		t.Errorf("Unexpected DiskUsed, expected 735.2gb, got %s", nodes[0].DiskUsed)
+	}
+
+	if nodes[0].Ip != "127.0.0.1" {
+		t.Errorf("Unexpected node IP, expected 127.0.0.1, got %s", nodes[0].Ip)
 	}
 }
 

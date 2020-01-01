@@ -39,15 +39,34 @@ type Client struct {
 	*Auth
 }
 
-//Holds information about an Elasticsearch node, based on the _cat/nodes API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html
+//Holds information about an Elasticsearch node, based on a combination of the _cat/nodes and _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html, https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
 type Node struct {
-	Name    string `json:"name"`
-	Ip      string `json:"ip"`
-	Id      string `json:"id"`
-	Role    string `json:"role"`
-	Master  string `json:"master"`
-	Jdk     string `json:"jdk"`
-	Version string `json:"version"`
+	Name        string `json:"name"`
+	Ip          string `json:"ip"`
+	Id          string `json:"id"`
+	Role        string `json:"role"`
+	Master      string `json:"master"`
+	Jdk         string `json:"jdk"`
+	Version     string `json:"version"`
+	Shards      string
+	DiskIndices string
+	DiskUsed    string
+	DiskAvail   string
+	DiskTotal   string
+	DiskPercent string
+}
+
+// DiskAllocation holds disk allocation information per node, based on _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
+type DiskAllocation struct {
+	Name        string `json:"name"`
+	Ip          string `json:"ip"`
+	Node        string `json:"node"`
+	Shards      string `json:"shards"`
+	DiskIndices string `json:"disk.indices"`
+	DiskUsed    string `json:"disk.used"`
+	DiskAvail   string `json:"disk.avail"`
+	DiskTotal   string `json:"disk.total"`
+	DiskPercent string `json:"disk.percent"`
 }
 
 //Holds information about an Elasticsearch index, based on the _cat/indices API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-indices.html
@@ -198,8 +217,8 @@ type acknowledgedResponse struct {
 type Snapshot struct {
 	State          string    `json:"state"`
 	Name           string    `json:"snapshot"`
-	StartTime      time.Time `json:"start_time,string"`
-	EndTime        time.Time `json:"end_time,string"`
+	StartTime      time.Time `json:"start_time"`
+	EndTime        time.Time `json:"end_time"`
 	DurationMillis int       `json:"duration_in_millis"`
 	Indices        []string  `json:"indices"`
 	Shards         struct {
@@ -486,6 +505,33 @@ func (c *Client) GetNodes() ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return nodes, nil
+}
+
+//Get all the nodes and their allocation/disk usage in the cluster.
+//
+//Use case: You want to see how much disk is being used by the nodes in the cluster.
+func (c *Client) GetNodeAllocations() ([]Node, error) {
+	var nodes []Node
+	var nodeErr error
+	// Get the node info first
+	nodes, nodeErr = c.GetNodes()
+
+	if nodeErr != nil {
+		return nil, nodeErr
+	}
+
+	// Now get the allocation info and decorate the existing nodes
+	var allocations []DiskAllocation
+	agent := c.buildGetRequest("_cat/allocation?v&h=shards,disk.indices,disk.used,disk.avail,disk.total,disk.percent,ip,name,node")
+	err := handleErrWithStruct(agent, &allocations)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodes = enrichNodesWithAllocations(nodes, allocations)
 
 	return nodes, nil
 }
