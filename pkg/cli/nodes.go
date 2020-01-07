@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/spf13/cobra"
 )
@@ -28,6 +29,9 @@ var cmdNodes = &cobra.Command{
 
 		header := []string{"Master", "Role", "Name", "Ip", "Id", "JDK", "Version"}
 		rows := [][]string{}
+		sort.Slice(nodes, func(i, j int) bool {
+			return nodes[i].Name < nodes[j].Name
+		})
 		for _, node := range nodes {
 			row := []string{
 				node.Master,
