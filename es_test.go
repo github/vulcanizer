@@ -28,6 +28,10 @@ func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Se
 
 		matched := false
 		for _, setup := range setups {
+			// Extra piece of debug incase there's a typo in your test's response, like a rogue space somewhere
+			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody != setup.Body {
+				t.Errorf("request body not matching: %s != %s", requestBody, setup.Body)
+			}
 			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody == setup.Body {
 				matched = true
 				if setup.HTTPStatus == 0 {
@@ -76,6 +80,8 @@ func setupTestTLSServers(t *testing.T, setups []*ServerSetup) (string, int, *htt
 	port, _ := strconv.Atoi(url.Port())
 	return url.Hostname(), port, ts
 }
+
+func stringToPointer(v string) *string { return &v }
 
 func TestGetClusterExcludeSettings(t *testing.T) {
 
@@ -680,9 +686,9 @@ func TestSetClusterSettings(t *testing.T) {
 		GetResponse string
 		PutResponse string
 		Setting     string
-		SetValue    string
+		SetValue    *string
 		HTTPStatus  int
-		OldValue    string
+		OldValue    *string
 	}{
 		{
 			// Tests for behavior with existing transient setting.
@@ -691,8 +697,8 @@ func TestSetClusterSettings(t *testing.T) {
 			Body:        `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
 			PutResponse: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
 			Setting:     "cluster.routing.allocation.exclude._name",
-			SetValue:    "10.0.0.99",
-			OldValue:    "10.0.0.2",
+			SetValue:    stringToPointer("10.0.0.99"),
+			OldValue:    stringToPointer("10.0.0.2"),
 		},
 
 		{
@@ -702,8 +708,8 @@ func TestSetClusterSettings(t *testing.T) {
 			Body:        `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
 			PutResponse: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
 			Setting:     "cluster.routing.allocation.exclude._name",
-			SetValue:    "10.0.0.99",
-			OldValue:    "10.0.0.2",
+			SetValue:    stringToPointer("10.0.0.99"),
+			OldValue:    stringToPointer("10.0.0.2"),
 		},
 
 		{
@@ -713,8 +719,30 @@ func TestSetClusterSettings(t *testing.T) {
 			Body:        `{"transient":{"cluster.routing.allocation.exclude._name":"10.0.0.99"}}`,
 			PutResponse: `{"persistent":{},"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.99"}}}}}}`,
 			Setting:     "cluster.routing.allocation.exclude._name",
-			SetValue:    "10.0.0.99",
-			OldValue:    "",
+			SetValue:    stringToPointer("10.0.0.99"),
+			OldValue:    nil,
+		},
+
+		{
+			// Tests for behavior when removing setting (null'ing it).
+			Name:        "Removing Existing Persistent Setting",
+			GetResponse: `{"transient":{},"persistent":{"cluster":{"routing":{"allocation":{"exclude":{"_name":"10.0.0.2"}}}}}}`,
+			Body:        `{"transient":{"cluster.routing.allocation.exclude._name":null}}`,
+			PutResponse: `{"transient":{},"persistent":{}}`,
+			Setting:     "cluster.routing.allocation.exclude._name",
+			SetValue:    nil,
+			OldValue:    stringToPointer("10.0.0.2"),
+		},
+
+		{
+			// Tests for behavior when removing setting (null'ing it) that is already null.
+			Name:        "Removing Null Persistent Setting",
+			GetResponse: `{"transient":{},"persistent":{}}`,
+			Body:        `{"transient":{"cluster.routing.allocation.exclude._name":null}}`,
+			PutResponse: `{"transient":{},"persistent":{}}`,
+			Setting:     "cluster.routing.allocation.exclude._name",
+			SetValue:    nil,
+			OldValue:    nil,
 		},
 	}
 
@@ -743,14 +771,35 @@ func TestSetClusterSettings(t *testing.T) {
 				st.Errorf("Expected error to be nil, %s", err)
 			}
 
-			if oldSetting != x.OldValue {
-				st.Errorf("Unexpected old value, got %s", oldSetting)
+			if oldSetting == nil {
+				if x.OldValue != nil {
+					st.Fatalf("Unexpected old value: expected old value to be %s, got nil", *x.OldValue)
+				}
 			}
 
-			if newSetting != "10.0.0.99" {
-				st.Errorf("Unexpected new value, got %s", newSetting)
+			if oldSetting != nil {
+				if x.OldValue == nil {
+					st.Fatalf("Unexpected old value: expected old value to be nil, got %v", *oldSetting)
+				}
+				if *oldSetting != *x.OldValue {
+					st.Errorf("Unexpected old value: expected %s, got %s", *x.OldValue, *oldSetting)
+				}
 			}
 
+			if newSetting == nil {
+				if x.SetValue != nil {
+					st.Fatalf("Unexpected new value, got nil, expected %s", *x.SetValue)
+				}
+			}
+
+			if newSetting != nil {
+				if x.SetValue == nil {
+					st.Errorf("Unexpected new value, got %s, expected nil", *newSetting)
+				}
+				if *newSetting != *x.SetValue {
+					st.Errorf("Unexpected new value, got %v, expected %v", newSetting, x.SetValue)
+				}
+			}
 		})
 	}
 }
@@ -831,7 +880,7 @@ func TestSetClusterSetting_BadRequest(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	_, _, err := client.SetClusterSetting("cluster.routing.allocation.enable", "foo")
+	_, _, err := client.SetClusterSetting("cluster.routing.allocation.enable", stringToPointer("foo"))
 
 	if err == nil {
 		t.Errorf("Expected error to not be nil, %s", err)
