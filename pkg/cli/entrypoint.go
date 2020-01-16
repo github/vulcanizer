@@ -5,11 +5,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/github/vulcanizer"
 	"io"
 	"io/ioutil"
 	"os"
 
+	"github.com/github/vulcanizer"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -111,6 +111,13 @@ func getClient() *vulcanizer.Client {
 	}
 
 	return v
+}
+
+func printableNil(ptrValue *string) string {
+	if ptrValue == nil {
+		return "null"
+	}
+	return *ptrValue
 }
 
 func renderTable(rows [][]string, header []string) string {

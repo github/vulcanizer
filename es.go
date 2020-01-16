@@ -761,37 +761,53 @@ func (c *Client) SetAllocation(allocation string) (string, error) {
 	return allocationVal.String(), nil
 }
 
-//Set a new value for a cluster setting
+// Set a new value for a cluster setting. Returns existing value and new value as well as error, in that order
+// If the setting is not set in Elasticsearch (it's falling back to default configuration) SetClusterSetting's existingValue will be nil.
+// If the value provided is nil, SetClusterSetting will remove the setting so that Elasticsearch falls back on default configuration for that setting.
 //
 //Use case: You've doubled the number of nodes in your cluster and you want to increase the number of shards the cluster can relocate at one time. Calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "100")` will update that value with the cluster. Once data relocation is complete you can decrease the setting by calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "20")`.
-func (c *Client) SetClusterSetting(setting string, value string) (string, string, error) {
-
+func (c *Client) SetClusterSetting(setting string, value *string) (*string, *string, error) {
+	var existingValue *string
+	var newValue *string
 	settingsBody, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
 
 	if err != nil {
-		return "", "", err
+		return existingValue, newValue, err
 	}
 
-	existingValues := gjson.GetManyBytes(settingsBody, fmt.Sprintf("transient.%s", setting), fmt.Sprintf("persistent.%s", setting))
+	existingResults := gjson.GetManyBytes(settingsBody, fmt.Sprintf("transient.%s", setting), fmt.Sprintf("persistent.%s", setting))
+
+	var newSettingBody string
+
+	if value == nil {
+		newSettingBody = fmt.Sprintf(`{"transient" : { "%s" : null}}`, setting)
+	} else {
+		newSettingBody = fmt.Sprintf(`{"transient" : { "%s" : "%s"}}`, setting, *value)
+	}
 
 	agent := c.buildPutRequest(clusterSettingsPath).
 		Set("Content-Type", "application/json").
-		Send(fmt.Sprintf(`{"transient" : { "%s" : "%s"}}`, setting, value))
+		Send(newSettingBody)
 
 	body, err := handleErrWithBytes(agent)
 
 	if err != nil {
-		return "", "", err
+		return existingValue, newValue, err
 	}
 
-	newValue := gjson.GetBytes(body, fmt.Sprintf("transient.%s", setting)).String()
+	newResults := gjson.GetBytes(body, fmt.Sprintf("transient.%s", setting)).String()
+	if newResults != "" {
+		newValue = &newResults
+	}
 
-	var existingValue string
-
-	if existingValues[0].String() == "" {
-		existingValue = existingValues[1].String()
+	if existingResults[0].String() == "" {
+		if existingResults[1].String() != "" {
+			value := existingResults[1].String()
+			existingValue = &value
+		}
 	} else {
-		existingValue = existingValues[0].String()
+		value := existingResults[0].String()
+		existingValue = &value
 	}
 
 	return existingValue, newValue, nil
