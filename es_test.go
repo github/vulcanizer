@@ -1855,3 +1855,19 @@ func TestGetShardRecoveryRemaining(t *testing.T) {
 
 	assert.Equal(t, estRemaining, time.Hour*6)
 }
+
+func TestNewClientSecure(t *testing.T) {
+	client := NewClient("https://somehost.com", 0)
+	assert.Equal(t, client.Secure, true)
+	assert.Equal(t, client.Host, "somehost.com")
+}
+
+func TestNewClientInsecure(t *testing.T) {
+	client := NewClient("http://somehost.com", 0)
+	assert.Equal(t, client.Secure, false)
+	assert.Equal(t, client.Host, "somehost.com")
+
+	client = NewClient("somehost.com", 0)
+	assert.Equal(t, client.Secure, false)
+	assert.Equal(t, client.Host, "somehost.com")
+}
