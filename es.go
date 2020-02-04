@@ -252,19 +252,12 @@ type Token struct {
 }
 
 //Initialize a new vulcanizer client to use.
+// Deprecated: NewClient has been deprecated in favor of using struct initialization.
 func NewClient(host string, port int) *Client {
-	secure := false
-	if strings.HasPrefix(host, "https://") {
-		secure = true
-		host = strings.TrimPrefix(host, "https://")
-	} else if strings.HasPrefix(host, "http://") {
-		host = strings.TrimPrefix(host, "http://")
-	}
-
 	if port > 0 {
-		return &Client{Host: host, Port: port, Secure: secure}
+		return &Client{Host: host, Port: port}
 	}
-	return &Client{Host: host, Secure: secure}
+	return &Client{Host: host}
 }
 
 const clusterSettingsPath = "_cluster/settings"
