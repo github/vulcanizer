@@ -252,6 +252,7 @@ type Token struct {
 }
 
 //Initialize a new vulcanizer client to use.
+// Deprecated: NewClient has been deprecated in favor of using struct initialization.
 func NewClient(host string, port int) *Client {
 	if port > 0 {
 		return &Client{Host: host, Port: port}
