@@ -13,6 +13,7 @@ func init() {
 	rootCmd.AddCommand(cmdIndices)
 	cmdIndices.AddCommand(cmdOpen)
 	cmdIndices.AddCommand(cmdClose)
+	cmdIndices.AddCommand(cmdDelete)
 }
 
 var cmdIndices = &cobra.Command{
@@ -88,7 +89,24 @@ var cmdClose = &cobra.Command{
 
 		err := v.CloseIndex(args[0])
 		if err != nil {
-			fmt.Printf("Error opening index/indices: %s - %s\n", args[0], err)
+			fmt.Printf("Error closing index/indices: %s - %s\n", args[0], err)
+			os.Exit(1)
+		}
+	},
+}
+
+var cmdDelete = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete the given index/indices",
+	Long:  `Given a name or pattern, deletes the index/indices`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+
+		v := getClient()
+
+		err := v.DeleteIndex(args[0])
+		if err != nil {
+			fmt.Printf("Error deleting index/indices: %s - %s\n", args[0], err)
 			os.Exit(1)
 		}
 	},
