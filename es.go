@@ -56,6 +56,22 @@ type Node struct {
 	DiskPercent string
 }
 
+// Holds a subset of information from the _nodes/stats endpoint: https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
+type NodeStats struct {
+	Name     string
+	Role     string
+	JVMStats NodeJVM
+}
+
+// Holds information about an Elasticsearch node's JVM settings. From _nodes/stats/jvm: https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
+type NodeJVM struct {
+	HeapUsedBytes         int `json:"heap_used_in_bytes"`
+	HeapUsedPercentage    int `json:"heap_used_percent"`
+	HeapMaxBytes          int `json:"heap_max_in_bytes"`
+	NonHeapUsedBytes      int `json:"non_heap_used_in_bytes"`
+	NonHeapCommittedBytes int `json:"non_heap_committed_in_bytes"`
+}
+
 // DiskAllocation holds disk allocation information per node, based on _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
 type DiskAllocation struct {
 	Name        string `json:"name"`
@@ -535,6 +551,64 @@ func (c *Client) GetNodeAllocations() ([]Node, error) {
 	nodes = enrichNodesWithAllocations(nodes, allocations)
 
 	return nodes, nil
+}
+
+func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
+
+	// NodeStats is not the top level of "nodes" as the individual node name
+	// is the key of each node. Eg. "nodes.H1iBOLqqToyT8CHF9C0W0w.name = es-node-1".
+	// This is tricky to unmarshal to struct, so let gjson deal with it.
+
+	var nodesStats []NodeStats
+	// Get node stats/jvm
+	agent := c.buildGetRequest("_nodes/stats/jvm?v")
+	bytes, err := handleErrWithBytes(agent)
+	if err != nil {
+		return nil, err
+	}
+
+	nodesRes := gjson.GetBytes(bytes, "nodes")
+
+	var itErr error
+	// Iterate over each node.
+	nodesRes.ForEach(func(key, value gjson.Result) bool {
+		var jvmStats NodeJVM
+		memString := value.Get("jvm.mem").String()
+		err = json.Unmarshal([]byte(memString), &jvmStats)
+		if err != nil {
+			itErr = fmt.Errorf("failed to unmarshal mem stats: %w", err)
+			return false
+		}
+
+		// Figure out if the node's role is master and/or data
+		var role string
+		masterRole := value.Get("attributes.master").String()
+		dataRole := value.Get("attributes.data").String()
+
+		if dataRole != "false" {
+			role = "d"
+		}
+		if masterRole == "true" {
+			role = "m" + role
+		}
+
+		nodeStat := NodeStats{
+			Name:     value.Get("name").String(),
+			Role:     role,
+			JVMStats: jvmStats,
+		}
+
+		nodesStats = append(nodesStats, nodeStat)
+
+		return true // keep iterating
+	})
+
+	if itErr != nil {
+		return nil, itErr
+	}
+
+	return nodesStats, nil
+
 }
 
 //Get all the indices in the cluster.
