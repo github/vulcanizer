@@ -553,6 +553,10 @@ func (c *Client) GetNodeAllocations() ([]Node, error) {
 	return nodes, nil
 }
 
+//Get all the nodes' JVM Heap statistics.
+//
+//Use case: You want to see how much heap each node is using and their max heap size.
+
 func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 
 	// NodeStats is not the top level of "nodes" as the individual node name
@@ -580,7 +584,7 @@ func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 			return false
 		}
 
-		// Figure out if the node's role is master and/or data
+		// Let's grab the nodes role(s). Different format depending on version
 		var role string
 
 		if value.Get("attributes.master").Exists() {
@@ -618,7 +622,7 @@ func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 
 		nodesStats = append(nodesStats, nodeStat)
 
-		return true // keep iterating
+		return true
 	})
 
 	if itErr != nil {
