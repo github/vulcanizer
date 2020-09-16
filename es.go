@@ -561,7 +561,7 @@ func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 
 	var nodesStats []NodeStats
 	// Get node stats/jvm
-	agent := c.buildGetRequest("_nodes/stats/jvm?v")
+	agent := c.buildGetRequest("_nodes/stats/jvm")
 	bytes, err := handleErrWithBytes(agent)
 	if err != nil {
 		return nil, err
@@ -582,16 +582,34 @@ func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 
 		// Figure out if the node's role is master and/or data
 		var role string
-		masterRole := value.Get("attributes.master").String()
-		dataRole := value.Get("attributes.data").String()
 
-		if dataRole != "false" {
-			role = "d"
-		}
-		if masterRole == "true" {
-			role = "m" + role
+		if value.Get("attributes.master").Exists() {
+			// Probably Elasticsearch 1.7
+			masterRole := value.Get("attributes.master").String()
+			dataRole := value.Get("attributes.data").String()
+
+			if dataRole != "false" {
+				role = "d"
+			}
+			if masterRole == "true" {
+				role = "m" + role
+			}
 		}
 
+		if value.Get("roles").Exists() {
+			// Probably Elasticsearch 5+
+
+			// Elasticsearch 5,6 and 7 has quite a few roles, let's collect them
+			roleRes := value.Get("roles").Array()
+			for _, res := range roleRes {
+				sr := res.String()
+				if sr == "master" {
+					role = "M" + role
+					continue
+				}
+				role = role + sr[:1]
+			}
+		}
 		nodeStat := NodeStats{
 			Name:     value.Get("name").String(),
 			Role:     role,
