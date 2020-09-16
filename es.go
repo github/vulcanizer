@@ -596,7 +596,7 @@ func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 				role = "d"
 			}
 			if masterRole == "true" {
-				role = "m" + role
+				role = "M" + role
 			}
 		}
 
