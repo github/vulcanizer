@@ -3,11 +3,6 @@
 if [ "$(uname -s)" = "Darwin" ]; then
   mkdir -p tmp
 
-  brew bundle &> tmp/brew-bundle.log || (
-      echo "Failed to brew bundle:"
-      cat tmp/brew-bundle.log
-  )
-
   if [[ ! -x "$(which go)" ]]; then
     echo >&2 "vulcanizer requires an installation of Go to build."
     exit 1
