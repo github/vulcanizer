@@ -14,7 +14,7 @@ func init() {
 
 func printSettings(settings []vulcanizer.Setting, name string) {
 	if len(settings) == 0 {
-		fmt.Println(fmt.Sprintf("No %s are set.\n", name))
+		fmt.Printf("No %s are set.\n", name)
 		return
 	}
 
