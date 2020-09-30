@@ -365,7 +365,7 @@ func (s ShardOverlap) isReplicaShard(shard Shard) bool {
 }
 
 func (c *Client) getAgent(method, path string) *gorequest.SuperAgent {
-	agent := gorequest.New().Set("Accept", "application/json")
+	agent := gorequest.New().Set("Accept", "application/json").Set("Content-Type", "application/json")
 	agent.Method = method
 
 	var protocol string
