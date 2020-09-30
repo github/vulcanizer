@@ -56,6 +56,22 @@ type Node struct {
 	DiskPercent string
 }
 
+// Holds a subset of information from the _nodes/stats endpoint: https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
+type NodeStats struct {
+	Name     string
+	Role     string
+	JVMStats NodeJVM
+}
+
+// Holds information about an Elasticsearch node's JVM settings. From _nodes/stats/jvm: https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
+type NodeJVM struct {
+	HeapUsedBytes         int `json:"heap_used_in_bytes"`
+	HeapUsedPercentage    int `json:"heap_used_percent"`
+	HeapMaxBytes          int `json:"heap_max_in_bytes"`
+	NonHeapUsedBytes      int `json:"non_heap_used_in_bytes"`
+	NonHeapCommittedBytes int `json:"non_heap_committed_in_bytes"`
+}
+
 // DiskAllocation holds disk allocation information per node, based on _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
 type DiskAllocation struct {
 	Name        string `json:"name"`
@@ -535,6 +551,86 @@ func (c *Client) GetNodeAllocations() ([]Node, error) {
 	nodes = enrichNodesWithAllocations(nodes, allocations)
 
 	return nodes, nil
+}
+
+//Get all the nodes' JVM Heap statistics.
+//
+//Use case: You want to see how much heap each node is using and their max heap size.
+
+func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
+
+	// NodeStats is not the top level of "nodes" as the individual node name
+	// is the key of each node. Eg. "nodes.H1iBOLqqToyT8CHF9C0W0w.name = es-node-1".
+	// This is tricky to unmarshal to struct, so let gjson deal with it.
+
+	var nodesStats []NodeStats
+	// Get node stats/jvm
+	agent := c.buildGetRequest("_nodes/stats/jvm")
+	bytes, err := handleErrWithBytes(agent)
+	if err != nil {
+		return nil, err
+	}
+
+	nodesRes := gjson.GetBytes(bytes, "nodes")
+
+	var itErr error
+	// Iterate over each node.
+	nodesRes.ForEach(func(key, value gjson.Result) bool {
+		var jvmStats NodeJVM
+		memString := value.Get("jvm.mem").String()
+		err = json.Unmarshal([]byte(memString), &jvmStats)
+		if err != nil {
+			itErr = fmt.Errorf("failed to unmarshal mem stats: %w", err)
+			return false
+		}
+
+		// Let's grab the nodes role(s). Different format depending on version
+		var role string
+
+		if value.Get("attributes.master").Exists() {
+			// Probably Elasticsearch 1.7
+			masterRole := value.Get("attributes.master").String()
+			dataRole := value.Get("attributes.data").String()
+
+			if dataRole != "false" {
+				role = "d"
+			}
+			if masterRole == "true" {
+				role = "M" + role
+			}
+		}
+
+		if value.Get("roles").Exists() {
+			// Probably Elasticsearch 5+
+
+			// Elasticsearch 5,6 and 7 has quite a few roles, let's collect them
+			roleRes := value.Get("roles").Array()
+			for _, res := range roleRes {
+				sr := res.String()
+				if sr == "master" {
+					role = "M" + role
+					continue
+				}
+				role = role + sr[:1]
+			}
+		}
+		nodeStat := NodeStats{
+			Name:     value.Get("name").String(),
+			Role:     role,
+			JVMStats: jvmStats,
+		}
+
+		nodesStats = append(nodesStats, nodeStat)
+
+		return true
+	})
+
+	if itErr != nil {
+		return nil, itErr
+	}
+
+	return nodesStats, nil
+
 }
 
 //Get all the indices in the cluster.
