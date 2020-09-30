@@ -1,17 +1,18 @@
 #!/bin/bash
 set -e
 
-# Before we start, check if "vm.max_map_count" is correctly set, or the Docker containers will silently fail and lock the test
-maxMap="$(sysctl vm.max_map_count | awk -F "= " '{print $2}')"
-if [[ $maxMap -lt 262144 ]]
-then 
-    # incorrect config, won't work
-    echo "You need to increase vm.max_map_count to at least 262144 before Elasticsearch will start"
-    echo "Currently set to $maxMap"
-    echo "Run \"sudo sysctl -w vm.max_map_count=262144\" and start the test again."
-    exit 1
+if [[ "$(uname -s)" == "Linux" ]]; then
+  # Before we start, check if "vm.max_map_count" is correctly set, or the Docker containers will silently fail and lock the test
+  maxMap="$(sysctl vm.max_map_count | awk -F "= " '{print $2}')"
+  if [[ $maxMap -lt 262144 ]]
+  then
+      # incorrect config, won't work
+      echo "You need to increase vm.max_map_count to at least 262144 before Elasticsearch will start"
+      echo "Currently set to $maxMap"
+      echo "Run \"sudo sysctl -w vm.max_map_count=262144\" and start the test again."
+      exit 1
+  fi
 fi
-
 
 # Run regular unit tests first
 ./script/test
