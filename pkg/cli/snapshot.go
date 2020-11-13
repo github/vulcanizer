@@ -14,6 +14,7 @@ func init() {
 	setupRestoreSubCommand()
 	setupListSubCommand()
 	setupCreateSubCommand()
+	setupDeleteSubCommand()
 
 	rootCmd.AddCommand(cmdSnapshot)
 }
@@ -63,6 +64,23 @@ func setupCreateSubCommand() {
 	cmdSnapshot.AddCommand(cmdSnapshotCreate)
 }
 
+func setupDeleteSubCommand() {
+	cmdSnapshotDelete.Flags().StringP("snapshot", "s", "", "Snapshot name to query (required)")
+	err := cmdSnapshotDelete.MarkFlagRequired("snapshot")
+	if err != nil {
+		fmt.Printf("Error binding snapshot configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshotDelete.Flags().StringP("repository", "r", "", "Snapshot repository to query (required)")
+	err = cmdSnapshotCreate.MarkFlagRequired("repository")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdSnapshot.AddCommand(cmdSnapshotDelete)
+}
 func setupListSubCommand() {
 	cmdSnapshotList.Flags().StringP("repository", "r", "", "Snapshot repository to query (required)")
 	err := cmdSnapshotList.MarkFlagRequired("repository")
@@ -284,5 +302,34 @@ var cmdSnapshotCreate = &cobra.Command{
 
 			fmt.Println("Snapshot operation started.")
 		}
+	},
+}
+
+var cmdSnapshotDelete = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete a snapshot.",
+	Long:  `This command will delete a snapshot of the data.`,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		v := getClient()
+
+		snapshotName, err := cmd.Flags().GetString("snapshot")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: snapshot. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		repository, err := cmd.Flags().GetString("repository")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: repository. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		err = v.DeleteSnapshot(repository, snapshotName)
+		if err != nil {
+			fmt.Printf("Error while deleting snapshot. Error: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Delete operation called successfully.")
 	},
 }
