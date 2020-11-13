@@ -330,6 +330,6 @@ var cmdSnapshotDelete = &cobra.Command{
 			fmt.Printf("Error while deleting snapshot. Error: %s\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Snapshot operation started.")
+		fmt.Println("Delete operation called successfully.")
 	},
 }
