@@ -1591,6 +1591,33 @@ func TestGetPrettyIndexMappings(t *testing.T) {
 	}
 }
 
+func TestGetPrettyIndexSegments(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/octocat/_segments",
+		Response: `{"_shards":{"total":2,"successful":1,"failed":0},"indices":{"octocat":{"shards":{"0":[{"routing":{"state":"STARTED","primary":true,"node":"Qwlz-A-6TyqJ-uLGaf8_0w"},"num_committed_segments":0,"num_search_segments":0,"segments":{}}]}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	mappings, err := client.GetPrettyIndexSegments("octocat")
+
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+
+	if mappings == "" {
+		t.Error("Unexpected index segments, got empty string")
+	}
+
+	lineCount := strings.Count(mappings, "\n")
+	if lineCount != 24 {
+		t.Errorf("Unexpected line count on segments, expected 24, got %d", lineCount)
+	}
+}
+
 // Shared server setup for GetShards tests
 var getShardsTestSetup = &ServerSetup{
 	Method:   "GET",
