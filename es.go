@@ -1220,6 +1220,25 @@ func (c *Client) GetPrettyIndexMappings(index string) (string, error) {
 	return prettyPrinted.String(), nil
 }
 
+// Get the segments of an index in a pretty-printed format
+//
+// Use case: you can view the segments of a particular index
+func (c *Client) GetPrettyIndexSegments(index string) (string, error) {
+	body, err := handleErrWithBytes(c.buildGetRequest(fmt.Sprintf("%s/_segments", index)))
+
+	if err != nil {
+		return "", err
+	}
+
+	var prettyPrinted bytes.Buffer
+	err = json.Indent(&prettyPrinted, body, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return prettyPrinted.String(), nil
+}
+
 //Get shard data for all or a subset of nodes
 //
 //Use case: You can view shard information on all nodes or a subset.
