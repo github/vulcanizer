@@ -129,7 +129,7 @@ And the test suite should execute correctly.
 
 ### License
 
-This project is released under the [MIT LICENSE](LICENSE). Please note it includes 3rd party dependencies release under their own licenses; these are found under [vendor](https://github.com/github/vulcanizer/tree/master/vendor). When using the GitHub logos, be sure to follow the [GitHub logo guidelines](https://github.com/logos).
+This project is released under the [MIT LICENSE](LICENSE). Please note it includes 3rd party dependencies release under their own licenses; dependencies are listed in our [go.mod](https://github.com/github/vulcanizer/blob/main/go.mod) file. When using the GitHub logos, be sure to follow the [GitHub logo guidelines](https://github.com/logos).
 
 ### Authors
 
