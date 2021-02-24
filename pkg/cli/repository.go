@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/github/vulcanizer"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +13,7 @@ func init() {
 
 	cmdRepository.AddCommand(cmdRepositoryList)
 	setupVerifySubCommand()
+	setupRegisterSubCommand()
 
 	rootCmd.AddCommand(cmdRepository)
 }
@@ -19,7 +21,7 @@ func init() {
 var cmdRepository = &cobra.Command{
 	Use:   "repository",
 	Short: "Interact with the configured snapshot repositories.",
-	Long:  `Use the list and verify subcommands.`,
+	Long:  `Use the list, verify, and register subcommands.`,
 }
 
 func setupVerifySubCommand() {
@@ -31,6 +33,26 @@ func setupVerifySubCommand() {
 	}
 
 	cmdRepository.AddCommand(cmdRepositoryVerify)
+}
+
+func setupRegisterSubCommand() {
+	cmdRepositoryRegister.Flags().StringP("repository", "r", "", "Snapshot repository name to register (required)")
+	err := cmdRepositoryRegister.MarkFlagRequired("repository")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdRepositoryRegister.Flags().StringP("type", "t", "", "Type of snapshot repository to register (required)")
+	err = cmdRepositoryRegister.MarkFlagRequired("type")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdRepositoryRegister.Flags().StringToStringP("settings", "s", map[string]string{}, "Settings of the repository to register in key value pairs, i.e. location=/backups,compress=true")
+
+	cmdRepository.AddCommand(cmdRepositoryRegister)
 }
 
 var cmdRepositoryVerify = &cobra.Command{
@@ -96,5 +118,53 @@ var cmdRepositoryList = &cobra.Command{
 		}
 
 		fmt.Println(renderTable(rows, header))
+	},
+}
+
+var cmdRepositoryRegister = &cobra.Command{
+	Use:   "register",
+	Short: "Register specified repository.",
+	Long:  `This command will register a snapshot repository.`,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		v := getClient()
+
+		repositoryName, err := cmd.Flags().GetString("repository")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: repository. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		repoType, err := cmd.Flags().GetString("type")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: type. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		stringSettings, err := cmd.Flags().GetStringToString("settings")
+		if err != nil {
+			fmt.Printf("Could not retrieve argument: settings. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		settings := make(map[string]interface{}, len(stringSettings))
+		for k, v := range stringSettings {
+			settings[k] = v
+		}
+
+		repository := vulcanizer.Repository{
+			Name:     repositoryName,
+			Type:     repoType,
+			Settings: settings,
+		}
+
+		err = v.RegisterRepository(repository)
+
+		if err != nil {
+			fmt.Printf("Error verifying repository %s: %s\n", repositoryName, err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Repository %s registered succesfully.\n", repositoryName)
 	},
 }
