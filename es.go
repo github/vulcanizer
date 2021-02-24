@@ -267,6 +267,22 @@ type Token struct {
 	Position    int    `json:"position"`
 }
 
+type ReloadSecureSettingsResponse struct {
+	Summary struct {
+		Total      int `json:"total"`
+		Failed     int `json:"failed"`
+		Successful int `json:"successful"`
+	} `json:"_nodes"`
+	ClusterName string `json:"cluster_name"`
+	Nodes       map[string]struct {
+		Name            string `json:"name"`
+		ReloadException *struct {
+			Type   string `json:"type"`
+			Reason string `json:"reason"`
+		} `json:"reload_exception"`
+	} `json:"nodes"`
+}
+
 //Initialize a new vulcanizer client to use.
 // Deprecated: NewClient has been deprecated in favor of using struct initialization.
 func NewClient(host string, port int) *Client {
@@ -1405,5 +1421,48 @@ func (s *Snapshot) GetEndTime() string {
 	}
 	// This will avoid returning incorrect values like "1970-01-01T00:00:00.000Z"
 	return ""
+}
 
+//Reload secure node settings
+//
+//Use case: Call the reload secure settings API https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-reload-secure-settings.html
+func (c *Client) ReloadSecureSettings() (ReloadSecureSettingsResponse, error) {
+	var response ReloadSecureSettingsResponse
+	err := handleErrWithStruct(c.buildPostRequest("_nodes/reload_secure_settings"), &response)
+
+	if err != nil {
+		return ReloadSecureSettingsResponse{}, err
+	}
+
+	return response, nil
+}
+
+//Reload secure node settings with password
+//
+//Use case: Call the reload secure settings API with a supplied password https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-reload-secure-settings.html
+func (c *Client) ReloadSecureSettingsWithPassword(password string) (ReloadSecureSettingsResponse, error) {
+
+	if password == "" {
+		return ReloadSecureSettingsResponse{}, fmt.Errorf("Keystore password is required.")
+	}
+
+	requestBody := struct {
+		Password string `json:"secure_settings_password"`
+	}{
+		Password: password,
+	}
+
+	agent := c.buildPostRequest("_nodes/reload_secure_settings").
+		Set("Content-Type", "application/json").
+		Send(requestBody)
+
+	var response ReloadSecureSettingsResponse
+
+	err := handleErrWithStruct(agent, &response)
+
+	if err != nil {
+		return ReloadSecureSettingsResponse{}, err
+	}
+
+	return response, nil
 }
