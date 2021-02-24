@@ -1009,6 +1009,24 @@ func (c *Client) RegisterRepository(repository Repository) error {
 	return nil
 }
 
+//Remove a snapshot repository
+//
+//Use case: Remove a snapshot repository in Elasticsearch
+func (c *Client) RemoveRepository(name string) error {
+
+	if name == "" {
+		return fmt.Errorf("Repository Name is required.")
+	}
+
+	_, err := handleErrWithBytes(c.buildDeleteRequest(fmt.Sprintf("_snapshot/%s", name)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //List snapshot respositories on the cluster
 //
 //Use case: You want to see all of the configured backup repositories on the given cluster, what types they are and if they are verified.
