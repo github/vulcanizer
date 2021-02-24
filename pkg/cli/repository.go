@@ -14,6 +14,7 @@ func init() {
 	cmdRepository.AddCommand(cmdRepositoryList)
 	setupVerifySubCommand()
 	setupRegisterSubCommand()
+	setupRemoveSubCommand()
 
 	rootCmd.AddCommand(cmdRepository)
 }
@@ -21,7 +22,7 @@ func init() {
 var cmdRepository = &cobra.Command{
 	Use:   "repository",
 	Short: "Interact with the configured snapshot repositories.",
-	Long:  `Use the list, verify, and register subcommands.`,
+	Long:  `Use the list, verify, remove, and register subcommands.`,
 }
 
 func setupVerifySubCommand() {
@@ -33,6 +34,17 @@ func setupVerifySubCommand() {
 	}
 
 	cmdRepository.AddCommand(cmdRepositoryVerify)
+}
+
+func setupRemoveSubCommand() {
+	cmdRepositoryRemove.Flags().StringP("repository", "r", "", "Snapshot repository to remove (required)")
+	err := cmdRepositoryRemove.MarkFlagRequired("repository")
+	if err != nil {
+		fmt.Printf("Error binding repository configuration flag: %s \n", err)
+		os.Exit(1)
+	}
+
+	cmdRepository.AddCommand(cmdRepositoryRemove)
 }
 
 func setupRegisterSubCommand() {
@@ -161,10 +173,35 @@ var cmdRepositoryRegister = &cobra.Command{
 		err = v.RegisterRepository(repository)
 
 		if err != nil {
-			fmt.Printf("Error verifying repository %s: %s\n", repositoryName, err)
+			fmt.Printf("Error registering repository %s: %s\n", repositoryName, err)
 			os.Exit(1)
 		}
 
 		fmt.Printf("Repository %s registered succesfully.\n", repositoryName)
+	},
+}
+
+var cmdRepositoryRemove = &cobra.Command{
+	Use:   "remove",
+	Short: "Remove specified repository.",
+	Long:  `This command will remove a snapshot repository.`,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		v := getClient()
+
+		repositoryName, err := cmd.Flags().GetString("repository")
+		if err != nil {
+			fmt.Printf("Could not retrieve required argument: repository. Error: %s\n", err)
+			os.Exit(1)
+		}
+
+		err = v.RemoveRepository(repositoryName)
+
+		if err != nil {
+			fmt.Printf("Error removing repository %s: %s\n", repositoryName, err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Repository %s removed succesfully.\n", repositoryName)
 	},
 }
