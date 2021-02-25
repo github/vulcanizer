@@ -1057,6 +1057,99 @@ func TestDeleteSnapshot(t *testing.T) {
 	}
 }
 
+func TestRegisterRepository(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/_snapshot/mysnapshotrepo",
+		Body:     `{"settings":{"location":"/backups"},"type":"fs"}`,
+		Response: `{"acknowledged":true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	repo := Repository{
+		Name: "mysnapshotrepo",
+		Type: "fs",
+		Settings: map[string]interface{}{
+			"location": "/backups",
+		},
+	}
+
+	err := client.RegisterRepository(repo)
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+}
+
+func TestRegisterRepository_MissingName(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	repo := Repository{
+		Type: "fs",
+		Settings: map[string]interface{}{
+			"location": "/backups",
+		},
+	}
+
+	err := client.RegisterRepository(repo)
+
+	if err == nil || err.Error() != "Repository Name is required." {
+		t.Error("Expected validation for missing repository name.")
+	}
+}
+
+func TestRegisterRepository_MissingType(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	repo := Repository{
+		Name: "myrepo",
+		Settings: map[string]interface{}{
+			"location": "/backups",
+		},
+	}
+
+	err := client.RegisterRepository(repo)
+
+	if err == nil || err.Error() != "Repository Type is required." {
+		t.Error("Expected validation for missing repository type.")
+	}
+}
+
+func TestRemoveRepository(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "DELETE",
+		Path:     "/_snapshot/mysnapshotrepo",
+		Response: `{"acknowledged":true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.RemoveRepository("mysnapshotrepo")
+	if err != nil {
+		t.Errorf("Unexpected error, got %s", err)
+	}
+}
+
+func TestRemoveRepository_MissingName(t *testing.T) {
+	host, port, ts := setupTestServers(t, []*ServerSetup{})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.RemoveRepository("")
+
+	if err == nil || err.Error() != "Repository Name is required." {
+		t.Error("Expected validation for missing repository name.")
+	}
+}
+
 func TestVerifyRepository(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "POST",

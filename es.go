@@ -258,6 +258,12 @@ type Repository struct {
 	Settings map[string]interface{}
 }
 
+//Internal struct for repository requests since Name is part of URL path
+type repo struct {
+	Type     string                 `json:"type"`
+	Settings map[string]interface{} `json:"settings"`
+}
+
 //Holds information about the tokens that Elasticsearch analyzes
 type Token struct {
 	Text        string `json:"token"`
@@ -975,9 +981,50 @@ func (c *Client) VerifyRepository(repository string) (bool, error) {
 	return true, nil
 }
 
-type repo struct {
-	Type     string                 `json:"type"`
-	Settings map[string]interface{} `json:"settings"`
+//Register a snapshot repository
+//
+//Use case: Register a snapshot repository in Elasticsearch
+func (c *Client) RegisterRepository(repository Repository) error {
+
+	if repository.Name == "" {
+		return fmt.Errorf("Repository Name is required.")
+	}
+
+	if repository.Type == "" {
+		return fmt.Errorf("Repository Type is required.")
+	}
+
+	repo := repo{Type: repository.Type, Settings: repository.Settings}
+
+	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s", repository.Name)).
+		Set("Content-Type", "application/json").
+		Send(repo)
+
+	_, err := handleErrWithBytes(agent)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//Remove a snapshot repository
+//
+//Use case: Remove a snapshot repository in Elasticsearch
+func (c *Client) RemoveRepository(name string) error {
+
+	if name == "" {
+		return fmt.Errorf("Repository Name is required.")
+	}
+
+	_, err := handleErrWithBytes(c.buildDeleteRequest(fmt.Sprintf("_snapshot/%s", name)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //List snapshot respositories on the cluster
