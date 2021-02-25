@@ -1975,3 +1975,70 @@ func TestGetShardRecoveryRemaining(t *testing.T) {
 
 	assert.Equal(t, estRemaining, time.Hour*6)
 }
+
+func TestReloadSecureSettings(t *testing.T) {
+	serverSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/_nodes/reload_secure_settings",
+		Response: `{"_nodes":{"total":2,"successful":2,"failed":0},"cluster_name":"vulcanizer-elasticsearch-v7","nodes":{"iJeJx6ydSbKf_cvzDt1_gg":{"name":"vulcanizer-elasticsearch-v7"},"GXtqL0WdSguHQdo2xHNX_A":{"name":"vulcanizer-elasticsearch-v7-2","reload_exception":{"type":"illegal_state_exception","reason":"Keystore is missing"}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{serverSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	response, err := client.ReloadSecureSettings()
+
+	if err != nil {
+		t.Errorf("Unexpected error, get %s", err)
+	}
+
+	if response.Summary.Successful != 2 {
+		t.Errorf("Expected response to parse 2 successful nodes from summary, got %#v", response)
+	}
+
+	goodNode := response.Nodes["iJeJx6ydSbKf_cvzDt1_gg"]
+	badNode := response.Nodes["GXtqL0WdSguHQdo2xHNX_A"]
+
+	if goodNode.Name != "vulcanizer-elasticsearch-v7" && goodNode.ReloadException != nil {
+		t.Errorf("Expected to parse good node response correctly, got %#v", goodNode)
+	}
+
+	if badNode.Name != "vulcanizer-elasticsearch-v7-2" && badNode.ReloadException.Reason != "Keystore is missing" {
+		t.Errorf("Expected to parse bad node response correctly, got %#v", goodNode)
+	}
+}
+
+func TestReloadSecureSettingsWithPassword(t *testing.T) {
+	serverSetup := &ServerSetup{
+		Method:   "POST",
+		Path:     "/_nodes/reload_secure_settings",
+		Body:     `{"secure_settings_password":"123456"}`,
+		Response: `{"_nodes":{"total":2,"successful":2,"failed":0},"cluster_name":"vulcanizer-elasticsearch-v7","nodes":{"iJeJx6ydSbKf_cvzDt1_gg":{"name":"vulcanizer-elasticsearch-v7"},"GXtqL0WdSguHQdo2xHNX_A":{"name":"vulcanizer-elasticsearch-v7-2","reload_exception":{"type":"illegal_state_exception","reason":"Keystore is missing"}}}}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{serverSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	response, err := client.ReloadSecureSettingsWithPassword("123456")
+
+	if err != nil {
+		t.Errorf("Unexpected error, get %s", err)
+	}
+
+	if response.Summary.Successful != 2 {
+		t.Errorf("Expected response to parse 2 successful nodes from summary, got %#v", response)
+	}
+
+	goodNode := response.Nodes["iJeJx6ydSbKf_cvzDt1_gg"]
+	badNode := response.Nodes["GXtqL0WdSguHQdo2xHNX_A"]
+
+	if goodNode.Name != "vulcanizer-elasticsearch-v7" && goodNode.ReloadException != nil {
+		t.Errorf("Expected to parse good node response correctly, got %#v", goodNode)
+	}
+
+	if badNode.Name != "vulcanizer-elasticsearch-v7-2" && badNode.ReloadException.Reason != "Keystore is missing" {
+		t.Errorf("Expected to parse bad node response correctly, got %#v", goodNode)
+	}
+}
