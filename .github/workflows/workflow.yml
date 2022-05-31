@@ -6,16 +6,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.15.x', '1.16.x', '1.17.x' ]
+        go: [ '1.18.x']
     name: Vulcanizer tests against go version ${{ matrix.go }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go }}
     - name: Run tests
       run: |
-        curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOROOT/bin v1.31.0
+        curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOROOT/bin v1.46.2
         sudo sysctl -w vm.max_map_count=262144
         script/integration-test
