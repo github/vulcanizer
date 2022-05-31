@@ -12,6 +12,6 @@ if [ "$(uname -s)" = "Darwin" ]; then
 fi
 
 # Install linter. Should be universal. Version is pinned per package recommendations.
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOPATH/bin v1.44.2
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOPATH/bin v1.46.2
 
 script/build
