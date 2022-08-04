@@ -1513,3 +1513,13 @@ func (c *Client) ReloadSecureSettingsWithPassword(password string) (ReloadSecure
 
 	return response, nil
 }
+
+// GetHotThreads allows to get the current hot threads on each node in the cluster
+func (c *Client) GetHotThreads() (string, error) {
+	body, err := handleErrWithBytes(c.buildGetRequest("_nodes/hot_threads"))
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}

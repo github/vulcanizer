@@ -2042,3 +2042,35 @@ func TestReloadSecureSettingsWithPassword(t *testing.T) {
 		t.Errorf("Expected to parse bad node response correctly, got %#v", goodNode)
 	}
 }
+
+func TestGetHotThreads(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method: "GET",
+		Path:   "/_nodes/hot_threads",
+		Response: `
+::: {Mister Sinister}{c0k7r8tKS0CGObWF7yzgQQ}{127.0.0.1}{127.0.0.1:9300}
+   Hot threads at 2022-08-04T20:30:34.357Z, interval=500ms, busiestThreads=3, ignoreIdleThreads=true:
+
+    0.0% (172.8micros out of 500ms) cpu usage by thread 'elasticsearch[Mister Sinister][transport_client_timer][T#1]{Hashed wheel timer #1}'
+     10/10 snapshots sharing following 5 elements
+       java.base@11.0.16/java.lang.Thread.sleep(Native Method)
+       app//org.jboss.netty.util.HashedWheelTimer$Worker.waitForNextTick(HashedWheelTimer.java:445)
+       app//org.jboss.netty.util.HashedWheelTimer$Worker.run(HashedWheelTimer.java:364)
+       app//org.jboss.netty.util.ThreadRenamingRunnable.run(ThreadRenamingRunnable.java:108)
+       java.base@11.0.16/java.lang.Thread.run(Thread.java:829)`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	hotThreads, err := client.GetHotThreads()
+
+	if err != nil {
+		t.Fatalf("Unexpected error expected nil, got %s", err)
+	}
+
+	if hotThreads != testSetup.Response {
+		t.Errorf("Unexpected response. got %v want %v", hotThreads, testSetup.Response)
+	}
+}
