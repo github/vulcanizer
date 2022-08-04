@@ -2065,7 +2065,6 @@ func TestGetHotThreads(t *testing.T) {
 	client := NewClient(host, port)
 
 	hotThreads, err := client.GetHotThreads()
-
 	if err != nil {
 		t.Fatalf("Unexpected error expected nil, got %s", err)
 	}
