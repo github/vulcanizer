@@ -1526,8 +1526,8 @@ func (c *Client) GetHotThreads() (string, error) {
 
 // GetNodesHotThreads allows to get the current hot threads on given nodes on the cluster
 func (c *Client) GetNodesHotThreads(nodesIDs []string) (string, error) {
-	joinedNodes := strings.Join(nodesIDs, ",")
-	url := fmt.Sprintf("_nodes/%s/hot_threads", strings.ReplaceAll(joinedNodes, " ", ""))
+	joinedNodesIDs := strings.Join(nodesIDs, ",")
+	url := fmt.Sprintf("_nodes/%s/hot_threads", strings.ReplaceAll(joinedNodesIDs, " ", ""))
 	body, err := handleErrWithBytes(c.buildGetRequest(url))
 	if err != nil {
 		return "", err
