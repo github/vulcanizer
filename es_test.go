@@ -2087,7 +2087,7 @@ func TestGetNodesHotThreads(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	hotThreads, err := client.GetNodesHotThreads("nodeid1, nodeid2")
+	hotThreads, err := client.GetNodesHotThreads([]string{"nodeid1  ", "  nodeid2"})
 	if err != nil {
 		t.Fatalf("Unexpected error expected nil, got %s", err)
 	}
