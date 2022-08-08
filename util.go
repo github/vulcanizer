@@ -8,7 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func excludeSettingsFromJson(settings []gjson.Result) ExcludeSettings {
+func excludeSettingsFromJSON(settings []gjson.Result) ExcludeSettings {
 	excludeSettings := ExcludeSettings{}
 
 	if settings[0].String() == "" {
@@ -34,8 +34,7 @@ func excludeSettingsFromJson(settings []gjson.Result) ExcludeSettings {
 
 // Returns caption based on cluster health explaining the meaning of this state.
 func captionHealth(clusterHealth ClusterHealth) (caption string) {
-
-	var unhealthyIndexList []string
+	unhealthyIndexList := make([]string, 0, len(clusterHealth.UnhealthyIndices))
 	for _, index := range clusterHealth.UnhealthyIndices {
 		status := fmt.Sprintf("%s is %s. %d shards are unassigned.", index.Name, index.Status, index.UnassignedShards)
 		unhealthyIndexList = append(unhealthyIndexList, status)
@@ -57,16 +56,17 @@ func captionHealth(clusterHealth ClusterHealth) (caption string) {
 }
 
 func enrichNodesWithAllocations(nodes []Node, allocations []DiskAllocation) []Node {
-	var enrichedNodes []Node
 	nodeAllocation := make(map[string]DiskAllocation)
 	for _, alloc := range allocations {
 		nodeAllocation[alloc.Node] = alloc
 	}
+
+	enrichedNodes := make([]Node, 0, len(nodes))
 	for _, node := range nodes {
 		enrichedNode := Node{
 			Name:        node.Name,
-			Ip:          node.Ip,
-			Id:          node.Id,
+			IP:          node.IP,
+			ID:          node.ID,
 			Role:        node.Role,
 			Master:      node.Master,
 			Jdk:         node.Jdk,
@@ -92,5 +92,5 @@ func combineErrors(errs []error) error {
 }
 
 func escapeIndexName(index string) string {
-	return strings.Replace(index, ".", "\\.", -1)
+	return strings.ReplaceAll(index, ".", "\\.")
 }

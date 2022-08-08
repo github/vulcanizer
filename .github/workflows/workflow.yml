@@ -16,6 +16,6 @@ jobs:
         go-version: ${{ matrix.go }}
     - name: Run tests
       run: |
-        curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOROOT/bin v1.31.0
+        curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOROOT/bin v1.46.2
         sudo sysctl -w vm.max_map_count=262144
         script/integration-test

@@ -2,6 +2,7 @@ package vulcanizer
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -337,8 +338,8 @@ func TestGetNodeAllocations(t *testing.T) {
 		t.Errorf("Unexpected DiskUsed, expected 735.2gb, got %s", nodes[0].DiskUsed)
 	}
 
-	if nodes[0].Ip != "127.0.0.1" {
-		t.Errorf("Unexpected node IP, expected 127.0.0.1, got %s", nodes[0].Ip)
+	if nodes[0].IP != "127.0.0.1" {
+		t.Errorf("Unexpected node IP, expected 127.0.0.1, got %s", nodes[0].IP)
 	}
 }
 
@@ -620,6 +621,8 @@ func TestGetHealth_TLS(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 	client.Secure = true
+	// nolint:gosec
+	// G402: TLS InsecureSkipVerify set true. (gosec)
 	client.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
 	health, err := client.GetHealth()
@@ -1096,8 +1099,7 @@ func TestRegisterRepository_MissingName(t *testing.T) {
 	}
 
 	err := client.RegisterRepository(repo)
-
-	if err == nil || err.Error() != "Repository Name is required." {
+	if !errors.Is(err, ErrRepositoryNameRequired) {
 		t.Error("Expected validation for missing repository name.")
 	}
 }
@@ -1115,8 +1117,7 @@ func TestRegisterRepository_MissingType(t *testing.T) {
 	}
 
 	err := client.RegisterRepository(repo)
-
-	if err == nil || err.Error() != "Repository Type is required." {
+	if !errors.Is(err, ErrRepositoryTypeRequired) {
 		t.Error("Expected validation for missing repository type.")
 	}
 }
@@ -1144,8 +1145,7 @@ func TestRemoveRepository_MissingName(t *testing.T) {
 	client := NewClient(host, port)
 
 	err := client.RemoveRepository("")
-
-	if err == nil || err.Error() != "Repository Name is required." {
+	if !errors.Is(err, ErrRepositoryNameRequired) {
 		t.Error("Expected validation for missing repository name.")
 	}
 }

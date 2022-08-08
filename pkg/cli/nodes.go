@@ -37,8 +37,8 @@ var cmdNodes = &cobra.Command{
 				node.Master,
 				node.Role,
 				node.Name,
-				node.Ip,
-				node.Id,
+				node.IP,
+				node.ID,
 				node.Jdk,
 				node.Version,
 			}
