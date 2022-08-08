@@ -3,7 +3,7 @@ package vulcanizer
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -23,7 +23,7 @@ type ServerSetup struct {
 
 func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Server {
 	handlerFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestBytes, _ := ioutil.ReadAll(r.Body)
+		requestBytes, _ := io.ReadAll(r.Body)
 		requestBody := string(requestBytes)
 
 		matched := false

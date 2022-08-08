@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/github/vulcanizer"
@@ -98,7 +97,7 @@ func getClient() *vulcanizer.Client {
 	}
 
 	if c.Cacert != "" {
-		caCert, err := ioutil.ReadFile(c.Cacert)
+		caCert, err := os.ReadFile(c.Cacert)
 		if err != nil {
 			fmt.Printf("Error loading cacert file: %s \n", err)
 			os.Exit(1)
