@@ -1026,17 +1026,22 @@ func (c *Client) VerifyRepository(repository string) (bool, error) {
 	return true, nil
 }
 
+var (
+	ErrRepositoryNameRequired = errors.New("Repository Name is required")
+	ErrRepositoryTypeRequired = errors.New("Repository Type is required")
+)
+
 // Register a snapshot repository
 //
 // Use case: Register a snapshot repository in Elasticsearch
 func (c *Client) RegisterRepository(repository Repository) error {
 
 	if repository.Name == "" {
-		return errors.New("Repository Name is required")
+		return ErrRepositoryNameRequired
 	}
 
 	if repository.Type == "" {
-		return errors.New("Repository Type is required")
+		return ErrRepositoryTypeRequired
 	}
 
 	repo := repo{Type: repository.Type, Settings: repository.Settings}
@@ -1060,7 +1065,7 @@ func (c *Client) RegisterRepository(repository Repository) error {
 func (c *Client) RemoveRepository(name string) error {
 
 	if name == "" {
-		return errors.New("Repository Name is required")
+		return ErrRepositoryNameRequired
 	}
 
 	_, err := handleErrWithBytes(c.buildDeleteRequest(fmt.Sprintf("_snapshot/%s", name)))
