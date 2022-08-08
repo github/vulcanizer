@@ -56,11 +56,12 @@ func captionHealth(clusterHealth ClusterHealth) (caption string) {
 }
 
 func enrichNodesWithAllocations(nodes []Node, allocations []DiskAllocation) []Node {
-	var enrichedNodes []Node
 	nodeAllocation := make(map[string]DiskAllocation)
 	for _, alloc := range allocations {
 		nodeAllocation[alloc.Node] = alloc
 	}
+
+	enrichedNodes := make([]Node, 0, len(nodes))
 	for _, node := range nodes {
 		enrichedNode := Node{
 			Name:        node.Name,
@@ -91,5 +92,5 @@ func combineErrors(errs []error) error {
 }
 
 func escapeIndexName(index string) string {
-	return strings.Replace(index, ".", "\\.", -1)
+	return strings.ReplaceAll(index, ".", "\\.")
 }
