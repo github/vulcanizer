@@ -2073,3 +2073,26 @@ func TestGetHotThreads(t *testing.T) {
 		t.Errorf("Unexpected response. got %v want %v", hotThreads, testSetup.Response)
 	}
 }
+
+func TestGetNodesHotThreads(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method: "GET",
+		Path:   "/_nodes/nodeid1,nodeid2/hot_threads",
+		Response: `
+::: {Mister Sinister}{nodeid1}{127.0.0.1}{127.0.0.1:9300}
+   Hot threads at 2022-08-04T20:30:34.357Z, interval=500ms, busiestThreads=3, ignoreIdleThreads=true:`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	hotThreads, err := client.GetNodesHotThreads([]string{"nodeid1  ", "  nodeid2"})
+	if err != nil {
+		t.Fatalf("Unexpected error expected nil, got %s", err)
+	}
+
+	if hotThreads != testSetup.Response {
+		t.Errorf("Unexpected response. got %v want %v", hotThreads, testSetup.Response)
+	}
+}

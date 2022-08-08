@@ -1514,9 +1514,21 @@ func (c *Client) ReloadSecureSettingsWithPassword(password string) (ReloadSecure
 	return response, nil
 }
 
-// GetHotThreads allows to get the current hot threads on each node in the cluster
+// GetHotThreads allows to get the current hot threads on each node on the cluster
 func (c *Client) GetHotThreads() (string, error) {
 	body, err := handleErrWithBytes(c.buildGetRequest("_nodes/hot_threads"))
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+// GetNodesHotThreads allows to get the current hot threads on given nodes on the cluster
+func (c *Client) GetNodesHotThreads(nodesIDs []string) (string, error) {
+	joinedNodesIDs := strings.Join(nodesIDs, ",")
+	url := fmt.Sprintf("_nodes/%s/hot_threads", strings.ReplaceAll(joinedNodesIDs, " ", ""))
+	body, err := handleErrWithBytes(c.buildGetRequest(url))
 	if err != nil {
 		return "", err
 	}
