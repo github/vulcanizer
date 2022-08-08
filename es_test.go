@@ -1099,7 +1099,7 @@ func TestRegisterRepository_MissingName(t *testing.T) {
 
 	err := client.RegisterRepository(repo)
 
-	if err == nil || err.Error() != "Repository Name is required." {
+	if err == nil || err.Error() != "Repository Name is required" {
 		t.Error("Expected validation for missing repository name.")
 	}
 }
@@ -1118,7 +1118,7 @@ func TestRegisterRepository_MissingType(t *testing.T) {
 
 	err := client.RegisterRepository(repo)
 
-	if err == nil || err.Error() != "Repository Type is required." {
+	if err == nil || err.Error() != "Repository Type is required" {
 		t.Error("Expected validation for missing repository type.")
 	}
 }
@@ -1147,7 +1147,7 @@ func TestRemoveRepository_MissingName(t *testing.T) {
 
 	err := client.RemoveRepository("")
 
-	if err == nil || err.Error() != "Repository Name is required." {
+	if err == nil || err.Error() != "Repository Name is required" {
 		t.Error("Expected validation for missing repository name.")
 	}
 }
