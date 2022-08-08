@@ -177,7 +177,7 @@ var cmdRepositoryRegister = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Repository %s registered succesfully.\n", repositoryName)
+		fmt.Printf("Repository %s registered successfully.\n", repositoryName)
 	},
 }
 
@@ -202,6 +202,6 @@ var cmdRepositoryRemove = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Repository %s removed succesfully.\n", repositoryName)
+		fmt.Printf("Repository %s removed successfully.\n", repositoryName)
 	},
 }

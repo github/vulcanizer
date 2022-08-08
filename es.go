@@ -17,8 +17,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-//Hold the values for what values are in the cluster.allocation.exclude settings.
-//Relevant Elasticsearch documentation: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/allocation-filtering.html
+// Hold the values for what values are in the cluster.allocation.exclude settings.
+// Relevant Elasticsearch documentation: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/allocation-filtering.html
 type ExcludeSettings struct {
 	Ips, Hosts, Names []string
 }
@@ -28,7 +28,7 @@ type Auth struct {
 	Password string
 }
 
-//Hold connection information to a Elasticsearch cluster.
+// Hold connection information to a Elasticsearch cluster.
 type Client struct {
 	Host      string
 	Port      int
@@ -39,11 +39,13 @@ type Client struct {
 	*Auth
 }
 
-//Holds information about an Elasticsearch node, based on a combination of the _cat/nodes and _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html, https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
+// Holds information about an Elasticsearch node, based on a combination of the
+// _cat/nodes and _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-nodes.html,
+// https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
 type Node struct {
 	Name        string `json:"name"`
-	Ip          string `json:"ip"`
-	Id          string `json:"id"`
+	IP          string `json:"ip"`
+	ID          string `json:"id"`
 	Role        string `json:"role"`
 	Master      string `json:"master"`
 	Jdk         string `json:"jdk"`
@@ -56,14 +58,16 @@ type Node struct {
 	DiskPercent string
 }
 
-// Holds a subset of information from the _nodes/stats endpoint: https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
+// Holds a subset of information from the _nodes/stats endpoint:
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
 type NodeStats struct {
 	Name     string
 	Role     string
 	JVMStats NodeJVM
 }
 
-// Holds information about an Elasticsearch node's JVM settings. From _nodes/stats/jvm: https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
+// Holds information about an Elasticsearch node's JVM settings.
+// From _nodes/stats/jvm: https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
 type NodeJVM struct {
 	HeapUsedBytes         int `json:"heap_used_in_bytes"`
 	HeapUsedPercentage    int `json:"heap_used_percent"`
@@ -72,10 +76,11 @@ type NodeJVM struct {
 	NonHeapCommittedBytes int `json:"non_heap_committed_in_bytes"`
 }
 
-// DiskAllocation holds disk allocation information per node, based on _cat/allocationAPI: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
+// DiskAllocation holds disk allocation information per node, based on _cat/allocation
+// API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-allocation.html
 type DiskAllocation struct {
 	Name        string `json:"name"`
-	Ip          string `json:"ip"`
+	IP          string `json:"ip"`
 	Node        string `json:"node"`
 	Shards      string `json:"shards"`
 	DiskIndices string `json:"disk.indices"`
@@ -85,7 +90,8 @@ type DiskAllocation struct {
 	DiskPercent string `json:"disk.percent"`
 }
 
-//Holds information about an Elasticsearch index, based on the _cat/indices API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-indices.html
+// Holds information about an Elasticsearch index, based on the _cat/indices
+// API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-indices.html
 type Index struct {
 	Health        string `json:"health"`
 	Status        string `json:"status"`
@@ -96,7 +102,8 @@ type Index struct {
 	DocumentCount int    `json:"docs.count,string"`
 }
 
-//Holds information about an index shard, based on the _cat/shards API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-shards.html
+// Holds information about an index shard, based on the _cat/shards
+// API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-shards.html
 type Shard struct {
 	Index string `json:"index"`
 	Shard string `json:"shard"`
@@ -108,7 +115,7 @@ type Shard struct {
 	Node  string `json:"node"`
 }
 
-//Holds information about overlapping shards for a given set of cluster nodes
+// Holds information about overlapping shards for a given set of cluster nodes
 type ShardOverlap struct {
 	Index         string
 	Shard         string
@@ -117,7 +124,8 @@ type ShardOverlap struct {
 	ReplicasTotal int
 }
 
-//Holds information about shard recovery based on the _cat/recovery API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-recovery.html
+// Holds information about shard recovery based on the _cat/recovery
+// API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-recovery.html
 type ShardRecovery struct {
 	Index                string `json:"index"`
 	Shard                string `json:"shard"`
@@ -143,7 +151,8 @@ type ShardRecovery struct {
 	TranslogOpsPercent   string `json:"translog_ops_percent"`
 }
 
-// Holds information about an Elasticsearch alias, based on the _cat/aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-alias.html
+// Holds information about an Elasticsearch alias, based on the _cat/aliases
+// API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cat-alias.html
 type Alias struct {
 	Name          string `json:"alias"`
 	IndexName     string `json:"index"`
@@ -152,7 +161,7 @@ type Alias struct {
 	RoutingSearch string `json:"routing.search"`
 }
 
-//Represent the two possible aliases actions: add or remove
+// Represent the two possible aliases actions: add or remove
 type AliasActionType string
 
 const (
@@ -160,7 +169,8 @@ const (
 	RemoveAlias AliasActionType = "remove"
 )
 
-//Holds information needed to perform an alias modification, based on the aliases API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/indices-aliases.html
+// Holds information needed to perform an alias modification, based on the aliases
+// API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/indices-aliases.html
 type AliasAction struct {
 	ActionType AliasActionType
 	IndexName  string `json:"index"`
@@ -181,7 +191,8 @@ func (ac *AliasAction) MarshalJSON() ([]byte, error) {
 	)
 }
 
-//Holds information about the health of an Elasticsearch cluster, based on the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
+// Holds information about the health of an Elasticsearch cluster, based on the
+// cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
 type ClusterHealth struct {
 	Cluster                string  `json:"cluster_name"`
 	Status                 string  `json:"status"`
@@ -196,7 +207,8 @@ type ClusterHealth struct {
 	UnhealthyIndices       []IndexHealth
 }
 
-//Holds information about the health of an Elasticsearch index, based on the index level of the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
+// Holds information about the health of an Elasticsearch index, based on the index
+// level of the cluster health API: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/cluster-health.html
 type IndexHealth struct {
 	Name               string
 	Status             string `json:"status"`
@@ -206,15 +218,19 @@ type IndexHealth struct {
 	UnassignedShards   int    `json:"unassigned_shards"`
 }
 
-//Holds slices for persistent and transient cluster settings.
+// Holds slices for persistent and transient cluster settings.
 type ClusterSettings struct {
 	PersistentSettings []Setting
 	TransientSettings  []Setting
 }
 
-//A setting name and value with the setting name to be a "collapsed" version of the setting. A setting of:
+// A setting name and value with the setting name to be a "collapsed" version of
+// the setting. A setting of:
+//
 //  { "indices": { "recovery" : { "max_bytes_per_sec": "10mb" } } }
-//would be represented by:
+//
+// would be represented by:
+//
 //  ClusterSetting{ Setting: "indices.recovery.max_bytes_per_sec", Value: "10mb" }
 type Setting struct {
 	Setting string
@@ -229,7 +245,8 @@ type acknowledgedResponse struct {
 	Acknowledged bool `json:"acknowledged"`
 }
 
-//Holds information about an Elasticsearch snapshot, based on the snapshot API: https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html
+// Holds information about an Elasticsearch snapshot, based on the snapshot
+// API: https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html
 type Snapshot struct {
 	State          string    `json:"state"`
 	Name           string    `json:"snapshot"`
@@ -251,20 +268,20 @@ type Snapshot struct {
 	} `json:"failures"`
 }
 
-//Holds information about an Elasticsearch snapshot repository.
+// Holds information about an Elasticsearch snapshot repository.
 type Repository struct {
 	Name     string
 	Type     string
 	Settings map[string]interface{}
 }
 
-//Internal struct for repository requests since Name is part of URL path
+// Internal struct for repository requests since Name is part of URL path
 type repo struct {
 	Type     string                 `json:"type"`
 	Settings map[string]interface{} `json:"settings"`
 }
 
-//Holds information about the tokens that Elasticsearch analyzes
+// Holds information about the tokens that Elasticsearch analyzes
 type Token struct {
 	Text        string `json:"token"`
 	StartOffset int    `json:"start_offset"`
@@ -289,7 +306,7 @@ type ReloadSecureSettingsResponse struct {
 	} `json:"nodes"`
 }
 
-//Initialize a new vulcanizer client to use.
+// Initialize a new vulcanizer client to use.
 // Deprecated: NewClient has been deprecated in favor of using struct initialization.
 func NewClient(host string, port int) *Client {
 	if port > 0 {
@@ -300,8 +317,8 @@ func NewClient(host string, port int) *Client {
 
 const clusterSettingsPath = "_cluster/settings"
 
-func settingsToStructs(rawJson string) ([]Setting, error) {
-	flatSettings, err := flatten.FlattenString(rawJson, "", flatten.DotStyle)
+func settingsToStructs(rawJSON string) ([]Setting, error) {
+	flatSettings, err := flatten.FlattenString(rawJSON, "", flatten.DotStyle)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +335,7 @@ func settingsToStructs(rawJson string) ([]Setting, error) {
 
 	sort.Strings(keys)
 
-	var clusterSettings []Setting
+	clusterSettings := make([]Setting, 0, len(keys))
 	for _, k := range keys {
 		setting := Setting{
 			Setting: k,
@@ -450,13 +467,17 @@ func (c *Client) GetClusterExcludeSettings() (ExcludeSettings, error) {
 
 	excludedArray := gjson.GetManyBytes(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	excludeSettings := excludeSettingsFromJson(excludedArray)
+	excludeSettings := excludeSettingsFromJSON(excludedArray)
 	return excludeSettings, nil
 }
 
-//Set shard allocation exclusion rules such that the Elasticsearch node with the name `serverToDrain` is excluded. This should cause Elasticsearch to migrate shards away from that node.
+// Set shard allocation exclusion rules such that the Elasticsearch node with
+// the name `serverToDrain` is excluded. This should cause Elasticsearch to
+// migrate shards away from that node.
 //
-//Use case: You need to restart an Elasticsearch node. In order to do so safely, you should migrate data away from it. Calling `DrainServer` with the node name will move data off of the specified node.
+// Use case: You need to restart an Elasticsearch node. In order to do so safely,
+// you should migrate data away from it. Calling `DrainServer` with the node name
+// will move data off of the specified node.
 func (c *Client) DrainServer(serverToDrain string) (ExcludeSettings, error) {
 	excludeSettings, err := c.GetClusterExcludeSettings()
 
@@ -479,9 +500,14 @@ func (c *Client) DrainServer(serverToDrain string) (ExcludeSettings, error) {
 	return excludeSettings, nil
 }
 
-//Set shard allocation exclusion rules such that the Elasticsearch node with the name `serverToFill` is no longer being excluded. This should cause Elasticsearch to migrate shards to that node.
+// Set shard allocation exclusion rules such that the Elasticsearch node with
+// the name `serverToFill` is no longer being excluded. This should cause
+// Elasticsearch to migrate shards to that node.
 //
-//Use case: You have completed maintenance on an Elasticsearch node and it's ready to hold data again. Calling `FillOneServer` with the node name will remove that node name from the shard exclusion rules and allow data to be relocated onto the node.
+// Use case: You have completed maintenance on an Elasticsearch node and it's
+// ready to hold data again. Calling `FillOneServer` with the node name will
+// remove that node name from the shard exclusion rules and allow data to be
+// relocated onto the node.
 func (c *Client) FillOneServer(serverToFill string) (ExcludeSettings, error) {
 
 	// Get the current list of strings
@@ -512,9 +538,12 @@ func (c *Client) FillOneServer(serverToFill string) (ExcludeSettings, error) {
 	return c.GetClusterExcludeSettings()
 }
 
-//Removes all shard allocation exclusion rules.
+// Removes all shard allocation exclusion rules.
 //
-//Use case: You had been performing maintenance on a number of Elasticsearch nodes. They are all ready to receive data again. Calling `FillAll` will remove all the allocation exclusion rules on the cluster, allowing Elasticsearch to freely allocate shards on the previously excluded nodes.
+// Use case: You had been performing maintenance on a number of Elasticsearch
+// nodes. They are all ready to receive data again. Calling `FillAll` will
+// remove all the allocation exclusion rules on the cluster, allowing
+// Elasticsearch to freely allocate shards on the previously excluded nodes.
 func (c *Client) FillAll() (ExcludeSettings, error) {
 
 	agent := c.buildPutRequest(clusterSettingsPath).
@@ -529,12 +558,12 @@ func (c *Client) FillAll() (ExcludeSettings, error) {
 
 	excludedArray := gjson.GetManyBytes(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	return excludeSettingsFromJson(excludedArray), nil
+	return excludeSettingsFromJSON(excludedArray), nil
 }
 
-//Get all the nodes in the cluster.
+// Get all the nodes in the cluster.
 //
-//Use case: You want to see what nodes Elasticsearch considers part of the cluster.
+// Use case: You want to see what nodes Elasticsearch considers part of the cluster.
 func (c *Client) GetNodes() ([]Node, error) {
 	var nodes []Node
 
@@ -548,9 +577,9 @@ func (c *Client) GetNodes() ([]Node, error) {
 	return nodes, nil
 }
 
-//Get all the nodes and their allocation/disk usage in the cluster.
+// Get all the nodes and their allocation/disk usage in the cluster.
 //
-//Use case: You want to see how much disk is being used by the nodes in the cluster.
+// Use case: You want to see how much disk is being used by the nodes in the cluster.
 func (c *Client) GetNodeAllocations() ([]Node, error) {
 	var nodes []Node
 	var nodeErr error
@@ -575,9 +604,9 @@ func (c *Client) GetNodeAllocations() ([]Node, error) {
 	return nodes, nil
 }
 
-//Get all the nodes' JVM Heap statistics.
+// Get all the nodes' JVM Heap statistics.
 //
-//Use case: You want to see how much heap each node is using and their max heap size.
+// Use case: You want to see how much heap each node is using and their max heap size.
 
 func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 
@@ -633,7 +662,7 @@ func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 					role = "M" + role
 					continue
 				}
-				role = role + sr[:1]
+				role += sr[:1]
 			}
 		}
 		nodeStat := NodeStats{
@@ -655,9 +684,9 @@ func (c *Client) GetNodeJVMStats() ([]NodeStats, error) {
 
 }
 
-//Get all the indices in the cluster.
+// Get all the indices in the cluster.
 //
-//Use case: You want to see some basic info on all the indices of the cluster.
+// Use case: You want to see some basic info on all the indices of the cluster.
 func (c *Client) GetAllIndices() ([]Index, error) {
 	var indices []Index
 	err := handleErrWithStruct(c.buildGetRequest("_cat/indices?h=health,status,index,pri,rep,store.size,docs.count"), &indices)
@@ -681,9 +710,9 @@ func (c *Client) GetIndices(index string) ([]Index, error) {
 	return indices, nil
 }
 
-//Get all the aliases in the cluster.
+// Get all the aliases in the cluster.
 //
-//Use case: You want to see some basic info on all the aliases of the cluster
+// Use case: You want to see some basic info on all the aliases of the cluster
 func (c *Client) GetAllAliases() ([]Alias, error) {
 	var aliases []Alias
 
@@ -696,9 +725,9 @@ func (c *Client) GetAllAliases() ([]Alias, error) {
 	return aliases, nil
 }
 
-//Get a subset the aliases in the cluster.
+// Get a subset the aliases in the cluster.
 //
-//Use case: You want to see some basic info on a subset of the aliases of the cluster
+// Use case: You want to see some basic info on a subset of the aliases of the cluster
 func (c *Client) GetAliases(alias string) ([]Alias, error) {
 	var aliases []Alias
 
@@ -712,9 +741,9 @@ func (c *Client) GetAliases(alias string) ([]Alias, error) {
 	return aliases, nil
 }
 
-//Interact with aliases in the cluster.
+// Interact with aliases in the cluster.
 //
-//Use case: You want to add, delete or update an index alias
+// Use case: You want to add, delete or update an index alias
 func (c *Client) ModifyAliases(actions []AliasAction) error {
 	request := map[string][]AliasAction{"actions": actions}
 
@@ -734,9 +763,9 @@ func (c *Client) ModifyAliases(actions []AliasAction) error {
 	return nil
 }
 
-//Delete an index in the cluster.
+// Delete an index in the cluster.
 //
-//Use case: You want to remove an index and all of its data.
+// Use case: You want to remove an index and all of its data.
 func (c *Client) DeleteIndex(indexName string) error {
 	var response acknowledgedResponse
 
@@ -753,9 +782,9 @@ func (c *Client) DeleteIndex(indexName string) error {
 	return nil
 }
 
-//Open an index on the cluster
+// Open an index on the cluster
 //
-//Use case: You want to open a closed index
+// Use case: You want to open a closed index
 func (c *Client) OpenIndex(indexName string) error {
 	// var response acknowledgedResponse
 
@@ -775,9 +804,9 @@ func (c *Client) OpenIndex(indexName string) error {
 	return nil
 }
 
-//Close an index on the cluster
+// Close an index on the cluster
 //
-//Use case: You want to close an opened index
+// Use case: You want to close an opened index
 func (c *Client) CloseIndex(indexName string) error {
 	// var response acknowledgedResponse
 
@@ -797,9 +826,9 @@ func (c *Client) CloseIndex(indexName string) error {
 	return nil
 }
 
-//Get the health of the cluster.
+// Get the health of the cluster.
 //
-//Use case: You want to see information needed to determine if the Elasticsearch cluster is healthy (green) or not (yellow/red).
+// Use case: You want to see information needed to determine if the Elasticsearch cluster is healthy (green) or not (yellow/red).
 func (c *Client) GetHealth() (ClusterHealth, error) {
 	var health ClusterHealth
 	err := handleErrWithStruct(c.buildGetRequest("_cluster/health?level=indices"), &health)
@@ -822,9 +851,9 @@ func (c *Client) GetHealth() (ClusterHealth, error) {
 	return health, nil
 }
 
-//Get all the persistent and transient cluster settings.
+// Get all the persistent and transient cluster settings.
 //
-//Use case: You want to see the current settings in the cluster.
+// Use case: You want to see the current settings in the cluster.
 func (c *Client) GetClusterSettings() (ClusterSettings, error) {
 	clusterSettings := ClusterSettings{}
 	body, err := handleErrWithBytes(c.buildGetRequest(clusterSettingsPath))
@@ -852,9 +881,9 @@ func (c *Client) GetClusterSettings() (ClusterSettings, error) {
 	return clusterSettings, nil
 }
 
-//Enables or disables allocation for the cluster.
+// Enables or disables allocation for the cluster.
 //
-//Use case: You are performing an operation the cluster where nodes may be dropping in and out. Elasticsearch will typically try to rebalance immediately but you want the cluster to hold off rebalancing until you complete your task. Calling `SetAllocation("disable")` will disable allocation so Elasticsearch won't move/relocate any shards. Once you complete your task, calling `SetAllocation("enable")` will allow Elasticsearch to relocate shards again.
+// Use case: You are performing an operation the cluster where nodes may be dropping in and out. Elasticsearch will typically try to rebalance immediately but you want the cluster to hold off rebalancing until you complete your task. Calling `SetAllocation("disable")` will disable allocation so Elasticsearch won't move/relocate any shards. Once you complete your task, calling `SetAllocation("enable")` will allow Elasticsearch to relocate shards again.
 func (c *Client) SetAllocation(allocation string) (string, error) {
 
 	var allocationSetting string
@@ -884,7 +913,7 @@ func (c *Client) SetAllocation(allocation string) (string, error) {
 // If the setting is not set in Elasticsearch (it's falling back to default configuration) SetClusterSetting's existingValue will be nil.
 // If the value provided is nil, SetClusterSetting will remove the setting so that Elasticsearch falls back on default configuration for that setting.
 //
-//Use case: You've doubled the number of nodes in your cluster and you want to increase the number of shards the cluster can relocate at one time. Calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "100")` will update that value with the cluster. Once data relocation is complete you can decrease the setting by calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "20")`.
+// Use case: You've doubled the number of nodes in your cluster and you want to increase the number of shards the cluster can relocate at one time. Calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "100")` will update that value with the cluster. Once data relocation is complete you can decrease the setting by calling `SetClusterSetting("cluster.routing.allocation.cluster_concurrent_rebalance", "20")`.
 func (c *Client) SetClusterSetting(setting string, value *string) (*string, *string, error) {
 	var existingValue *string
 	var newValue *string
@@ -932,9 +961,9 @@ func (c *Client) SetClusterSetting(setting string, value *string) (*string, *str
 	return existingValue, newValue, nil
 }
 
-//List the snapshots of the given repository.
+// List the snapshots of the given repository.
 //
-//Use case: You want to see information on snapshots in a repository.
+// Use case: You want to see information on snapshots in a repository.
 func (c *Client) GetSnapshots(repository string) ([]Snapshot, error) {
 
 	var snapshotWrapper snapshotWrapper
@@ -948,9 +977,9 @@ func (c *Client) GetSnapshots(repository string) ([]Snapshot, error) {
 	return snapshotWrapper.Snapshots, nil
 }
 
-//Get detailed information about a particular snapshot.
+// Get detailed information about a particular snapshot.
 //
-//Use case: You had a snapshot fail and you want to see the reason why and what shards/nodes the error occurred on.
+// Use case: You had a snapshot fail and you want to see the reason why and what shards/nodes the error occurred on.
 func (c *Client) GetSnapshotStatus(repository string, snapshot string) (Snapshot, error) {
 
 	var snapshotWrapper snapshotWrapper
@@ -964,9 +993,9 @@ func (c *Client) GetSnapshotStatus(repository string, snapshot string) (Snapshot
 	return snapshotWrapper.Snapshots[0], nil
 }
 
-//Delete a snapshot
+// Delete a snapshot
 //
-//Use case: You want to delete older snapshots so that they don't take up extra space.
+// Use case: You want to delete older snapshots so that they don't take up extra space.
 func (c *Client) DeleteSnapshot(repository string, snapshot string) error {
 	var response acknowledgedResponse
 
@@ -983,9 +1012,9 @@ func (c *Client) DeleteSnapshot(repository string, snapshot string) error {
 	return nil
 }
 
-//Verify a snapshot repository
+// Verify a snapshot repository
 //
-//Use case: Have Elasticsearch verify a repository to make sure that all nodes can access the snapshot location correctly.
+// Use case: Have Elasticsearch verify a repository to make sure that all nodes can access the snapshot location correctly.
 func (c *Client) VerifyRepository(repository string) (bool, error) {
 
 	_, err := handleErrWithBytes(c.buildPostRequest(fmt.Sprintf("_snapshot/%s/_verify", repository)))
@@ -997,17 +1026,17 @@ func (c *Client) VerifyRepository(repository string) (bool, error) {
 	return true, nil
 }
 
-//Register a snapshot repository
+// Register a snapshot repository
 //
-//Use case: Register a snapshot repository in Elasticsearch
+// Use case: Register a snapshot repository in Elasticsearch
 func (c *Client) RegisterRepository(repository Repository) error {
 
 	if repository.Name == "" {
-		return fmt.Errorf("Repository Name is required.")
+		return errors.New("Repository Name is required")
 	}
 
 	if repository.Type == "" {
-		return fmt.Errorf("Repository Type is required.")
+		return errors.New("Repository Type is required")
 	}
 
 	repo := repo{Type: repository.Type, Settings: repository.Settings}
@@ -1025,13 +1054,13 @@ func (c *Client) RegisterRepository(repository Repository) error {
 	return nil
 }
 
-//Remove a snapshot repository
+// Remove a snapshot repository
 //
-//Use case: Remove a snapshot repository in Elasticsearch
+// Use case: Remove a snapshot repository in Elasticsearch
 func (c *Client) RemoveRepository(name string) error {
 
 	if name == "" {
-		return fmt.Errorf("Repository Name is required.")
+		return errors.New("Repository Name is required")
 	}
 
 	_, err := handleErrWithBytes(c.buildDeleteRequest(fmt.Sprintf("_snapshot/%s", name)))
@@ -1043,20 +1072,18 @@ func (c *Client) RemoveRepository(name string) error {
 	return nil
 }
 
-//List snapshot respositories on the cluster
+// List snapshot repositories on the cluster
 //
-//Use case: You want to see all of the configured backup repositories on the given cluster, what types they are and if they are verified.
+// Use case: You want to see all of the configured backup repositories on the given cluster, what types they are and if they are verified.
 func (c *Client) GetRepositories() ([]Repository, error) {
-
 	var repos map[string]repo
-	var repositories []Repository
 
 	err := handleErrWithStruct(c.buildGetRequest("_snapshot/_all"), &repos)
-
 	if err != nil {
 		return nil, err
 	}
 
+	repositories := make([]Repository, 0, len(repos))
 	for name, r := range repos {
 		// Sanitize AWS secrets if they exist in the settings
 		delete(r.Settings, "access_key")
@@ -1071,20 +1098,20 @@ func (c *Client) GetRepositories() ([]Repository, error) {
 	return repositories, nil
 }
 
-//Take a snapshot of specific indices on the cluster to the given repository
+// Take a snapshot of specific indices on the cluster to the given repository
 //
-//Use case: You want to backup certain indices on the cluster to the given repository.
+// Use case: You want to backup certain indices on the cluster to the given repository.
 func (c *Client) SnapshotIndices(repository string, snapshot string, indices []string) error {
 	if repository == "" {
-		return fmt.Errorf("Empty string for repository is not allowed.")
+		return errors.New("Empty string for repository is not allowed")
 	}
 
 	if snapshot == "" {
-		return fmt.Errorf("Empty string for snapshot is not allowed.")
+		return errors.New("Empty string for snapshot is not allowed")
 	}
 
 	if len(indices) == 0 {
-		return fmt.Errorf("No indices provided to snapshot.")
+		return errors.New("No indices provided to snapshot")
 	}
 
 	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).
@@ -1096,16 +1123,16 @@ func (c *Client) SnapshotIndices(repository string, snapshot string, indices []s
 	return err
 }
 
-//Take a snapshot of all indices on the cluster to the given repository
+// Take a snapshot of all indices on the cluster to the given repository
 //
-//Use case: You want to backup all of the indices on the cluster to the given repository.
+// Use case: You want to backup all of the indices on the cluster to the given repository.
 func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
 	if repository == "" {
-		return fmt.Errorf("Empty string for repository is not allowed.")
+		return errors.New("Empty string for repository is not allowed")
 	}
 
 	if snapshot == "" {
-		return fmt.Errorf("Empty string for snapshot is not allowed.")
+		return errors.New("Empty string for snapshot is not allowed")
 	}
 
 	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot))
@@ -1114,16 +1141,16 @@ func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
 	return err
 }
 
-//Restore an index or indices on the cluster
+// Restore an index or indices on the cluster
 //
-//Use case: You want to restore a particular index or indices onto your cluster with a new name.
+// Use case: You want to restore a particular index or indices onto your cluster with a new name.
 func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indices []string, restoredIndexPrefix string, indexSettings map[string]interface{}) error {
 	if repository == "" {
-		return fmt.Errorf("Empty string for repository is not allowed.")
+		return errors.New("Empty string for repository is not allowed")
 	}
 
 	if snapshot == "" {
-		return fmt.Errorf("Empty string for snapshot is not allowed.")
+		return errors.New("Empty string for snapshot is not allowed")
 	}
 
 	request := struct {
@@ -1147,9 +1174,9 @@ func (c *Client) RestoreSnapshotIndices(repository string, snapshot string, indi
 	return err
 }
 
-//Call the analyze API with sample text and an analyzer. https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html
+// Call the analyze API with sample text and an analyzer. https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html
 //
-//Use case: You want to see how Elasticsearch will break up sample text given a specific analyzer.
+// Use case: You want to see how Elasticsearch will break up sample text given a specific analyzer.
 func (c *Client) AnalyzeText(analyzer, text string) ([]Token, error) {
 	request := struct {
 		Analyzer string `json:"analyzer"`
@@ -1175,9 +1202,9 @@ func (c *Client) AnalyzeText(analyzer, text string) ([]Token, error) {
 	return tokenWrapper.Tokens, nil
 }
 
-//Call the analyze API with sample text on an index and a specific field . https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html
+// Call the analyze API with sample text on an index and a specific field . https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html
 //
-//Use case: You have a particular field that might have custom analyzers and you want to see how this field will tokenize some particular text.
+// Use case: You have a particular field that might have custom analyzers and you want to see how this field will tokenize some particular text.
 func (c *Client) AnalyzeTextWithField(index, field, text string) ([]Token, error) {
 	request := struct {
 		Field string `json:"field"`
@@ -1203,9 +1230,9 @@ func (c *Client) AnalyzeTextWithField(index, field, text string) ([]Token, error
 	return tokenWrapper.Tokens, nil
 }
 
-//Get the settings of an index in a pretty-printed format.
+// Get the settings of an index in a pretty-printed format.
 //
-//Use case: You can view the custom settings that are set on a particular index.
+// Use case: You can view the custom settings that are set on a particular index.
 func (c *Client) GetPrettyIndexSettings(index string) (string, error) {
 	body, err := handleErrWithBytes(c.buildGetRequest(fmt.Sprintf("%s/_settings", index)))
 
@@ -1224,9 +1251,9 @@ func (c *Client) GetPrettyIndexSettings(index string) (string, error) {
 	return prettyPrinted.String(), nil
 }
 
-//Get the settings of an index in a machine-oriented format.
+// Get the settings of an index in a machine-oriented format.
 //
-//Use case: You can view the custom settings that are set on a particular index.
+// Use case: You can view the custom settings that are set on a particular index.
 func (c *Client) GetIndexSettings(index string) ([]Setting, error) {
 	body, err := handleErrWithBytes(c.buildGetRequest(fmt.Sprintf("%s/_settings", index)))
 
@@ -1241,9 +1268,9 @@ func (c *Client) GetIndexSettings(index string) ([]Setting, error) {
 	return settings, err
 }
 
-//Set a setting on an index.
+// Set a setting on an index.
 //
-//Use case: Set or update an index setting for a particular index.
+// Use case: Set or update an index setting for a particular index.
 func (c *Client) SetIndexSetting(index, setting, value string) (string, string, error) {
 	settingsPath := fmt.Sprintf("%s/_settings", index)
 	body, err := handleErrWithBytes(c.buildGetRequest(settingsPath))
@@ -1264,9 +1291,9 @@ func (c *Client) SetIndexSetting(index, setting, value string) (string, string, 
 	return currentValue, value, nil
 }
 
-//Get the mappings of an index in a pretty-printed format.
+// Get the mappings of an index in a pretty-printed format.
 //
-//Use case: You can view the custom mappings that are set on a particular index.
+// Use case: You can view the custom mappings that are set on a particular index.
 func (c *Client) GetPrettyIndexMappings(index string) (string, error) {
 	body, err := handleErrWithBytes(c.buildGetRequest(fmt.Sprintf("%s/_mappings", index)))
 
@@ -1302,9 +1329,9 @@ func (c *Client) GetPrettyIndexSegments(index string) (string, error) {
 	return prettyPrinted.String(), nil
 }
 
-//Get shard data for all or a subset of nodes
+// Get shard data for all or a subset of nodes
 //
-//Use case: You can view shard information on all nodes or a subset.
+// Use case: You can view shard information on all nodes or a subset.
 func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 	var allShards []Shard
 	req := c.buildGetRequest("_cat/shards")
@@ -1320,7 +1347,7 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 	}
 
 	var filteredShards []Shard
-	var nodeRegexps []*regexp.Regexp
+	nodeRegexps := make([]*regexp.Regexp, 0, len(nodes))
 
 	for _, node := range nodes {
 		nodeRegexp, err := regexp.Compile(node)
@@ -1344,9 +1371,9 @@ func (c *Client) GetShards(nodes []string) ([]Shard, error) {
 	return filteredShards, nil
 }
 
-//Get details regarding shard distribution across a given set of cluster nodes.
+// Get details regarding shard distribution across a given set of cluster nodes.
 //
-//Use case: You can leverage this information to determine if it's safe to remove cluster nodes without losing data.
+// Use case: You can leverage this information to determine if it's safe to remove cluster nodes without losing data.
 func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error) {
 	shards, err := c.GetShards(nodes)
 	overlap := map[string]ShardOverlap{}
@@ -1379,7 +1406,7 @@ func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error
 			if val.isPrimaryShard(shard) {
 				val.PrimaryFound = true
 			} else if val.isReplicaShard(shard) {
-				val.ReplicasFound += 1
+				val.ReplicasFound++
 			}
 			overlap[name] = val
 		} else {
@@ -1401,9 +1428,9 @@ func (c *Client) GetShardOverlap(nodes []string) (map[string]ShardOverlap, error
 	return overlap, nil
 }
 
-//Get details regarding shard recovery operations across a set of cluster nodes.
+// Get details regarding shard recovery operations across a set of cluster nodes.
 //
-//Use case: You can view the shard recovery progress of the cluster.
+// Use case: You can view the shard recovery progress of the cluster.
 func (c *Client) GetShardRecovery(nodes []string, onlyActive bool) ([]ShardRecovery, error) {
 	var allRecoveries []ShardRecovery
 	uri := "_cat/recovery"
@@ -1425,7 +1452,7 @@ func (c *Client) GetShardRecovery(nodes []string, onlyActive bool) ([]ShardRecov
 	}
 
 	var filteredRecoveries []ShardRecovery
-	var nodeRegexps []*regexp.Regexp
+	nodeRegexps := make([]*regexp.Regexp, 0, len(nodes))
 
 	for _, node := range nodes {
 		nodeRegexp, err := regexp.Compile(node)
@@ -1470,9 +1497,9 @@ func (s *Snapshot) GetEndTime() string {
 	return ""
 }
 
-//Reload secure node settings
+// Reload secure node settings
 //
-//Use case: Call the reload secure settings API https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-reload-secure-settings.html
+// Use case: Call the reload secure settings API https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-reload-secure-settings.html
 func (c *Client) ReloadSecureSettings() (ReloadSecureSettingsResponse, error) {
 	var response ReloadSecureSettingsResponse
 	err := handleErrWithStruct(c.buildPostRequest("_nodes/reload_secure_settings"), &response)
@@ -1484,13 +1511,13 @@ func (c *Client) ReloadSecureSettings() (ReloadSecureSettingsResponse, error) {
 	return response, nil
 }
 
-//Reload secure node settings with password
+// Reload secure node settings with password
 //
-//Use case: Call the reload secure settings API with a supplied password https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-reload-secure-settings.html
+// Use case: Call the reload secure settings API with a supplied password https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-reload-secure-settings.html
 func (c *Client) ReloadSecureSettingsWithPassword(password string) (ReloadSecureSettingsResponse, error) {
 
 	if password == "" {
-		return ReloadSecureSettingsResponse{}, fmt.Errorf("Keystore password is required.")
+		return ReloadSecureSettingsResponse{}, errors.New("Keystore password is required")
 	}
 
 	requestBody := struct {

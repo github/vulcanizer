@@ -11,7 +11,7 @@ func TestExcludeSettingsFromJson_OneResult(t *testing.T) {
 	body := `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_host":"excluded.host","_name":"excluded_name","_ip":"10.0.0.99"}}}}}}`
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	settings := excludeSettingsFromJson(excludedArray)
+	settings := excludeSettingsFromJSON(excludedArray)
 
 	if len(settings.Ips) != 1 && settings.Ips[0] != "10.0.0.99" {
 		t.Fatalf("Ips should should contain 10.0.0.99, got %s", settings.Ips)
@@ -30,7 +30,7 @@ func TestExcludeSettingsFromJson_NoResults(t *testing.T) {
 	body := `{"transient":{"cluster":{"routing":{"allocation":{"exclude":{"_host":"","_name":"","_ip":""}}}}}}`
 	excludedArray := gjson.GetMany(body, "transient.cluster.routing.allocation.exclude._ip", "transient.cluster.routing.allocation.exclude._name", "transient.cluster.routing.allocation.exclude._host")
 
-	settings := excludeSettingsFromJson(excludedArray)
+	settings := excludeSettingsFromJSON(excludedArray)
 
 	if len(settings.Ips) != 0 {
 		t.Fatalf("Ips should be empty array, got %#v", settings.Ips)

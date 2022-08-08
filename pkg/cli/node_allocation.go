@@ -48,7 +48,7 @@ var cmdNodeAllocations = &cobra.Command{
 					node.DiskPercent,
 					node.DiskIndices,
 					node.Shards,
-					node.Ip,
+					node.IP,
 				}
 
 				rows = append(rows, row)
@@ -70,8 +70,8 @@ var cmdNodeAllocations = &cobra.Command{
 					node.DiskTotal,
 					node.DiskUsed,
 					node.Shards,
-					node.Ip,
-					node.Id,
+					node.IP,
+					node.ID,
 					node.Jdk,
 					node.Version,
 				}
