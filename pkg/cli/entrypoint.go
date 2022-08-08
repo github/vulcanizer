@@ -81,6 +81,9 @@ func getClient() *vulcanizer.Client {
 		v.Secure = true
 	}
 
+	// nolint:gosec
+	// G402: TLS MinVersion too low. (gosec)
+	// Skipping it for now. This should be fixed in a separate PR.
 	v.TLSConfig = &tls.Config{}
 
 	if c.TLSSkipVerify {
