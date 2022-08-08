@@ -1,0 +1,43 @@
+# This file contains all available configuration options for golangci-lint.
+# The Go Community at GitHub is currently working on a finalized version
+# of this configuration file to share with all Hubbers.
+
+run:
+  tests: true
+
+linters-settings:
+  staticcheck:
+    # https://staticcheck.io/docs/options#checks
+    # Default: ["*"]
+    checks: ["all", "-SA1019"]
+
+linters:
+  enable:
+    - deadcode
+    - depguard
+    - errcheck
+    - exportloopref
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - prealloc
+    - revive
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unconvert
+    - unused
+    - varcheck
+  disable:
+    - gochecknoglobals # we allow global variables in packages
+    - gochecknoinits   # we allow inits in packages
+    - goconst          # we allow repeated values to go un-const'd
+    - lll              # we allow any line length
+    - unparam          # we allow function calls to name unused parameters
