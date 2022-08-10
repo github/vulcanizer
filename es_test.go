@@ -2153,7 +2153,7 @@ func TestClusterAllocationExplain(t *testing.T) {
 
 			_, err := client.ClusterAllocationExplain(tc.request)
 			if err != nil {
-				t.Fatalf("Unexpected error expected nil, got %s", err)
+				t.Fatalf("Unexpected error. expected nil, got %s", err)
 			}
 		})
 	}
