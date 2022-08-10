@@ -1567,3 +1567,37 @@ func (c *Client) GetNodesHotThreads(nodesIDs []string) (string, error) {
 
 	return string(body), nil
 }
+
+// ClusterAllocationExplainRequest represents request data that can be sent to
+// `_cluster/allocation/explain` calls
+type ClusterAllocationExplainRequest struct {
+	// Specifies the node ID or the name of the node to only explain a shard that
+	// is currently located on the specified node.
+	CurrentNode string `json:"current_node,omitempty"`
+
+	// Specifies the name of the index that you would like an explanation for.
+	Index string `json:"index,omitempty"`
+
+	// If true, returns explanation for the primary shard for the given shard ID.
+	Primary bool `json:"primary,omitempty"`
+
+	// Specifies the ID of the shard that you would like an explanation for.
+	Shard string `json:"shard,omitempty"`
+}
+
+// ClusterAllocationExplain provides an explanation for a shard’s current allocation.
+func (c *Client) ClusterAllocationExplain(req *ClusterAllocationExplainRequest) (string, error) {
+	agent := c.buildGetRequest("_cluster/allocation/explain?pretty").
+		Set("Content-Type", "application/json")
+
+	if req != nil {
+		agent.Send(req)
+	}
+
+	body, err := handleErrWithBytes(agent)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}

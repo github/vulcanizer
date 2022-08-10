@@ -2096,3 +2096,65 @@ func TestGetNodesHotThreads(t *testing.T) {
 		t.Errorf("Unexpected response. got %v want %v", hotThreads, testSetup.Response)
 	}
 }
+
+func TestClusterAllocationExplain(t *testing.T) {
+	tests := []struct {
+		name         string
+		request      *ClusterAllocationExplainRequest
+		expectedBody string
+	}{
+		{
+			name:         "with nil request",
+			request:      nil,
+			expectedBody: "",
+		},
+		{
+			name: "with current_node set",
+			request: &ClusterAllocationExplainRequest{
+				CurrentNode: "test-node",
+			},
+			expectedBody: `{"current_node":"test-node"}`,
+		},
+		{
+			name: "with index set",
+			request: &ClusterAllocationExplainRequest{
+				Index: "test-index",
+			},
+			expectedBody: `{"index":"test-index"}`,
+		},
+		{
+			name: "with primary set",
+			request: &ClusterAllocationExplainRequest{
+				Primary: true,
+			},
+			expectedBody: `{"primary":true}`,
+		},
+		{
+			name: "with shard set",
+			request: &ClusterAllocationExplainRequest{
+				Shard: "test-shard",
+			},
+			expectedBody: `{"shard":"test-shard"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		tc := tt
+		t.Run(tc.name, func(t *testing.T) {
+			testSetup := &ServerSetup{
+				Method: "GET",
+				Path:   "/_cluster/allocation/explain",
+				Body:   tc.expectedBody,
+			}
+
+			host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+			defer ts.Close()
+			client := NewClient(host, port)
+
+			_, err := client.ClusterAllocationExplain(tc.request)
+			if err != nil {
+				t.Fatalf("Unexpected error expected nil, got %s", err)
+			}
+		})
+	}
+}
