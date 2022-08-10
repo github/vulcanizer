@@ -1586,6 +1586,7 @@ type ClusterAllocationExplainRequest struct {
 }
 
 // ClusterAllocationExplain provides an explanation for a shard’s current allocation.
+// For more info, please check https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-allocation-explain.html
 func (c *Client) ClusterAllocationExplain(req *ClusterAllocationExplainRequest) (string, error) {
 	agent := c.buildGetRequest("_cluster/allocation/explain?pretty").
 		Set("Content-Type", "application/json")
