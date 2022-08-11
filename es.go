@@ -1596,8 +1596,7 @@ func (c *Client) ClusterAllocationExplain(req *ClusterAllocationExplainRequest, 
 
 	agent := c.buildGetRequest(urlBuilder.String())
 	if req != nil {
-		agent.Set("Content-Type", "application/json").
-			Send(req)
+		agent.Set("Content-Type", "application/json").Send(req)
 	}
 
 	body, err := handleErrWithBytes(agent)
