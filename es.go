@@ -1587,12 +1587,17 @@ type ClusterAllocationExplainRequest struct {
 
 // ClusterAllocationExplain provides an explanation for a shard’s current allocation.
 // For more info, please check https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-allocation-explain.html
-func (c *Client) ClusterAllocationExplain(req *ClusterAllocationExplainRequest) (string, error) {
-	agent := c.buildGetRequest("_cluster/allocation/explain?pretty").
-		Set("Content-Type", "application/json")
+func (c *Client) ClusterAllocationExplain(req *ClusterAllocationExplainRequest, prettyOutput bool) (string, error) {
+	var urlBuilder strings.Builder
+	urlBuilder.WriteString("_cluster/allocation/explain")
+	if prettyOutput {
+		urlBuilder.WriteString("?pretty")
+	}
 
+	agent := c.buildGetRequest(urlBuilder.String())
 	if req != nil {
-		agent.Send(req)
+		agent.Set("Content-Type", "application/json").
+			Send(req)
 	}
 
 	body, err := handleErrWithBytes(agent)

@@ -20,6 +20,7 @@ import (
 type ServerSetup struct {
 	Method, Path, Body, Response string
 	HTTPStatus                   int
+	extraChecksFn                func(t *testing.T, r *http.Request)
 }
 
 func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Server {
@@ -29,10 +30,14 @@ func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Se
 
 		matched := false
 		for _, setup := range setups {
-			// Extra piece of debug incase there's a typo in your test's response, like a rogue space somewhere
-			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody != setup.Body {
-				t.Errorf("request body not matching: %s != %s", requestBody, setup.Body)
+			if setup.extraChecksFn != nil {
+				setup.extraChecksFn(t, r)
 			}
+			// Extra piece of debug incase there's a typo in your test's response, like a rogue space somewhere
+			if r.Method == setup.Method && r.URL.String() == setup.Path && requestBody != setup.Body {
+				t.Fatalf("request body not matching: %s != %s", requestBody, setup.Body)
+			}
+
 			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody == setup.Body {
 				matched = true
 				if setup.HTTPStatus == 0 {
@@ -2101,6 +2106,7 @@ func TestClusterAllocationExplain(t *testing.T) {
 	tests := []struct {
 		name         string
 		request      *ClusterAllocationExplainRequest
+		prettyOutput bool
 		expectedBody string
 	}{
 		{
@@ -2136,6 +2142,11 @@ func TestClusterAllocationExplain(t *testing.T) {
 			},
 			expectedBody: `{"shard":"test-shard"}`,
 		},
+		{
+			name:         "with pretty output",
+			request:      nil,
+			prettyOutput: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -2147,11 +2158,20 @@ func TestClusterAllocationExplain(t *testing.T) {
 				Body:   tc.expectedBody,
 			}
 
+			if tc.prettyOutput {
+				testSetup.extraChecksFn = func(t *testing.T, r *http.Request) {
+					expectedURL := "/_cluster/allocation/explain?pretty="
+					if r.URL.String() != expectedURL {
+						t.Errorf("Unexpected url query. Want %s, got %s", expectedURL, r.URL.String())
+					}
+				}
+			}
+
 			host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
 			defer ts.Close()
 			client := NewClient(host, port)
 
-			_, err := client.ClusterAllocationExplain(tc.request)
+			_, err := client.ClusterAllocationExplain(tc.request, tc.prettyOutput)
 			if err != nil {
 				t.Fatalf("Unexpected error. expected nil, got %s", err)
 			}
