@@ -34,7 +34,7 @@ func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Se
 				setup.extraChecksFn(t, r)
 			}
 			// Extra piece of debug incase there's a typo in your test's response, like a rogue space somewhere
-			if r.Method == setup.Method && r.URL.String() == setup.Path && requestBody != setup.Body {
+			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody != setup.Body {
 				t.Fatalf("request body not matching: %s != %s", requestBody, setup.Body)
 			}
 
