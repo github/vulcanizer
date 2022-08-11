@@ -20,6 +20,7 @@ import (
 type ServerSetup struct {
 	Method, Path, Body, Response string
 	HTTPStatus                   int
+	extraChecksFn                func(t *testing.T, r *http.Request)
 }
 
 func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Server {
@@ -29,10 +30,14 @@ func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Se
 
 		matched := false
 		for _, setup := range setups {
+			if setup.extraChecksFn != nil {
+				setup.extraChecksFn(t, r)
+			}
 			// Extra piece of debug incase there's a typo in your test's response, like a rogue space somewhere
 			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody != setup.Body {
-				t.Errorf("request body not matching: %s != %s", requestBody, setup.Body)
+				t.Fatalf("request body not matching: %s != %s", requestBody, setup.Body)
 			}
+
 			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody == setup.Body {
 				matched = true
 				if setup.HTTPStatus == 0 {
@@ -2094,5 +2099,82 @@ func TestGetNodesHotThreads(t *testing.T) {
 
 	if hotThreads != testSetup.Response {
 		t.Errorf("Unexpected response. got %v want %v", hotThreads, testSetup.Response)
+	}
+}
+
+func TestClusterAllocationExplain(t *testing.T) {
+	tests := []struct {
+		name         string
+		request      *ClusterAllocationExplainRequest
+		prettyOutput bool
+		expectedBody string
+	}{
+		{
+			name:         "with nil request",
+			request:      nil,
+			expectedBody: "",
+		},
+		{
+			name: "with current_node set",
+			request: &ClusterAllocationExplainRequest{
+				CurrentNode: "test-node",
+			},
+			expectedBody: `{"current_node":"test-node"}`,
+		},
+		{
+			name: "with index set",
+			request: &ClusterAllocationExplainRequest{
+				Index: "test-index",
+			},
+			expectedBody: `{"index":"test-index"}`,
+		},
+		{
+			name: "with primary set",
+			request: &ClusterAllocationExplainRequest{
+				Primary: true,
+			},
+			expectedBody: `{"primary":true}`,
+		},
+		{
+			name: "with shard set",
+			request: &ClusterAllocationExplainRequest{
+				Shard: "test-shard",
+			},
+			expectedBody: `{"shard":"test-shard"}`,
+		},
+		{
+			name:         "with pretty output",
+			request:      nil,
+			prettyOutput: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tc := tt
+		t.Run(tc.name, func(t *testing.T) {
+			testSetup := &ServerSetup{
+				Method: "GET",
+				Path:   "/_cluster/allocation/explain",
+				Body:   tc.expectedBody,
+			}
+
+			if tc.prettyOutput {
+				testSetup.extraChecksFn = func(t *testing.T, r *http.Request) {
+					expectedURL := "/_cluster/allocation/explain?pretty="
+					if r.URL.String() != expectedURL {
+						t.Errorf("Unexpected url query. Want %s, got %s", expectedURL, r.URL.String())
+					}
+				}
+			}
+
+			host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+			defer ts.Close()
+			client := NewClient(host, port)
+
+			_, err := client.ClusterAllocationExplain(tc.request, tc.prettyOutput)
+			if err != nil {
+				t.Fatalf("Unexpected error. expected nil, got %s", err)
+			}
+		})
 	}
 }
