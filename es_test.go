@@ -2103,6 +2103,7 @@ func TestGetNodesHotThreads(t *testing.T) {
 }
 
 func TestClusterAllocationExplain(t *testing.T) {
+	shardID := 0
 	tests := []struct {
 		name         string
 		request      *ClusterAllocationExplainRequest
@@ -2138,9 +2139,9 @@ func TestClusterAllocationExplain(t *testing.T) {
 		{
 			name: "with shard set",
 			request: &ClusterAllocationExplainRequest{
-				Shard: "test-shard",
+				Shard: &shardID,
 			},
-			expectedBody: `{"shard":"test-shard"}`,
+			expectedBody: `{"shard":0}`,
 		},
 		{
 			name:         "with pretty output",
