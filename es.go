@@ -1582,7 +1582,7 @@ type ClusterAllocationExplainRequest struct {
 	Primary bool `json:"primary,omitempty"`
 
 	// Specifies the ID of the shard that you would like an explanation for.
-	Shard string `json:"shard,omitempty"`
+	Shard *int `json:"shard,omitempty"`
 }
 
 // ClusterAllocationExplain provides an explanation for a shard’s current allocation.
