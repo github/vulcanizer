@@ -10,7 +10,7 @@ import (
 var nodesToGetHotThreads []string
 
 func init() {
-	cmdHotThreads.Flags().StringArrayVarP(&nodesToGetHotThreads, "nodes", "n", []string{}, "Elasticsearch nodes to get hot threads for. (optional, omitted means all nodes)")
+	cmdHotThreads.Flags().StringArrayVarP(&nodesToGetHotThreads, "nodes", "n", []string{}, "Elasticsearch nodes to get hot threads for. (optional, omitted will include all nodes)")
 	rootCmd.AddCommand(cmdHotThreads)
 }
 
