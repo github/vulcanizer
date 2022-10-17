@@ -29,26 +29,33 @@ Usage:
   vulcanizer [command]
 
 Available Commands:
-  aliases     Interact with aliases of the cluster.
-  allocation  Set shard allocation on the cluster.
-  analyze     Analyze text given an analyzer or a field and index.
-  drain       Drain a server or see what servers are draining.
-  fill        Fill servers with data, removing shard allocation exclusion rules.
-  health      Display the health of the cluster.
-  help        Help about any command
-  indices     Display the indices of the cluster.
-  nodes       Display the nodes of the cluster.
-  repository  Interact with the configured snapshot repositories.
-  setting     Interact with cluster settings.
-  settings    Display all the settings of the cluster.
-  shards      Get shard data by cluster node(s).
-  snapshot    Interact with a specific snapshot.
+  aliases         Interact with aliases of the cluster.
+  allocation      Set shard allocation on the cluster.
+  analyze         Analyze text given an analyzer or a field and index.
+  drain           Drain a server or see what servers are draining.
+  fill            Fill servers with data, removing shard allocation exclusion rules.
+  health          Display the health of the cluster.
+  heap            Display the node heap stats.
+  help            Help about any command
+  hotthreads      Display the current hot threads by node in the cluster.
+  indices         Display the indices of the cluster.
+  mappings        Display the mappings of the specified index.
+  nodeallocations Display the nodes of the cluster and their disk usage/allocation.
+  nodes           Display the nodes of the cluster.
+  repository      Interact with the configured snapshot repositories.
+  setting         Interact with cluster settings.
+  settings        Display all the settings of the cluster.
+  shards          Get shard data by cluster node(s).
+  snapshot        Interact with a specific snapshot.
 
 Flags:
+      --cacert string       Path to the certificate to check the cluster certificates against
+      --cert string         Path to the certificate to use for client certificate authentication
   -c, --cluster string      Cluster to connect to defined in config file
   -f, --configFile string   Configuration file to read in (default to "~/.vulcanizer.yaml")
   -h, --help                help for vulcanizer
       --host string         Host to connect to (default "localhost")
+      --key string          Path to the key to use for client certificate authentication
       --password string     Password to use during authentication
       --path string         Path to prepend to queries, in case Elasticsearch is behind a reverse proxy
   -p, --port int            Port to connect to (default 9200)
