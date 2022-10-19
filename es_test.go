@@ -2179,3 +2179,20 @@ func TestClusterAllocationExplain(t *testing.T) {
 		})
 	}
 }
+
+func TestAllocateStalePrimaryShard(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method: "POST",
+		Path:   "/_cluster/reroute",
+		Body:   `{"commands":[{"allocate_stale_primary":{"accept_data_loss":true,"index":"test-index","node":"test-node","shard":0}}]}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.AllocateStalePrimaryShard("test-node", "test-index", 0)
+	if err != nil {
+		t.Fatalf("Unexpected error. expected nil, got %s", err)
+	}
+}
