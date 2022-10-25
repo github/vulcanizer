@@ -227,11 +227,11 @@ type ClusterSettings struct {
 // A setting name and value with the setting name to be a "collapsed" version of
 // the setting. A setting of:
 //
-//  { "indices": { "recovery" : { "max_bytes_per_sec": "10mb" } } }
+//	{ "indices": { "recovery" : { "max_bytes_per_sec": "10mb" } } }
 //
 // would be represented by:
 //
-//  ClusterSetting{ Setting: "indices.recovery.max_bytes_per_sec", Value: "10mb" }
+//	ClusterSetting{ Setting: "indices.recovery.max_bytes_per_sec", Value: "10mb" }
 type Setting struct {
 	Setting string
 	Value   string
@@ -1605,4 +1605,56 @@ func (c *Client) ClusterAllocationExplain(req *ClusterAllocationExplainRequest, 
 	}
 
 	return string(body), nil
+}
+
+type RerouteRequest struct {
+	// The commands to perform (move, cancel, allocate, etc)
+	Commands []RerouteCommand `json:"commands,omitempty"`
+}
+
+type RerouteCommand struct {
+	AllocateStalePrimary AllocateStalePrimary `json:"allocate_stale_primary,omitempty"`
+}
+
+type AllocateStalePrimary struct {
+	// The node ID or node name of the node to assign the shard to.
+	Node string `json:"node,omitempty"`
+
+	// The name of the index containing the shard to be assigned.
+	Index string `json:"index,omitempty"`
+
+	// The shard ID of the shard to be assigned.
+	Shard *int `json:"shard,omitempty"`
+
+	// If a node which has the good copy of the data rejoins the cluster later on, that data will be deleted or overwritten with the data of the stale copy that was forcefully allocated with this command.
+	AcceptDataLoss bool `json:"accept_data_loss,omitempty"`
+}
+
+// AllocateStalePrimary allows to manually allocate a stale primary shard to a specific node
+func (c *Client) AllocateStalePrimaryShard(node, index string, shard int) error {
+	var urlBuilder strings.Builder
+	urlBuilder.WriteString("_cluster/reroute")
+
+	agent := c.buildPostRequest(urlBuilder.String())
+
+	req := RerouteRequest{
+		Commands: []RerouteCommand{
+			{
+				AllocateStalePrimary: AllocateStalePrimary{
+					Node:           node,
+					Index:          index,
+					Shard:          &shard,
+					AcceptDataLoss: true,
+				},
+			},
+		},
+	}
+	agent.Set("Content-Type", "application/json").Send(req)
+
+	_, err := handleErrWithBytes(agent)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
