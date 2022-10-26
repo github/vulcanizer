@@ -2190,7 +2190,7 @@ func TestReroute(t *testing.T) {
 	defer ts.Close()
 	client := NewClient(host, port)
 
-	err := client.Reroute()
+	err := client.RerouteWithRetryFailed()
 	if err != nil {
 		t.Fatalf("Unexpected error expected nil, got %s", err)
 	}
