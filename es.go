@@ -1630,6 +1630,21 @@ type AllocateStalePrimary struct {
 	AcceptDataLoss bool `json:"accept_data_loss,omitempty"`
 }
 
+// Reroute allows to change the allocation of individual shards in the cluster.
+func (c *Client) Reroute() error {
+	var urlBuilder strings.Builder
+	urlBuilder.WriteString("_cluster/reroute?retry_failed=true")
+
+	agent := c.buildPostRequest(urlBuilder.String())
+
+	_, err := handleErrWithBytes(agent)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // AllocateStalePrimary allows to manually allocate a stale primary shard to a specific node
 func (c *Client) AllocateStalePrimaryShard(node, index string, shard int) error {
 	var urlBuilder strings.Builder

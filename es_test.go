@@ -2180,6 +2180,22 @@ func TestClusterAllocationExplain(t *testing.T) {
 	}
 }
 
+func TestReroute(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method: "POST",
+		Path:   "/_cluster/reroute",
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.Reroute()
+	if err != nil {
+		t.Fatalf("Unexpected error expected nil, got %s", err)
+	}
+}
+
 func TestAllocateStalePrimaryShard(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method: "POST",
