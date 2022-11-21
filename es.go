@@ -1673,3 +1673,15 @@ func (c *Client) AllocateStalePrimaryShard(node, index string, shard int) error 
 
 	return nil
 }
+
+// RemoveIndexILMPolicy removes the ILM policy from the index
+func (c *Client) RemoveIndexILMPolicy(index string) error {
+	agent := c.buildPostRequest(fmt.Sprintf("%s/_ilm/remove", index))
+
+	_, err := handleErrWithBytes(agent)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
