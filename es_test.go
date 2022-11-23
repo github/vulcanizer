@@ -19,6 +19,7 @@ import (
 // ServerSetup type contains the Method, Path, Body and Response strings, as well as the HTTP Status code.
 type ServerSetup struct {
 	Method, Path, Body, Response string
+	QueryParams                  url.Values
 	HTTPStatus                   int
 	extraChecksFn                func(t *testing.T, r *http.Request)
 }
@@ -26,6 +27,7 @@ type ServerSetup struct {
 func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Server {
 	handlerFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestBytes, _ := ioutil.ReadAll(r.Body)
+		requestQueryParameters := r.URL.Query()
 		requestBody := string(requestBytes)
 
 		matched := false
@@ -36,6 +38,14 @@ func buildTestServer(t *testing.T, setups []*ServerSetup, tls bool) *httptest.Se
 			// Extra piece of debug incase there's a typo in your test's response, like a rogue space somewhere
 			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody != setup.Body {
 				t.Fatalf("request body not matching: %s != %s", requestBody, setup.Body)
+			}
+
+			if setup.QueryParams != nil {
+				for key, value := range setup.QueryParams {
+					if requestQueryParameters.Get(key) != value[0] {
+						t.Fatalf("request query parameter not matching: %s != %s", requestQueryParameters.Get(key), value[0])
+					}
+				}
 			}
 
 			if r.Method == setup.Method && r.URL.EscapedPath() == setup.Path && requestBody == setup.Body {
@@ -543,6 +553,27 @@ func TestDeleteIndex(t *testing.T) {
 	client := NewClient(host, port)
 
 	err := client.DeleteIndex("badindex")
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+}
+
+func TestDeleteIndexWithQueryParameters(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method: "DELETE",
+		Path:   "/badindex",
+		QueryParams: map[string][]string{
+			"timeout": {"1m"},
+		},
+		Response: `{"acknowledged": true}`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.DeleteIndexWithQueryParameters("badindex", map[string][]string{"timeout": {"1m"}})
 
 	if err != nil {
 		t.Errorf("Unexpected error expected nil, got %s", err)
