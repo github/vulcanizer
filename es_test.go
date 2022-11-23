@@ -2214,12 +2214,17 @@ func TestAllocateStalePrimaryShard(t *testing.T) {
 }
 
 func TestRemoveIndexILMPolicy(t *testing.T) {
-	testSetup := &ServerSetup{
+	ilmRemoveTestSetup := &ServerSetup{
 		Method: "POST",
 		Path:   "/test-index/_ilm/remove",
 	}
+	getIndicesTestSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/indices/test-index*.ds-ilm-history-*",
+		Response: "[]",
+	}
 
-	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	host, port, ts := setupTestServers(t, []*ServerSetup{ilmRemoveTestSetup, getIndicesTestSetup})
 	defer ts.Close()
 	client := NewClient(host, port)
 
