@@ -2212,3 +2212,24 @@ func TestAllocateStalePrimaryShard(t *testing.T) {
 		t.Fatalf("Unexpected error. expected nil, got %s", err)
 	}
 }
+
+func TestRemoveIndexILMPolicy(t *testing.T) {
+	ilmRemoveTestSetup := &ServerSetup{
+		Method: "POST",
+		Path:   "/test-index/_ilm/remove",
+	}
+	getIndicesTestSetup := &ServerSetup{
+		Method:   "GET",
+		Path:     "/_cat/indices/test-index*.ds-ilm-history-*",
+		Response: "[]",
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{ilmRemoveTestSetup, getIndicesTestSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.RemoveIndexILMPolicy("test-index")
+	if err != nil {
+		t.Fatalf("Unexpected error. expected nil, got %s", err)
+	}
+}

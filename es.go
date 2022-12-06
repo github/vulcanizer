@@ -710,6 +710,18 @@ func (c *Client) GetIndices(index string) ([]Index, error) {
 	return indices, nil
 }
 
+// Get a subset of indices including hidden ones
+func (c *Client) GetHiddenIndices(index string) ([]Index, error) {
+	var indices []Index
+	err := handleErrWithStruct(c.buildGetRequest(fmt.Sprintf("_cat/indices/%s?h=health,status,index,pri,rep,store.size,docs.count&expand_wildcards=open,closed,hidden", index)), &indices)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return indices, nil
+}
+
 // Get all the aliases in the cluster.
 //
 // Use case: You want to see some basic info on all the aliases of the cluster
@@ -1669,6 +1681,30 @@ func (c *Client) AllocateStalePrimaryShard(node, index string, shard int) error 
 	_, err := handleErrWithBytes(agent)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// RemoveIndexILMPolicy removes the ILM policy from the index
+func (c *Client) RemoveIndexILMPolicy(index string) error {
+	agent := c.buildPostRequest(fmt.Sprintf("%s/_ilm/remove", index))
+
+	_, err := handleErrWithBytes(agent)
+	if err != nil {
+		return err
+	}
+
+	ilmHistoryIndices, err := c.GetHiddenIndices(fmt.Sprintf("%s*.ds-ilm-history-*", index))
+	if err != nil {
+		return err
+	}
+
+	for _, ilmHistoryIndex := range ilmHistoryIndices {
+		err = c.DeleteIndex(ilmHistoryIndex.Name)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
