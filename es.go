@@ -779,9 +779,25 @@ func (c *Client) ModifyAliases(actions []AliasAction) error {
 //
 // Use case: You want to remove an index and all of its data.
 func (c *Client) DeleteIndex(indexName string) error {
+	return c.DeleteIndexWithQueryParameters(indexName, nil)
+}
+
+// Delete an index in the cluster with query parameters.
+//
+// Use case: You want to remove an index and all of its data. You also want to
+// specify query parameters such as timeout.
+func (c *Client) DeleteIndexWithQueryParameters(indexName string, queryParamMap map[string][]string) error {
+	queryParams := make([]string, 0, len(queryParamMap))
+	for key, value := range queryParamMap {
+		queryParams = append(queryParams, fmt.Sprintf("%s=%s", key,
+			strings.Join(value, ",")))
+	}
+	queryString := strings.Join(queryParams, "&")
+
+	agent := c.buildDeleteRequest(fmt.Sprintf("%s?%s", indexName, queryString))
 	var response acknowledgedResponse
 
-	err := handleErrWithStruct(c.buildDeleteRequest(indexName), &response)
+	err := handleErrWithStruct(agent, &response)
 
 	if err != nil {
 		return err
