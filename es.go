@@ -1511,6 +1511,59 @@ func (c *Client) GetShardRecovery(nodes []string, onlyActive bool) ([]ShardRecov
 	return filteredRecoveries, nil
 }
 
+// Get details regarding shard recovery operations across a set of cluster nodes sending the desired query parameters
+//
+// Use case: You can view the shard recovery progress of the cluster with the bytes=b parameter.
+func (c *Client) GetShardRecoveryWithQueryParams(nodes []string, params map[string]string) ([]ShardRecovery, error) {
+	var allRecoveries []ShardRecovery
+	uri := "_cat/recovery"
+
+	var queryStrings []string
+	for param, val := range params {
+		queryStrings = append(queryStrings, fmt.Sprintf("%s=%s", param, val))
+	}
+
+	uri = fmt.Sprintf("%s?%s", uri, strings.Join(queryStrings, "&"))
+
+	req := c.buildGetRequest(uri)
+	err := handleErrWithStruct(req, &allRecoveries)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// No nodes passed, so return all shards
+	if len(nodes) == 0 {
+		return allRecoveries, nil
+	}
+
+	var filteredRecoveries []ShardRecovery
+	nodeRegexps := make([]*regexp.Regexp, 0, len(nodes))
+
+	for _, node := range nodes {
+		nodeRegexp, err := regexp.Compile(node)
+		if err != nil {
+			return nil, err
+		}
+		nodeRegexps = append(nodeRegexps, nodeRegexp)
+	}
+
+	for _, shard := range allRecoveries {
+		for _, nodeRegexp := range nodeRegexps {
+			// Support regexp matching of node name
+			matchesSource := nodeRegexp.MatchString(shard.SourceNode)
+			matchesTarget := nodeRegexp.MatchString(shard.TargetNode)
+
+			// Return if either source node or target node matches
+			if matchesSource || matchesTarget {
+				filteredRecoveries = append(filteredRecoveries, shard)
+			}
+		}
+	}
+
+	return filteredRecoveries, nil
+}
+
 // GetDuration gets the total duration of a snapshot
 func (s *Snapshot) GetDuration() int {
 	if s.DurationMillis > 0 {
