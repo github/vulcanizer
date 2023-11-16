@@ -1518,7 +1518,7 @@ func (c *Client) GetShardRecoveryWithQueryParams(nodes []string, params map[stri
 	var allRecoveries []ShardRecovery
 	uri := "_cat/recovery"
 
-	var queryStrings []string
+	queryStrings := []string{}
 	for param, val := range params {
 		queryStrings = append(queryStrings, fmt.Sprintf("%s=%s", param, val))
 	}
