@@ -13,7 +13,6 @@ linters-settings:
 
 linters:
   enable:
-    - deadcode
     - depguard
     - errcheck
     - exportloopref
@@ -30,11 +29,9 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - structcheck
     - typecheck
     - unconvert
     - unused
-    - varcheck
   disable:
     - gochecknoglobals # we allow global variables in packages
     - gochecknoinits   # we allow inits in packages
