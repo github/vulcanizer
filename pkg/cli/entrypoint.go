@@ -28,6 +28,8 @@ type Config struct {
 	TLSSkipVerify bool
 }
 
+var applicationName = "vulcanizer"
+
 func getConfiguration() Config {
 
 	v := viper.GetViper()
@@ -133,7 +135,7 @@ func renderTable(rows [][]string, header []string) string {
 	return result.String()
 }
 
-var rootCmd = &cobra.Command{Use: "vulcanizer"}
+var rootCmd = &cobra.Command{Use: applicationName}
 
 func InitializeCLI(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) {
 
@@ -197,6 +199,9 @@ func InitializeCLI(args []string, stdin io.Reader, stdout io.Writer, stderr io.W
 		fmt.Printf("Error binding password flag: %s \n", err)
 		os.Exit(1)
 	}
+
+	viper.SetEnvPrefix(applicationName)
+	viper.AutomaticEnv()
 
 	err = rootCmd.Execute()
 	if err != nil {

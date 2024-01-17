@@ -66,6 +66,15 @@ Flags:
 Use "vulcanizer [command] --help" for more information about a command.
 ```
 
+#### Using environment variables
+Flags can also be defined via environment variables.
+To do this, simply append the flag to `VULCANIZER_`
+
+##### Example:
+
+Define password via environment variable:
+`VULCANIZER_PASSWORD=thepassword vulcanizer health`
+
 #### Roadmap and future releases
 
 The proposed future for vulcanizer can be found in our [ROADMAP](ROADMAP.md).
