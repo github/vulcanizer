@@ -1,6 +1,6 @@
 module github.com/github/vulcanizer
 
-go 1.15
+go 1.22
 
 require (
 	github.com/elazarl/goproxy v0.0.0-20191011121108-aa519ddbe484 // indirect
@@ -21,9 +21,19 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/tidwall/gjson v1.11.0
 	golang.org/x/net v0.0.0-20200927032502-5d4f70055728 // indirect
-	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
+	golang.org/x/sys v0.13.0 // indirect
 	gopkg.in/ini.v1 v1.61.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gotest.tools v2.2.0+incompatible
 	moul.io/http2curl v1.0.0 // indirect
+)
+
+require (
+	github.com/google/go-cmp v0.3.0 // indirect
+	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/subosito/gotenv v1.2.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 )

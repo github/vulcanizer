@@ -13,8 +13,8 @@ linters-settings:
 
 linters:
   enable:
-    - depguard
     - errcheck
+    - errorlint
     - exportloopref
     - gocritic
     - gocyclo
@@ -27,14 +27,15 @@ linters:
     - misspell
     - nakedret
     - prealloc
-    - revive
     - staticcheck
     - typecheck
     - unconvert
     - unused
+    - revive
+    - reassign
+    - unparam
   disable:
     - gochecknoglobals # we allow global variables in packages
     - gochecknoinits   # we allow inits in packages
     - goconst          # we allow repeated values to go un-const'd
     - lll              # we allow any line length
-    - unparam          # we allow function calls to name unused parameters
