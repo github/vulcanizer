@@ -3,7 +3,7 @@ module github.com/github/vulcanizer
 go 1.22
 
 require (
-	github.com/elazarl/goproxy v0.0.0-20191011121108-aa519ddbe484 // indirect
+	github.com/elazarl/goproxy v0.0.0-20231117061959-7cc037d33fb5 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/magiconair/properties v1.8.4 // indirect
