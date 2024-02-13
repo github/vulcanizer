@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.22.x' ]
+        go: [ '1.17.x', '1.22.x' ]
     name: Vulcanizer tests against go version ${{ matrix.go }}
     steps:
     - uses: actions/checkout@v2
