@@ -2211,6 +2211,105 @@ func TestClusterAllocationExplain(t *testing.T) {
 	}
 }
 
+func TestClusterAllocationExplainWithQueryParams(t *testing.T) {
+	shardID := 0
+	tests := []struct {
+		name         string
+		request      *ClusterAllocationExplainRequest
+		params       map[string]string
+		expectedBody string
+	}{
+		{
+			name:         "with nil request",
+			request:      nil,
+			expectedBody: "",
+			params:       map[string]string{},
+		},
+		{
+			name: "with current_node set",
+			request: &ClusterAllocationExplainRequest{
+				CurrentNode: "test-node",
+			},
+			expectedBody: `{"current_node":"test-node"}`,
+			params:       map[string]string{},
+		},
+		{
+			name: "with index set",
+			request: &ClusterAllocationExplainRequest{
+				Index: "test-index",
+			},
+			expectedBody: `{"index":"test-index"}`,
+			params:       map[string]string{},
+		},
+		{
+			name: "with primary set",
+			request: &ClusterAllocationExplainRequest{
+				Primary: true,
+			},
+			expectedBody: `{"primary":true}`,
+			params:       map[string]string{},
+		},
+		{
+			name: "with shard set",
+			request: &ClusterAllocationExplainRequest{
+				Shard: &shardID,
+			},
+			expectedBody: `{"shard":0}`,
+			params:       map[string]string{},
+		},
+		{
+			name:    "with pretty param",
+			request: nil,
+			params: map[string]string{
+				"pretty": "true",
+			},
+		},
+		{
+			name:    "with multiple params",
+			request: nil,
+			params: map[string]string{
+				"pretty":                "true",
+				"include_disk_info":     "true",
+				"include_yes_decisions": "true",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tc := tt
+		t.Run(tc.name, func(t *testing.T) {
+			testSetup := &ServerSetup{
+				Method: "GET",
+				Path:   "/_cluster/allocation/explain",
+				Body:   tc.expectedBody,
+			}
+
+			if len(tc.params) > 0 {
+				testSetup.extraChecksFn = func(t *testing.T, r *http.Request) {
+					vals := r.URL.Query()
+					if len(vals) != len(tc.params) {
+						t.Errorf("expected %d query params but got %d", len(tc.params), len(vals))
+					}
+					for param, val := range tc.params {
+						if actual := vals.Get(param); actual != val {
+							t.Errorf("expected val '%s' for query parameter '%s' but got '%s'", val, param, actual)
+						}
+					}
+				}
+			}
+
+			host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+			defer ts.Close()
+			client := NewClient(host, port)
+
+			_, err := client.ClusterAllocationExplainWithQueryParams(tc.request, tc.params)
+			if err != nil {
+				t.Fatalf("Unexpected error. expected nil, got %s", err)
+			}
+		})
+	}
+}
+
 func TestReroute(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method: "POST",
