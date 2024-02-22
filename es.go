@@ -1688,6 +1688,30 @@ func (c *Client) ClusterAllocationExplain(req *ClusterAllocationExplainRequest, 
 	return string(body), nil
 }
 
+// ClusterAllocationExplainWithQueryParams provides an explanation for a shard’s current allocation with optional query parameters.
+// For more info, please check https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-allocation-explain.html
+func (c *Client) ClusterAllocationExplainWithQueryParams(req *ClusterAllocationExplainRequest, params map[string]string) (string, error) {
+	uri := "_cluster/allocation/explain"
+	queryStrings := []string{}
+	for param, val := range params {
+		queryStrings = append(queryStrings, fmt.Sprintf("%s=%s", param, val))
+	}
+
+	uri = fmt.Sprintf("%s?%s", uri, strings.Join(queryStrings, "&"))
+
+	agent := c.buildGetRequest(uri)
+	if req != nil {
+		agent.Set("Content-Type", "application/json").Send(req)
+	}
+
+	body, err := handleErrWithBytes(agent)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
 type RerouteRequest struct {
 	// The commands to perform (move, cancel, allocate, etc)
 	Commands []RerouteCommand `json:"commands,omitempty"`
