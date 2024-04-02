@@ -1,11 +1,13 @@
+//go:build integration
 // +build integration
 
 package vulcanizer_test
 
 import (
-	"github.com/github/vulcanizer"
 	"testing"
 	"time"
+
+	"github.com/github/vulcanizer"
 )
 
 func TestNodes(t *testing.T) {

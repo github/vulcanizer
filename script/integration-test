@@ -17,7 +17,8 @@ fi
 # Run regular unit tests first
 ./script/test
 
-elasticsearch_versions=(v5 v6 v7)
+# These match integration_data/ sub-folder names
+elasticsearch_versions=(v5 v6 v7 v8)
 
 for v in "${elasticsearch_versions[@]}"
 do
@@ -44,7 +45,7 @@ do
     }
   }'
   echo "Filling in data to integration_test index"
-  curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@../documents.dat"; echo
+  curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:49200/_bulk --data-binary "@documents.dat"; echo
   echo "Creating snapshot repository backup-repo"
   curl -H "Content-Type: application/json" -XPUT localhost:49200/_snapshot/backup-repo -d '{ "type": "fs", "settings": { "location": "/backups" } }'
   echo "Making snapshot snapshot_1 in repository backup-repo"
