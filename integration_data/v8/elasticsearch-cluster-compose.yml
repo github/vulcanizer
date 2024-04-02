@@ -1,0 +1,82 @@
+version: '3'
+
+services:
+  elasticsearch-v8:
+    build:
+      context: .
+      dockerfile: elasticsearch.dockerfile
+    image: vulcanizer-elasticsearch:v8
+    container_name: vulcanizer-elasticsearch-v8
+    environment:
+      - cluster.name=vulcanizer-elasticsearch-v8
+      - node.name=vulcanizer-elasticsearch-v8
+      - bootstrap.memory_lock=true
+      - "path.repo=/backups"
+      - "discovery.seed_hosts=vulcanizer-elasticsearch-v8,vulcanizer-elasticsearch-v8-2"
+      - "cluster.initial_master_nodes=vulcanizer-elasticsearch-v8,vulcanizer-elasticsearch-v8-2"
+      - "ES_JAVA_OPTS=-Xms512M -Xmx512M"
+      - xpack.security.enabled=false
+      - xpack.profiling.enabled=false
+      - xpack.ml.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
+      - ingest.geoip.downloader.enabled=false
+      - indices.lifecycle.history_index_enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - 49200:9200
+    networks:
+      - vulcanizer-esnet
+    volumes:
+      - vulcanizer-backup-volume:/backups
+
+  elasticsearch-v8-2:
+    build:
+      context: .
+      dockerfile: elasticsearch.dockerfile
+    image: vulcanizer-elasticsearch:v8
+    depends_on:
+      - "elasticsearch-v8"
+    container_name: vulcanizer-elasticsearch-v8-2
+    environment:
+      - cluster.name=vulcanizer-elasticsearch-v8
+      - bootstrap.memory_lock=true
+      - node.name=vulcanizer-elasticsearch-v8-2
+      - "path.repo=/backups"
+      - "discovery.seed_hosts=vulcanizer-elasticsearch-v8,vulcanizer-elasticsearch-v8-2"
+      - "cluster.initial_master_nodes=vulcanizer-elasticsearch-v8,vulcanizer-elasticsearch-v8-2"
+      - "ES_JAVA_OPTS=-Xms512M -Xmx512M"
+      - xpack.security.enabled=false
+      - xpack.profiling.enabled=false
+      - xpack.ml.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
+      - ingest.geoip.downloader.enabled=false
+      - indices.lifecycle.history_index_enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - vulcanizer-esnet
+    volumes:
+      - vulcanizer-backup-volume:/backups
+
+networks:
+  vulcanizer-esnet:
+
+volumes:
+  vulcanizer-backup-volume:

@@ -1,0 +1,20 @@
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test"} }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
+{ "index" : { "_index" : "integration_test" } }
+{ "stat" : "test_data", "value": "foo" }
