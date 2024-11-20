@@ -2363,3 +2363,22 @@ func TestRemoveIndexILMPolicy(t *testing.T) {
 		t.Fatalf("Unexpected error. expected nil, got %s", err)
 	}
 }
+func TestLicenseCluster(t *testing.T) {
+	body := `{"license":{"start_date_in_millis":2728303200000,"uid":"asdfasdf-e"}}`
+
+	testSetup := &ServerSetup{
+		Method: "PUT",
+		Path:   "/_license",
+		Body:   body,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.LicenseCluster(body)
+
+	if err != nil {
+		t.Errorf("Unexpected error expected nil, got %s", err)
+	}
+}

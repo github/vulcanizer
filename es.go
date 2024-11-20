@@ -1803,7 +1803,7 @@ func (c *Client) RemoveIndexILMPolicy(index string) error {
 	return nil
 }
 
-// Function called LicenseCluster. This function takes a json document as a string which is the license to apply to the Elasticsearch cluster.
+// LicenseCluster takes in the Elasticsearch license encoded as a string
 func (c *Client) LicenseCluster(license string) error {
 	// If the license is empty, return an error
 	if license == "" {
