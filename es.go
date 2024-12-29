@@ -1195,7 +1195,7 @@ func (c *Client) SnapshotAllIndicesWithBodyParams(repository string, snapshot st
 
 	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).
 		Set("Content-Type", "application/json").
-		Send(parsedJson)
+		Send(string(parsedJson))
 
 	_, err := handleErrWithBytes(agent)
 
