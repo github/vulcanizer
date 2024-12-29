@@ -1407,6 +1407,29 @@ func TestSnapshotAllIndicesWithAdditionalParameters(t *testing.T) {
 	}
 }
 
+func TestSnapshotAllIndicesWithAdditionalParametersIncludeGlobalState(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/_snapshot/backup-repo/snapshot1",
+		Body:     `{"include_global_state":true}`,
+		Response: `{"acknowledged": true }`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	bodyParams := map[string]interface{}{
+		"include_global_state": true,
+	}
+
+	err := client.SnapshotAllIndicesWithBodyParams("backup-repo", "snapshot1", bodyParams)
+
+	if err != nil {
+		t.Fatalf("Got error taking snapshot: %s", err)
+	}
+}
+
 func TestSnapshotAllIndicesWithAdditionalParametersErr(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "PUT",
