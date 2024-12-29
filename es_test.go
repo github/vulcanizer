@@ -1381,6 +1381,51 @@ func TestSnapshotAllIndices(t *testing.T) {
 	}
 }
 
+func TestSnapshotAllIndicesWithAdditionalParameters(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/_snapshot/backup-repo/snapshot1",
+		Body:     `{"metadata":{"taken_because":"backup before upgrading","taken_by":"user123"}}`,
+		Response: `{"acknowledged": true }`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	bodyParams := map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"taken_by":      "user123",
+			"taken_because": "backup before upgrading",
+		},
+	}
+
+	err := client.SnapshotAllIndicesWithBodyParams("backup-repo", "snapshot1", bodyParams)
+
+	if err != nil {
+		t.Fatalf("Got error taking snapshot: %s", err)
+	}
+}
+
+func TestSnapshotAllIndicesWithAdditionalParametersErr(t *testing.T) {
+	testSetup := &ServerSetup{
+		Method:   "PUT",
+		Path:     "/_snapshot/backup-repo/snapshot1",
+		Body:     `{"metadata":{"taken_because":"backup before upgrading","taken_by":"user123"}}`,
+		Response: `{"acknowledged": true }`,
+	}
+
+	host, port, ts := setupTestServers(t, []*ServerSetup{testSetup})
+	defer ts.Close()
+	client := NewClient(host, port)
+
+	err := client.SnapshotAllIndicesWithBodyParams("backup-repo", "snapshot1", nil)
+
+	if err == nil {
+		t.Fatalf("should have thrown an error")
+	}
+}
+
 func TestRestoreSnapshotIndices_ErrorConditions(t *testing.T) {
 	tt := []struct {
 		Name        string
