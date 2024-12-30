@@ -1186,19 +1186,19 @@ func (c *Client) SnapshotAllIndicesWithBodyParams(repository string, snapshot st
 		return errors.New("empty string for snapshot is not allowed")
 	}
 
-	if bodyParams == nil {
-		return errors.New("no body params provided, please use SnapshotAllIndices Function instead")
-	}
-
 	parsedJSON, parsingErr := json.Marshal(bodyParams)
 
 	if parsingErr != nil {
 		return parsingErr
 	}
 
-	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot)).
-		Set("Content-Type", "application/json").
-		Send(string(parsedJSON))
+	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot))
+
+	if bodyParams != nil {
+		agent = agent.
+			Set("Content-Type", "application/json").
+			Send(string(parsedJSON))
+	}
 
 	_, err := handleErrWithBytes(agent)
 

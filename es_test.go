@@ -1430,11 +1430,10 @@ func TestSnapshotAllIndicesWithAdditionalParametersIncludeGlobalState(t *testing
 	}
 }
 
-func TestSnapshotAllIndicesWithAdditionalParametersErr(t *testing.T) {
+func TestSnapshotAllIndicesWithAdditionalParametersNilValue(t *testing.T) {
 	testSetup := &ServerSetup{
 		Method:   "PUT",
 		Path:     "/_snapshot/backup-repo/snapshot1",
-		Body:     `{"metadata":{"taken_because":"backup before upgrading","taken_by":"user123"}}`,
 		Response: `{"acknowledged": true }`,
 	}
 
@@ -1444,8 +1443,8 @@ func TestSnapshotAllIndicesWithAdditionalParametersErr(t *testing.T) {
 
 	err := client.SnapshotAllIndicesWithBodyParams("backup-repo", "snapshot1", nil)
 
-	if err == nil {
-		t.Fatalf("should have thrown an error")
+	if err != nil {
+		t.Fatalf("Should be able to take Nil body params: %s", err)
 	}
 }
 
