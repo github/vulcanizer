@@ -1174,6 +1174,9 @@ func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
 	return err
 }
 
+// Take a snapshot of all indices on the cluster to the given repository with body params
+//
+// Use case: You want to backup all of the indices on the cluster to the given repository with body params
 func (c *Client) SnapshotAllIndicesWithBodyParams(repository string, snapshot string, bodyParams map[string]interface{}) error {
 	if repository == "" {
 		return errors.New("empty string for repository is not allowed")
