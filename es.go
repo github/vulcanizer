@@ -1174,6 +1174,37 @@ func (c *Client) SnapshotAllIndices(repository string, snapshot string) error {
 	return err
 }
 
+// Take a snapshot of all indices on the cluster to the given repository with body params
+//
+// Use case: You want to backup all of the indices on the cluster to the given repository with body params
+func (c *Client) SnapshotAllIndicesWithBodyParams(repository string, snapshot string, bodyParams map[string]interface{}) error {
+	if repository == "" {
+		return errors.New("empty string for repository is not allowed")
+	}
+
+	if snapshot == "" {
+		return errors.New("empty string for snapshot is not allowed")
+	}
+
+	parsedJSON, parsingErr := json.Marshal(bodyParams)
+
+	if parsingErr != nil {
+		return parsingErr
+	}
+
+	agent := c.buildPutRequest(fmt.Sprintf("_snapshot/%s/%s", repository, snapshot))
+
+	if bodyParams != nil {
+		agent = agent.
+			Set("Content-Type", "application/json").
+			Send(string(parsedJSON))
+	}
+
+	_, err := handleErrWithBytes(agent)
+
+	return err
+}
+
 // Restore an index or indices on the cluster
 //
 // Use case: You want to restore a particular index or indices onto your cluster with a new name.
