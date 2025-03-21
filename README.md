@@ -1,5 +1,17 @@
 # vulcanizer
 
+⚠️ This repository is deprecated and no longer maintained.
+
+As of March 2025, the vulcanizer project has been officially deprecated. This means:
+
+- No further updates, bug fixes, or security patches will be provided.
+- Issues and pull requests will no longer be monitored or addressed.
+- Users are encouraged to find alternative solutions or migrate to maintained projects such as [go-elasticsearch](https://github.com/elastic/go-elasticsearch)
+
+If you are currently using this repository, we recommend forking it if you wish to continue development on your own.
+
+---
+
 GitHub's ops focused Elasticsearch library
 
 [![build status](https://github.com/github/vulcanizer/workflows/Vulcanizer%20CI/badge.svg)](https://github.com/github/vulcanizer/actions) [![GoDoc](https://godoc.org/github.com/github/vulcanizer?status.svg)](https://godoc.org/github.com/github/vulcanizer) [![Go Report Card](https://goreportcard.com/badge/github.com/github/vulcanizer)](https://goreportcard.com/report/github.com/github/vulcanizer) [![release](https://img.shields.io/github/release/github/vulcanizer.svg)](https://github.com/github/vulcanizer/releases)
@@ -66,10 +78,6 @@ Flags:
 Use "vulcanizer [command] --help" for more information about a command.
 ```
 
-#### Roadmap and future releases
-
-The proposed future for vulcanizer can be found in our [ROADMAP](ROADMAP.md).
-
 
 #### Configuration and connection information 
 
@@ -115,7 +123,7 @@ Integration tests are set up to run against the latest v5 and v6 versions of Ela
 
 ### Project status
 
-This project is under active development.
+This project is no longer actively maintained.
 
 ### Contributing
 
